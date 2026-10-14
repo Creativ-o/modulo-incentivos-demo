@@ -1,0 +1,584 @@
+@font-face {
+  font-family: -naotech-icons;
+  src: url("fonts/icons.woff") format("woff"), url("fonts/icons.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+[class^=nwt-icon],
+[class*=" nwt-icon"] {
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.naotech-icon-arrow-down:before {
+  content: "\e900";
+}
+
+.naotech-icon-arrow-left:before {
+  content: "\e901";
+}
+
+.naotech-icon-arrow-right-up:before {
+  content: "\e902";
+}
+
+.naotech-icon-arrow-right:before {
+  content: "\e903";
+}
+
+.naotech-icon-arrow-up:before {
+  content: "\e904";
+}
+
+.naotech-icon-chevron-down:before {
+  content: "\e905";
+}
+
+.naotech-icon-chevron-left:before {
+  content: "\e906";
+}
+
+.naotech-icon-chevron-right:before {
+  content: "\e907";
+}
+
+.naotech-icon-chevron-up:before {
+  content: "\e908";
+}
+
+.naotech-icon-close:before {
+  content: "\e909";
+}
+
+.naotech-icon-drawer:before {
+  content: "\e90a";
+}
+
+.naotech-icon-fallback:before {
+  content: "\e90b";
+}
+
+.naotech-icon-helper:before {
+  content: "\e90c";
+}
+
+.naotech-icon-info:before {
+  content: "\e90d";
+}
+
+.naotech-icon-overflow-menu-horizontal:before {
+  content: "\e90e";
+}
+
+.naotech-icon-overflow-menu-vertical:before {
+  content: "\e90f";
+}
+
+.naotech-icon-placeholder-image:before {
+  content: "\e910";
+}
+
+.naotech-icon-refresh:before {
+  content: "\e911";
+}
+
+.naotech-icon-cbt:before {
+  content: "\e912";
+}
+
+.naotech-icon-delivery:before {
+  content: "\e913";
+}
+
+.naotech-icon-dispatch-time:before {
+  content: "\e914";
+}
+
+.naotech-icon-fast-shipping:before {
+  content: "\e915";
+}
+
+.naotech-icon-gps-pin-filled:before {
+  content: "\e916";
+}
+
+.naotech-icon-gps-pin:before {
+  content: "\e917";
+}
+
+.naotech-icon-package:before {
+  content: "\e918";
+}
+
+.naotech-icon-pick-up:before {
+  content: "\e919";
+}
+
+.naotech-icon-pin-pick-up:before {
+  content: "\e91a";
+}
+
+.naotech-icon-post-office-shipping:before {
+  content: "\e91b";
+}
+
+.naotech-icon-return:before {
+  content: "\e91c";
+}
+
+.naotech-icon-shipping-agreement:before {
+  content: "\e91d";
+}
+
+.naotech-icon-shipping:before {
+  content: "\e91e";
+}
+
+.naotech-icon-avatar-new:before {
+  content: "\e91f";
+}
+
+.naotech-icon-avatar:before {
+  content: "\e920";
+}
+
+.naotech-icon-contact-new:before {
+  content: "\e921";
+}
+
+.naotech-icon-mercado-lider:before {
+  content: "\e922";
+}
+
+.naotech-icon-privacy:before {
+  content: "\e923";
+}
+
+.naotech-icon-user:before {
+  content: "\e924";
+}
+
+.naotech-icon-bank-transfer:before {
+  content: "\e925";
+}
+
+.naotech-icon-bill:before {
+  content: "\e926";
+}
+
+.naotech-icon-boleto:before {
+  content: "\e927";
+}
+
+.naotech-icon-cash:before {
+  content: "\e928";
+}
+
+.naotech-icon-charge:before {
+  content: "\e929";
+}
+
+.naotech-icon-credit-card:before {
+  content: "\e92a";
+}
+
+.naotech-icon-debit-card:before {
+  content: "\e92b";
+}
+
+.naotech-icon-deposit:before {
+  content: "\e92c";
+}
+
+.naotech-icon-express-point:before {
+  content: "\e92d";
+}
+
+.naotech-icon-mercado-pago-card:before {
+  content: "\e92e";
+}
+
+.naotech-icon-payment:before {
+  content: "\e92f";
+}
+
+.naotech-icon-phone-top-up:before {
+  content: "\e930";
+}
+
+.naotech-icon-point-2:before {
+  content: "\e931";
+}
+
+.naotech-icon-point-smart:before {
+  content: "\e932";
+}
+
+.naotech-icon-point:before {
+  content: "\e933";
+}
+
+.naotech-icon-qr-code-charge:before {
+  content: "\e934";
+}
+
+.naotech-icon-qr-code:before {
+  content: "\e935";
+}
+
+.naotech-icon-recurring-payments:before {
+  content: "\e936";
+}
+
+.naotech-icon-to-agree:before {
+  content: "\e937";
+}
+
+.naotech-icon-wallet:before {
+  content: "\e938";
+}
+
+.naotech-icon-withdrawal:before {
+  content: "\e939";
+}
+
+.naotech-icon-calendar:before {
+  content: "\e93a";
+}
+
+.naotech-icon-camera:before {
+  content: "\e93b";
+}
+
+.naotech-icon-donation:before {
+  content: "\e93c";
+}
+
+.naotech-icon-file:before {
+  content: "\e93d";
+}
+
+.naotech-icon-leaf:before {
+  content: "\e93e";
+}
+
+.naotech-icon-megaphone:before {
+  content: "\e93f";
+}
+
+.naotech-icon-movies-and-series:before {
+  content: "\e940";
+}
+
+.naotech-icon-padlock-close:before {
+  content: "\e941";
+}
+
+.naotech-icon-padlock-open:before {
+  content: "\e942";
+}
+
+.naotech-icon-present:before {
+  content: "\e943";
+}
+
+.naotech-icon-protected-purchase:before {
+  content: "\e944";
+}
+
+.naotech-icon-thunder:before {
+  content: "\e945";
+}
+
+.naotech-icon-warranty:before {
+  content: "\e946";
+}
+
+.naotech-icon-cart-add:before {
+  content: "\e947";
+}
+
+.naotech-icon-cart-empty:before {
+  content: "\e948";
+}
+
+.naotech-icon-categories:before {
+  content: "\e949";
+}
+
+.naotech-icon-deals:before {
+  content: "\e94a";
+}
+
+.naotech-icon-history:before {
+  content: "\e94b";
+}
+
+.naotech-icon-home:before {
+  content: "\e94c";
+}
+
+.naotech-icon-link:before {
+  content: "\e94d";
+}
+
+.naotech-icon-mercado-credit:before {
+  content: "\e94e";
+}
+
+.naotech-icon-mercado-puntos:before {
+  content: "\e94f";
+}
+
+.naotech-icon-notification:before {
+  content: "\e950";
+}
+
+.naotech-icon-official-stores:before {
+  content: "\e951";
+}
+
+.naotech-icon-purchases:before {
+  content: "\e952";
+}
+
+.naotech-icon-real-estate:before {
+  content: "\e953";
+}
+
+.naotech-icon-sales:before {
+  content: "\e954";
+}
+
+.naotech-icon-settings:before {
+  content: "\e955";
+}
+
+.naotech-icon-supermarket:before {
+  content: "\e956";
+}
+
+.naotech-icon-vehicles:before {
+  content: "\e957";
+}
+
+.naotech-icon-caution:before {
+  content: "\e958";
+}
+
+.naotech-icon-info1:before {
+  content: "\e959";
+}
+
+.naotech-icon-positive:before {
+  content: "\e95a";
+}
+
+.naotech-icon-negative:before {
+  content: "\e95b";
+}
+
+.naotech-icon-add:before {
+  content: "\e95c";
+}
+
+.naotech-icon-attach:before {
+  content: "\e95d";
+}
+
+.naotech-icon-bookmark-filled:before {
+  content: "\e95e";
+}
+
+.naotech-icon-bookmark:before {
+  content: "\e95f";
+}
+
+.naotech-icon-copy:before {
+  content: "\e960";
+}
+
+.naotech-icon-delete:before {
+  content: "\e961";
+}
+
+.naotech-icon-download:before {
+  content: "\e962";
+}
+
+.naotech-icon-edit:before {
+  content: "\e963";
+}
+
+.naotech-icon-favorite-filled:before {
+  content: "\e964";
+}
+
+.naotech-icon-favorite:before {
+  content: "\e965";
+}
+
+.naotech-icon-filter:before {
+  content: "\e966";
+}
+
+.naotech-icon-logout:before {
+  content: "\e967";
+}
+
+.naotech-icon-microphone:before {
+  content: "\e968";
+}
+
+.naotech-icon-pause-filled:before {
+  content: "\e969";
+}
+
+.naotech-icon-play-filled:before {
+  content: "\e96a";
+}
+
+.naotech-icon-play:before {
+  content: "\e96b";
+}
+
+.naotech-icon-price-highest:before {
+  content: "\e96c";
+}
+
+.naotech-icon-price-lowest:before {
+  content: "\e96d";
+}
+
+.naotech-icon-search:before {
+  content: "\e96e";
+}
+
+.naotech-icon-share:before {
+  content: "\e96f";
+}
+
+.naotech-icon-sort:before {
+  content: "\e970";
+}
+
+.naotech-icon-sound-off:before {
+  content: "\e971";
+}
+
+.naotech-icon-sound-on:before {
+  content: "\e972";
+}
+
+.naotech-icon-star-filled:before {
+  content: "\e973";
+}
+
+.naotech-icon-star-half-filled:before {
+  content: "\e974";
+}
+
+.naotech-icon-star:before {
+  content: "\e975";
+}
+
+.naotech-icon-thumb-down-filled:before {
+  content: "\e976";
+}
+
+.naotech-icon-thumb-down:before {
+  content: "\e977";
+}
+
+.naotech-icon-thumb-up-filled:before {
+  content: "\e978";
+}
+
+.naotech-icon-thumb-up:before {
+  content: "\e979";
+}
+
+.naotech-icon-upload:before {
+  content: "\e97a";
+}
+
+.naotech-icon-view-columns:before {
+  content: "\e97b";
+}
+
+.naotech-icon-view-galery:before {
+  content: "\e97c";
+}
+
+.naotech-icon-view-grid:before {
+  content: "\e97d";
+}
+
+.naotech-icon-view-list:before {
+  content: "\e97e";
+}
+
+.naotech-icon-view-mosaic:before {
+  content: "\e97f";
+}
+
+.naotech-icon-view-relevant:before {
+  content: "\e980";
+}
+
+.naotech-icon-visibility-off:before {
+  content: "\e981";
+}
+
+.naotech-icon-visibility-on:before {
+  content: "\e982";
+}
+
+.naotech-icon-zoom-in:before {
+  content: "\e983";
+}
+
+.naotech-icon-zoom-out:before {
+  content: "\e984";
+}
+
+.naotech-icon-answer:before {
+  content: "\e985";
+}
+
+.naotech-icon-attention:before {
+  content: "\e986";
+}
+
+.naotech-icon-laptop:before {
+  content: "\e987";
+}
+
+.naotech-icon-mail:before {
+  content: "\e988";
+}
+
+.naotech-icon-phone-add:before {
+  content: "\e989";
+}
+
+.naotech-icon-phone:before {
+  content: "\e98a";
+}
+
+.naotech-icon-question:before {
+  content: "\e98b";
+}
+
+.naotech-icon-smartphone:before {
+  content: "\e98c";
+}
+
+.naotech-icon-tablet:before {
+  content: "\e98d";
+}

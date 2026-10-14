@@ -1,0 +1,47 @@
+// NaoSuite Fonts
+// @license MIT
+// Author: Naowee Tech
+
+@font-face {
+  font-family: -naotech-sdk-inter;
+  font-style: normal;
+  font-weight: 100 300;
+  src: url('@naowee-tech/sdk-frontend-foundations/fonts/inter/inter-light.ttf')
+    format('truetype');
+}
+
+@font-face {
+  font-family: -naotech-sdk-inter;
+  font-style: normal;
+  font-weight: 400;
+  src: url('@naowee-tech/sdk-frontend-foundations/fonts/inter/inter-regular.ttf')
+    format('truetype');
+}
+
+@font-face {
+  font-family: -naotech-sdk-inter;
+  font-style: normal;
+  font-weight: 500;
+  src: url('@naowee-tech/sdk-frontend-foundations/fonts/inter/inter-medium.ttf')
+    format('truetype');
+}
+
+@font-face {
+  font-family: -naotech-sdk-inter;
+  font-style: normal;
+  font-weight: 600;
+  src: url('@naowee-tech/sdk-frontend-foundations/fonts/inter/inter-semibold.ttf')
+    format('truetype');
+}
+
+@font-face {
+  font-family: -naotech-sdk-inter;
+  font-style: normal;
+  font-weight: 700 900;
+  src: url('@naowee-tech/sdk-frontend-foundations/fonts/inter/inter-bold.ttf')
+    format('truetype');
+}
+
+:root {
+  --naotech-sdk-font-family-base: -naotech-sdk-inter;
+}

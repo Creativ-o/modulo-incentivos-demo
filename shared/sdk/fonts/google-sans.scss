@@ -1,0 +1,37 @@
+// Google Sans (self-hosted in public/google-sans)
+
+@font-face {
+  font-family: -naotech-sdk-google-sans;
+  font-style: normal;
+  font-weight: 100 400;
+  src: url('@naowee-tech/sdk-frontend-foundations/fonts/google-sans/GoogleSans-Regular.ttf')
+    format('truetype');
+}
+
+@font-face {
+  font-family: -naotech-sdk-google-sans;
+  font-style: normal;
+  font-weight: 500;
+  src: url('@naowee-tech/sdk-frontend-foundations/fonts/google-sans/GoogleSans-Medium.ttf')
+    format('truetype');
+}
+
+@font-face {
+  font-family: -naotech-sdk-google-sans;
+  font-style: normal;
+  font-weight: 600;
+  src: url('@naowee-tech/sdk-frontend-foundations/fonts/google-sans/GoogleSans-SemiBold.ttf')
+    format('truetype');
+}
+
+@font-face {
+  font-family: -naotech-sdk-google-sans;
+  font-style: normal;
+  font-weight: 700 900;
+  src: url('@naowee-tech/sdk-frontend-foundations/fonts/google-sans/GoogleSans-Bold.ttf')
+    format('truetype');
+}
+
+:root {
+  --naotech-sdk-font-family-base: -naotech-sdk-google-sans;
+}
