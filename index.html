@@ -12,117 +12,120 @@
 <link rel="stylesheet" href="shared/sdk/icons.css"/>
 
 <style>
-  /* Solo layout de la portada; todo componente y token viene del SDK */
+  /* Portada de entrada — mismo patrón que la del gestor de contenidos:
+     no existe en el SDK, se compone con nwt-card + nwt-avatar-icon + tokens. */
   :root{ --naotech-logo-background:url("../logos/naowee.svg"); }
-  body{
-    margin:0;min-height:100vh;
-    background:
-      radial-gradient(circle at 1px 1px, var(--naotech-app-color-300) 1px, transparent 0) 0 0/24px 24px,
-      var(--naotech-app-color-100);
+  body{ margin:0; background:var(--naotech-color-gray-050,#f6f7f9); }
+
+  .welcome{
+    min-height:100vh; box-sizing:border-box; position:relative; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; padding:136px 16px 16px;
+    background:var(--naotech-app-color-050,#fff7ed);
   }
-  .landing{
-    min-height:100vh;display:flex;flex-direction:column;align-items:center;text-align:center;
-    padding:var(--naotech-sizing-56) var(--naotech-sizing-24) 120px;
+  .welcome::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,var(--naotech-app-color-100),var(--naotech-app-background))}
+  .welcome::after{content:'';position:absolute;inset:0;background-image:radial-gradient(var(--naotech-app-color-300) 1px,transparent 1px);background-size:18px 18px;opacity:.28;pointer-events:none}
+  .welcome > *{position:relative;z-index:1}
+
+  .welcome__top{position:absolute!important;top:0;left:0;right:0;display:flex;justify-content:center;padding:56px 40px 24px}
+  .welcome__top .nwt-logo-naowee{--naotech-logo-width:10rem}
+  .welcome__head{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+  .welcome__head p{max-width:52ch;margin:16px 0 0;font-size:16px;color:var(--naotech-color-gray-600,#667085)}
+  .welcome__title{
+    margin:8px 0 0;max-width:18ch;font-size:52px;line-height:1.05;font-weight:900;letter-spacing:-.01em;min-height:0;
+    background:linear-gradient(100deg,var(--naotech-app-color-900) 44%,var(--naotech-primary-color-600) 50%,var(--naotech-app-color-900) 56%);
+    background-size:300% 100%;background-position:120% 0;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:welcome-glow 3.4s linear infinite;
   }
-  .landing .nwt-logo-naowee{--naotech-logo-width:11rem;margin-bottom:var(--naotech-sizing-56)}
-  .landing__title{
-    margin:0;max-width:760px;font-size:clamp(32px,5vw,56px);font-weight:var(--naotech-font-weight-bold);
-    letter-spacing:-.03em;line-height:1.1;color:var(--naotech-app-color-900);
+  .welcome__grid{display:flex;justify-content:center;flex-wrap:wrap;gap:16px;padding:40px 24px 48px}
+
+  .welcome__card.nwt-card{
+    flex:0 0 240px;min-height:260px;position:relative;cursor:pointer;text-decoration:none;color:inherit;
+    --pvt-body-background-color:var(--naotech-app-background);
+    animation:welcome-card-in .4s cubic-bezier(.22,1,.36,1) both;
   }
-  .landing__sub{
-    margin:var(--naotech-sizing-16) 0 0;max-width:560px;font-size:var(--naotech-sizing-16);
-    line-height:1.5;color:var(--naotech-app-color-700);
+  .welcome__card.nwt-card:nth-child(2){animation-delay:80ms}
+  .welcome__card.nwt-card:nth-child(3){animation-delay:160ms}
+  .welcome__card .nwt-card__body{border-radius:24px}
+  .welcome__card:hover .nwt-card__body,.welcome__card:focus-visible .nwt-card__body{box-shadow:var(--naotech-shadow-large)}
+  .welcome__card:focus-visible{outline:none}
+  .welcome__card .nwt-card__content{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding-top:8px}
+  .welcome__card .nwt-avatar-icon{width:48px;height:48px}
+  .welcome__card .nwt-avatar-icon .nwt-icon,.welcome__card .nwt-avatar-icon i{font-size:24px;width:24px;height:24px;line-height:24px}
+  .welcome__name{font-size:16px;font-weight:700;color:var(--naotech-app-color-900)}
+  .welcome__desc{min-height:3.6em;margin:0;max-width:24ch;font-size:13px;color:var(--naotech-color-gray-600,#667085)}
+  .welcome__foot{font-size:12px;color:var(--naotech-app-color-600);text-align:center}
+  .welcome__foot a{color:var(--naotech-primary-color-700);font-weight:600;text-decoration:none}
+  .welcome__foot a:hover{text-decoration:underline}
+
+  .welcome__zoom{
+    position:fixed!important;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:var(--naotech-primary-color-700,#d74009);border-radius:24px;color:#fff;
+    transition:all .38s cubic-bezier(.7,0,.9,.4);
   }
-  .landing__hint{
-    margin-top:var(--naotech-sizing-40);font-size:var(--naotech-sizing-12);
-    font-weight:var(--naotech-font-weight-bold);letter-spacing:.6px;text-transform:uppercase;
-    color:var(--naotech-app-color-500);
-  }
-  .roles{
-    margin-top:var(--naotech-sizing-12);width:100%;max-width:1040px;
-    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--naotech-sizing-20);
-  }
-  .role-card{text-decoration:none;color:inherit;--nwt-card-width:100%}
-  .role-card:focus-visible{outline:2px solid var(--naotech-primary-color-700);outline-offset:3px;border-radius:var(--naotech-sizing-20)}
-  .role-card__header{align-items:center;padding-top:var(--naotech-sizing-32)}
-  .role-card__title{margin:0;font-size:var(--naotech-sizing-20);font-weight:var(--naotech-font-weight-bold);color:var(--naotech-app-color-900)}
-  .role-card__content{align-items:center;gap:var(--naotech-sizing-16)}
-  .role-card__desc{margin:0;max-width:280px;font-size:var(--naotech-sizing-14);line-height:1.5;color:var(--naotech-app-color-700)}
-  .role-card__perms{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--naotech-sizing-8)}
-  .role-card__footer{justify-content:center;padding:var(--naotech-sizing-16) var(--naotech-sizing-16) var(--naotech-sizing-24)}
-  .landing__foot{margin-top:var(--naotech-sizing-48);font-size:var(--naotech-sizing-12);color:var(--naotech-app-color-700)}
-  .landing__foot a{color:var(--naotech-primary-color-700);font-weight:var(--naotech-font-weight-semibold);text-decoration:none}
-  .landing__foot a:hover{text-decoration:underline}
+  .welcome__zoom span{font-size:28px;font-weight:700;opacity:0;transition:opacity .3s .15s}
+  .welcome__zoom.is-grown{left:0!important;top:0!important;width:100vw!important;height:100vh!important;border-radius:0}
+  .welcome__zoom.is-grown span{opacity:1}
+
   .nwt-version-pill{--naotech-logo-width:5.5rem}
-  @media (max-width:860px){
-    .roles{grid-template-columns:1fr;max-width:420px}
-    .landing{padding-top:var(--naotech-sizing-32)}
-    .landing .nwt-logo-naowee{margin-bottom:var(--naotech-sizing-32)}
+  @keyframes welcome-card-in{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes welcome-glow{0%{background-position:120% 0}100%{background-position:-20% 0}}
+  @media (prefers-reduced-motion:reduce){
+    .welcome__card.nwt-card{animation:none}
+    .welcome__title{animation:none;background:none;color:var(--naotech-app-color-900)}
   }
+  @media (max-width:700px){ .welcome__title{font-size:32px} .welcome{padding-top:120px} .welcome__card.nwt-card{flex-basis:100%;max-width:340px} }
 </style>
 </head>
 <body>
 
-<main class="landing">
-  <div class="nwt-logo-naowee" role="img" aria-label="Naowee"></div>
+<div class="welcome">
+  <div class="welcome__top"><div class="nwt-logo-naowee" role="img" aria-label="Naowee"></div></div>
 
-  <h1 class="landing__title">Bienvenido al módulo de incentivos</h1>
-  <p class="landing__sub">Parametriza programas, gestiona postulaciones y entrega incentivos a deportistas. Elige tu rol para ver solo lo que tienes permitido.</p>
+  <div class="welcome__head">
+    <h1 class="welcome__title">Bienvenido al módulo de incentivos Naowee</h1>
+    <p>Elige tu rol para acceder a las herramientas de parametrización, postulación y entrega de incentivos que tienes permitidas.</p>
+  </div>
 
-  <div class="landing__hint">Ingresar como</div>
+  <div class="welcome__grid">
+      <a class="welcome__card nwt-card nwt-card--clickable" href="incentivo-02-dashboard.html" data-role-go="admin" data-name="Gestor de incentivos" nwt-variant="quiet" nwt-size="medium">
+        <div class="nwt-card__body">
+          <div class="nwt-card__header"></div>
+          <div class="nwt-card__content">
+            <div class="nwt-avatar-icon" nwt-theme="primary"><div class="nwt-icon"><i class="naotech-icon-settings"></i></div></div>
+            <span class="welcome__name">Gestor de incentivos</span>
+            <p class="welcome__desc">Crea y parametriza programas, carga códigos, revisa y audita todo el módulo.</p>
+          </div>
+          <div class="nwt-card__footer"></div>
+        </div>
+      </a>
+      <a class="welcome__card nwt-card nwt-card--clickable" href="incentivo-03-programas.html" data-role-go="programa" data-name="Gestor de programa" nwt-variant="quiet" nwt-size="medium">
+        <div class="nwt-card__body">
+          <div class="nwt-card__header"></div>
+          <div class="nwt-card__content">
+            <div class="nwt-avatar-icon" nwt-theme="primary"><div class="nwt-icon"><i class="naotech-icon-file"></i></div></div>
+            <span class="welcome__name">Gestor de programa</span>
+            <p class="welcome__desc">Gestiona el programa que tiene asignado: consulta condiciones y asignaciones.</p>
+          </div>
+          <div class="nwt-card__footer"></div>
+        </div>
+      </a>
+      <a class="welcome__card nwt-card nwt-card--clickable" href="incentivo-08-asignar-buscar.html" data-role-go="operador" data-name="Operador" nwt-variant="quiet" nwt-size="medium">
+        <div class="nwt-card__body">
+          <div class="nwt-card__header"></div>
+          <div class="nwt-card__content">
+            <div class="nwt-avatar-icon" nwt-theme="primary"><div class="nwt-icon"><i class="naotech-icon-search"></i></div></div>
+            <span class="welcome__name">Operador</span>
+            <p class="welcome__desc">Entrega incentivos en campo: busca al beneficiario, asigna y sube la evidencia.</p>
+          </div>
+          <div class="nwt-card__footer"></div>
+        </div>
+      </a>
+  </div>
 
-  <nav class="roles" aria-label="Roles de la demo">
-    <a class="role-card nwt-card nwt-card--clickable" href="incentivo-02-dashboard.html" data-role-go="admin" nwt-variant="quiet" nwt-size="medium">
-      <div class="nwt-card__body">
-        <div class="nwt-card__header role-card__header">
-          <div class="nwt-avatar-icon" nwt-theme="primary"><div class="nwt-icon"><i class="naotech-icon-settings"></i></div></div>
-          <h2 class="role-card__title">Gestor de incentivos</h2>
-        </div>
-        <div class="nwt-card__content role-card__content">
-          <p class="role-card__desc">Crea y parametriza programas, carga códigos, revisa y audita todo el módulo.</p>
-          <div class="role-card__perms"><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Dashboard</div></div></span><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Programas</div></div></span><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Códigos</div></div></span><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Reportería</div></div></span></div>
-        </div>
-        <div class="nwt-card__footer role-card__footer">
-          <span class="nwt-button" nwt-variant="loud" nwt-size="small"><span class="nwt-button__content">Entrar <div class="nwt-icon nwt-button__icon"><i class="naotech-icon-arrow-right"></i></div></span></span>
-        </div>
-      </div>
-    </a>
-
-    <a class="role-card nwt-card nwt-card--clickable" href="incentivo-03-programas.html" data-role-go="programa" nwt-variant="quiet" nwt-size="medium">
-      <div class="nwt-card__body">
-        <div class="nwt-card__header role-card__header">
-          <div class="nwt-avatar-icon" nwt-theme="primary"><div class="nwt-icon"><i class="naotech-icon-file"></i></div></div>
-          <h2 class="role-card__title">Gestor de programa</h2>
-        </div>
-        <div class="nwt-card__content role-card__content">
-          <p class="role-card__desc">Gestiona únicamente el programa que tiene asignado: consulta condiciones y asignaciones.</p>
-          <div class="role-card__perms"><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Su programa</div></div></span><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Condiciones (lectura)</div></div></span><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Asignaciones</div></div></span></div>
-        </div>
-        <div class="nwt-card__footer role-card__footer">
-          <span class="nwt-button" nwt-variant="loud" nwt-size="small"><span class="nwt-button__content">Entrar <div class="nwt-icon nwt-button__icon"><i class="naotech-icon-arrow-right"></i></div></span></span>
-        </div>
-      </div>
-    </a>
-
-    <a class="role-card nwt-card nwt-card--clickable" href="incentivo-08-asignar-buscar.html" data-role-go="operador" nwt-variant="quiet" nwt-size="medium">
-      <div class="nwt-card__body">
-        <div class="nwt-card__header role-card__header">
-          <div class="nwt-avatar-icon" nwt-theme="primary"><div class="nwt-icon"><i class="naotech-icon-search"></i></div></div>
-          <h2 class="role-card__title">Operador</h2>
-        </div>
-        <div class="nwt-card__content role-card__content">
-          <p class="role-card__desc">Entrega incentivos en campo: busca al beneficiario, valida, asigna y sube la evidencia.</p>
-          <div class="role-card__perms"><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Buscar</div></div></span><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Asignar</div></div></span><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Evidencia</div></div></span><span class="nwt-badge" role="status" nwt-theme="neutral" nwt-size="small" nwt-variant="quiet"><div class="nwt-badge__content"><div class="nwt-badge__label">Mis asignaciones</div></div></span></div>
-        </div>
-        <div class="nwt-card__footer role-card__footer">
-          <span class="nwt-button" nwt-variant="loud" nwt-size="small"><span class="nwt-button__content">Entrar <div class="nwt-icon nwt-button__icon"><i class="naotech-icon-arrow-right"></i></div></span></span>
-        </div>
-      </div>
-    </a>
-  </nav>
-
-  <p class="landing__foot">¿Buscas una pantalla específica? <a href="mapa-pantallas.html">Ver mapa de pantallas</a></p>
-</main>
+  <div class="welcome__foot">Una herramienta del ecosistema Naowee · <a href="mapa-pantallas.html">Mapa de pantallas</a></div>
+</div>
 
 <div class="nwt-version-pill">
   <span class="nwt-version-pill__logo"><div class="nwt-logo-naowee"></div></span>
@@ -133,12 +136,28 @@
 </div>
 
 <script>
-/* Guarda el rol ANTES de navegar: profile-switcher.js lo lee al cargar la pantalla destino. */
+/* Al elegir un rol: se guarda ANTES de navegar (profile-switcher.js lo lee en la pantalla destino)
+   y la card crece a pantalla completa, como en el gestor de contenidos. */
+var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+var busy = false;
 document.querySelectorAll('[data-role-go]').forEach(function (a) {
-  a.addEventListener('click', function () {
+  a.addEventListener('click', function (e) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || busy) { try { localStorage.setItem('naowee-incentivos-role', a.dataset.roleGo); } catch (_) {} return; }
+    e.preventDefault(); busy = true;
     try { localStorage.setItem('naowee-incentivos-role', a.dataset.roleGo); } catch (_) {}
+    if (reduced) { location.href = a.href; return; }
+    var r = a.getBoundingClientRect();
+    var z = document.createElement('div');
+    z.className = 'welcome__zoom';
+    z.style.cssText = 'left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px';
+    z.innerHTML = '<span>' + a.dataset.name + '</span>';
+    document.body.appendChild(z);
+    requestAnimationFrame(function () { requestAnimationFrame(function () { z.classList.add('is-grown'); }); });
+    setTimeout(function () { location.href = a.href; }, 1000);
   });
 });
+/* bfcache: al volver con "atrás" no dejar el overlay */
+window.addEventListener('pageshow', function () { busy = false; document.querySelectorAll('.welcome__zoom').forEach(function (z) { z.remove(); }); });
 </script>
 </body>
 </html>
