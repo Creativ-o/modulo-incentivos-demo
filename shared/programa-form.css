@@ -242,3 +242,7 @@ a.nwt-button{text-decoration:none}
 /* Paso 3: aviso de cuántos tipos hay (definido en el paso 2) + acceso para cambiarlo */
 .pf-types-bar{display:flex;align-items:center;gap:var(--naotech-sizing-12);flex-wrap:wrap}
 .pf-types-bar .nwt-alert{flex:1;min-width:260px}
+
+/* Modalidades que no aplican a la categoría elegida: visibles pero deshabilitadas */
+.pf .nwt-radio-group__option--disabled{opacity:.5;cursor:not-allowed;background:var(--naotech-app-color-100)}
+.pf .nwt-radio-group__option--disabled .nwt-radio-group__option-label{cursor:not-allowed}

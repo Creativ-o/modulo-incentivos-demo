@@ -29,12 +29,14 @@
   ];
   function catOf(i) { return CATEGORIAS.filter(function (c) { return c.k === i.categoria; })[0] || null; }
   function conValor(i) { var c = catOf(i); return !c || !!c.valor; }
-  /* La categoría decide si se pide valor; las 3 modalidades del Excel están siempre disponibles. Solo se sugiere una por defecto. */
+  /* La categoría decide si se pide valor y qué modalidades tienen sentido:
+     Diploma / reconocimiento → solo certificado digital; las demás → código o fijo recurrente (no certificado). Sin categoría → ninguna aún. */
+  function modsOf(i) { var c = catOf(i); return !c ? [] : (c.cert ? ['certificado'] : ['codigo', 'fijo']); }
   function applyCategoria(inc) {
     var c = catOf(inc); if (!c) return;
     if (!c.valor) inc.valor = '';
-    if (c.cert && inc.modalidad === 'codigo') { inc.modalidad = 'certificado'; inc.foto = false; }       // sugerencia para diplomas
-    else if (!c.cert && inc.modalidad === 'certificado') { inc.modalidad = 'codigo'; inc.foto = true; }  // al salir de diploma
+    var ok = modsOf(inc);
+    if (ok.indexOf(inc.modalidad) < 0) { inc.modalidad = ok[0]; inc.foto = (inc.modalidad === 'codigo'); }
   }
   var FRECUENCIAS = [['mensual', 'Mensual'], ['bimestral', 'Bimestral'], ['trimestral', 'Trimestral'], ['semestral', 'Semestral'], ['otra', 'Otra (definir meses)']];
   var DOC_SUGERIDOS = ['Documento de identidad', 'Certificado de resultado', 'Certificación bancaria', 'Certificado de estudio', 'Autorización del acudiente', 'Certificado médico'];
@@ -152,7 +154,7 @@
       (o.label ? '<legend class="nwt-radio-group__label">' + esc(o.label) + '</legend>' : '') +
       '<div class="nwt-radio-group__options">' + o.options.map(function (op) {
         var on = String(o.value) === String(op.v);
-        return '<label class="nwt-radio-group__option' + (on ? ' nwt-radio-group__option--selected' : '') + '" data-act="' + o.act + '"' + (o.d ? ' data-i="' + esc(o.d) + '"' : '') + ' data-x="' + esc(op.v) + '">' +
+        return '<label class="nwt-radio-group__option' + (on ? ' nwt-radio-group__option--selected' : '') + (op.dis ? ' nwt-radio-group__option--disabled' : '') + '"' + (op.dis ? ' aria-disabled="true" title="' + esc(op.why || 'No disponible') + '" data-x="' + esc(op.v) + '"' : ' data-act="' + o.act + '"' + (o.d ? ' data-i="' + esc(o.d) + '"' : '') + ' data-x="' + esc(op.v) + '"') + '>' +
           '<span class="nwt-radio-group__circle"><span class="nwt-radio-group__dot"></span></span>' +
           '<span class="nwt-radio-group__option-label"><span class="pf-opt"><b>' + esc(op.l) + '</b>' + (op.s ? '<small>' + esc(op.s) + '</small>' : '') + '</span></span></label>';
       }).join('') + '</div></fieldset></div>';
@@ -327,8 +329,11 @@
       { v: 'certificado', l: 'Certificado digital / reconocimiento', s: 'Entrega única sin código: PDF con firma digital y QR de verificación.' },
       { v: 'fijo', l: 'Incentivo fijo recurrente', s: 'Apoyo periódico de sostenimiento. Sin código; exige documentación previa.' }
     ];
-    var cv = conValor(inc);
-    var mod = radios({ label: 'Modalidad', act: 'inc-modalidad', d: inc.id, value: m, dir: 'horizontal', options: ALL_MODS });
+    var cv = conValor(inc), allowed = modsOf(inc), cat = catOf(inc);
+    var mod = radios({ label: 'Modalidad', act: 'inc-modalidad', d: inc.id, value: m, dir: 'horizontal', options: ALL_MODS.map(function (o) {
+      var dis = allowed.indexOf(o.v) < 0;
+      return { v: o.v, l: o.l, s: o.s, dis: dis, why: !cat ? 'Selecciona primero la categoría' : (o.v === 'certificado' ? 'El certificado solo aplica a la categoría Diploma / reconocimiento' : 'No aplica a ' + cat.l) };
+    }) }) + (cat ? '' : '<p class="pf-hint">Selecciona primero la categoría para elegir la modalidad.</p>');
     var extra = '';
     if (m === 'codigo') {
       extra = alertBox('Los códigos se cargan en el paso 5 o después, y no se pueden eliminar si ya registran entregas.', 'informative');
@@ -724,7 +729,7 @@
     'cob-del': function (x) { cobSet(x); },
     'anexo-del': function () { S.datos.anexo = null; saveDraft(true); anexoRedraw(); },
     'rubro-tipos': function (x) { S.rubro.tipos = x; syncInc(); render(true); },
-    'inc-modalidad': function (x, i) { var n = incById(i); n.modalidad = x; n.foto = (x === 'codigo'); render(true); },
+    'inc-modalidad': function (x, i) { var n = incById(i); if (modsOf(n).indexOf(x) < 0) return; n.modalidad = x; n.foto = (x === 'codigo'); render(true); },
     'inc-foto': function (x, i) { var n = incById(i); n.foto = !n.foto; render(true); },
     benef: function (x) { var b = S.cond.benef, i = b.indexOf(x); if (i > -1) b.splice(i, 1); else b.push(x); render(true); },
     'cond-modo': function (x) { S.cond.modo = x; render(true); },
