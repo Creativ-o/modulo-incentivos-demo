@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="shared/enter-transition.js?v=1"></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SUID – Incentivos · Historial de asignaciones</title>
@@ -211,7 +212,7 @@
       </div>
     </nav>
     <div class="sidebar-bottom">
-      <div class="nav-row" onclick="fadeAndGo('incentivo-01-login.html')">
+      <div class="nav-row" onclick="window.incGoLanding ? incGoLanding(this) : (location.href='index.html')">
         <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="#B5B9D4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <span class="lbl">Cerrar sesión</span>
       </div>
@@ -613,7 +614,7 @@ render();
 
 function fadeAndGo(url){window.location.href=url}
 </script>
-<script src="shared/profile-switcher.js?v=role-7" defer></script>
+<script src="shared/profile-switcher.js?v=role-8" defer></script>
 
 
 <script src="shared/footer-scroll.js" defer></script>

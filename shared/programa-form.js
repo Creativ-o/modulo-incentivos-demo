@@ -705,7 +705,8 @@
     });
     burger.addEventListener('click', function () { setDrawer(true); });
     scrim.addEventListener('click', function () { setDrawer(false); });
-    $('#pfLogout').addEventListener('click', function () { location.href = 'index.html'; });
+    function toLanding(e) { e.preventDefault(); if (window.incGoLanding) window.incGoLanding(e.currentTarget); else location.href = 'index.html'; }
+    $('#pfLogout').addEventListener('click', toLanding); $('#pfRole').addEventListener('click', toLanding);
     if (mq.addEventListener) mq.addEventListener('change', apply); apply();
     /* Encabezado: sombra + compactación al hacer scroll (histéresis para evitar parpadeo) */
     var on = false;

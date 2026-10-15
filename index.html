@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="shared/sdk/styles.css"/>
 <link rel="stylesheet" href="shared/sdk/components.css"/>
 <link rel="stylesheet" href="shared/sdk/icons.css"/>
+<script src="shared/enter-transition.js?v=1"></script>
 
 <style>
   /* Portada de entrada — mismo patrón que la del gestor de contenidos:
@@ -71,6 +72,7 @@
   .nwt-version-pill{--naotech-logo-width:5.5rem}
   @keyframes welcome-card-in{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
   @keyframes welcome-glow{0%{background-position:120% 0}100%{background-position:-20% 0}}
+  html.inc-no-anim .welcome__card.nwt-card{animation:none}
   @media (prefers-reduced-motion:reduce){
     .welcome__card.nwt-card{animation:none}
     .welcome__title{animation:none;background:none;color:var(--naotech-app-color-900)}
@@ -144,7 +146,7 @@ document.querySelectorAll('[data-role-go]').forEach(function (a) {
   a.addEventListener('click', function (e) {
     if (e.metaKey || e.ctrlKey || e.shiftKey || busy) { try { localStorage.setItem('naowee-incentivos-role', a.dataset.roleGo); } catch (_) {} return; }
     e.preventDefault(); busy = true;
-    try { localStorage.setItem('naowee-incentivos-role', a.dataset.roleGo); } catch (_) {}
+    try { localStorage.setItem('naowee-incentivos-role', a.dataset.roleGo); sessionStorage.setItem('inc-enter', JSON.stringify({ role: a.dataset.roleGo, name: a.dataset.name, t: Date.now() })); } catch (_) {}
     if (reduced) { location.href = a.href; return; }
     var r = a.getBoundingClientRect();
     var z = document.createElement('div');
