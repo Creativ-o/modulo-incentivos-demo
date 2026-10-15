@@ -183,7 +183,34 @@
     }).join('') + '</ul></div>' : '';
     return inputBox('Cobertura territorial', false, control, '«Nacional» incluye todas las regiones. Puedes elegir varias.', 'datos.cobertura') + list;
   }
-  function cobRedraw() { var el = $('#pfCob'); if (el) { el.classList.toggle('nwt-dropdown--open', cobOpen); el.innerHTML = cobInner(); if (cobOpen) { var l = el.querySelector('.pf-ms__list'); if (l) l.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } } }
+  function cobRedraw() {
+    var el = $('#pfCob'); if (!el) return;
+    el.classList.toggle('nwt-dropdown--open', cobOpen);
+    el.innerHTML = cobInner();
+    if (cobOpen) cobPlace(el);
+  }
+  /* La lista nunca puede tapar el pie ni salirse del área visible: se abre hacia donde haya espacio y limita su alto. */
+  function cobPlace(el) {
+    var list = el.querySelector('.pf-ms__list'), ctl = el.querySelector('.nwt-dropdown__content'), opts = list && list.querySelector('.nwt-dropdown__options');
+    if (!list || !ctl) return;
+    var sc = $('#pfScroll'), foot = $('.pf-footer'), head = $('#pfHead');
+    var GAP = 6, NEED = 200;
+    function room() {
+      var c = ctl.getBoundingClientRect();
+      return { below: foot.getBoundingClientRect().top - c.bottom - GAP * 2, above: c.top - head.getBoundingClientRect().bottom - GAP * 2 };
+    }
+    var r = room(), cr0 = ctl.getBoundingClientRect();
+    var visible = cr0.top >= head.getBoundingClientRect().bottom && cr0.bottom <= foot.getBoundingClientRect().top;
+    if (!visible || Math.max(r.below, r.above) < NEED) { // fuera de vista o con poco espacio: se centra el control en el área visible
+      ctl.scrollIntoView({ block: 'center' }); r = room();
+    }
+    var up = r.below < NEED && r.above > r.below, avail = Math.max(120, Math.min(300, (up ? r.above : r.below) - 16));
+    opts.style.maxHeight = avail + 'px';
+    var e = el.getBoundingClientRect(), c = ctl.getBoundingClientRect();
+    list.classList.toggle('pf-ms__list--up', up);
+    if (up) { list.style.top = 'auto'; list.style.bottom = (e.bottom - c.top + GAP) + 'px'; }
+    else { list.style.bottom = 'auto'; list.style.top = (c.bottom - e.top + GAP) + 'px'; }
+  }
   function cobSet(r) {
     var c = S.datos.cobertura;
     if (r === 'Nacional') c = ['Nacional'];
