@@ -65,8 +65,8 @@
   var SNAP = null; // foto del programa publicado (modo edición) para detectar versionamiento
 
   function seedEdit() {
-    var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.modalidad = 'fijo'; i1.valor = '1000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
-    var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.modalidad = 'codigo'; i2.valor = '350000'; i2.cantidad = '150'; i2.foto = true;
+    var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.modalidad = 'fijo'; i1.valor = '200000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
+    var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.modalidad = 'codigo'; i2.valor = '52500000'; i2.cantidad = '150'; i2.foto = true;
     S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], area: AREAS[0], gestor: 'Isa Pabon', desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', cobertura: ['Nacional'], justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 }, responsable: 'Danna Arrieta · Gestor de incentivos' };
     S.rubro = { valor: '252500000', tipos: 'varios', n: 2 };
     S.inc = [i1, i2];
@@ -85,6 +85,13 @@
   /* ── Utilidades ─────────────────────────────────────────────── */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function money(n) { return '$ ' + Number(n || 0).toLocaleString('es-CO'); }
+  function money2(n) { return '$ ' + Number(n || 0).toLocaleString('es-CO', { maximumFractionDigits: 2 }); }
+  /* Debajo de la cantidad: valor de cada cupo = valor total ÷ cantidad */
+  function cupoText(inc) {
+    var v = Number(inc.valor) || 0, c = Number(inc.cantidad) || 0, fijo = inc.modalidad === 'fijo', who = fijo ? 'beneficiario' : 'cupo';
+    if (v && c) return 'Cada ' + who + (fijo ? ' recibe ' : ' es de ') + money2(v / c) + (fijo ? ' por ciclo' : '') + ' (' + money2(v) + ' ÷ ' + c.toLocaleString('es-CO') + ').';
+    return 'Con el valor total y la cantidad se calcula el valor de cada ' + who + '.';
+  }
   function digits(s) { return String(s || '').replace(/\D/g, ''); }
   function fmtDate(d) { if (!d) return '—'; var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -317,7 +324,7 @@
     }
     var foto = '<div class="pf-switch-row">' + toggle(inc.foto, 'inc-foto', inc.id) + '<span>Exige fotografía de evidencia en la entrega</span></div>';
     var cantLabel = m === 'codigo' ? 'Cantidad / stock de códigos' : (m === 'fijo' ? 'Cantidad de beneficiarios' : 'Cantidad');
-    var valorLabel = m === 'fijo' ? 'Valor por ciclo' : 'Valor';
+    var valorLabel = m === 'fijo' ? 'Valor total por ciclo' : 'Valor total';
     var n = S.inc.length;
     return '<div class="nwt-card" nwt-variant="quiet" nwt-size="medium"><div class="nwt-card__body">' +
       '<div class="nwt-card__header"><div class="pf-card-head-row"><h3 class="pf-card-title"><span class="pf-num">' + (idx + 1) + '</span>Tipo de incentivo #' + (idx + 1) + (n > 1 ? ' de ' + n : '') + '</h3></div></div>' +
@@ -325,8 +332,8 @@
         tf({ label: 'Nombre', req: 1, k: k + 'nombre', val: inc.nombre, ph: 'Ej. Bono, Beca educativa, Kit deportivo', hint: 'El nombre del tipo de incentivo (ej. Bono, Beca, Kit).' }) +
       '<div class="pf-modal-box">' + mod + extra + '</div>' +
       '<div class="pf-grid">' +
-        tf({ label: valorLabel, req: m !== 'certificado', k: k + 'valor', val: inc.valor ? Number(inc.valor).toLocaleString('es-CO') : '', ph: m === 'certificado' ? 'Sin valor monetario' : '0', mode: 'numeric', pre: '$', hint: m === 'fijo' ? 'Pesos por cada ciclo entregado.' : 'Pesos por incentivo entregado.' }) +
-        tf({ label: cantLabel, k: k + 'cantidad', val: inc.cantidad, ph: '0', mode: 'numeric' }) +
+        tf({ label: valorLabel, req: m !== 'certificado', k: k + 'valor', val: inc.valor ? Number(inc.valor).toLocaleString('es-CO') : '', ph: m === 'certificado' ? 'Sin valor monetario' : '0', mode: 'numeric', pre: '$', hint: m === 'fijo' ? 'Monto total que se paga en cada ciclo a todos los beneficiarios.' : 'Monto total destinado a este tipo de incentivo.' }) +
+        tf({ label: cantLabel, k: k + 'cantidad', val: inc.cantidad, ph: '0', mode: 'numeric', hint: cupoText(inc) }) +
       '</div>' + foto + '</div></div><div class="nwt-card__footer"></div></div></div>';
   }
   function step3() {
@@ -339,13 +346,14 @@
   function totalCupo() { return S.inc.reduce(function (a, i) { return a + (Number(i.cantidad) || 0); }, 0); }
   function updateDist() {
     var host = $('#pfDist'); if (!host) return;
-    var total = S.inc.reduce(function (a, i) { return a + (Number(i.valor) || 0) * (Number(i.cantidad) || 0); }, 0);
+    var total = S.inc.reduce(function (a, i) { return a + (Number(i.valor) || 0); }, 0); // el valor de cada tipo ya es su total
     var cupo = totalCupo(), rub = Number(S.rubro.valor) || 0;
     var cupoTxt = cupo ? ' · cupo de <b>' + cupo.toLocaleString('es-CO') + ' entregas</b>' : '';
+    var recTxt = hasModalidad('fijo') ? ' (los recurrentes cuentan un ciclo)' : '';
     if (!total && !cupo) { host.innerHTML = ''; return; }
-    if (!rub) { host.innerHTML = alertBox((total ? 'Distribución estimada: <b>' + money(total) + '</b> (valor × cantidad)' : 'Sin valor monetario') + cupoTxt + '. Define un presupuesto en el paso 2 para compararla.', 'informative'); return; }
-    host.innerHTML = total > rub ? alertBox('La distribución estimada <b>' + money(total) + '</b> supera el presupuesto <b>' + money(rub) + '</b> en ' + money(total - rub) + cupoTxt + '.', 'negative', 'attention')
-      : alertBox('Distribuido <b>' + money(total) + '</b> de <b>' + money(rub) + '</b> · disponible ' + money(rub - total) + cupoTxt + '.', 'positive', 'positive');
+    if (!rub) { host.innerHTML = alertBox((total ? 'Distribución: <b>' + money(total) + '</b> entre los tipos' + recTxt : 'Sin valor monetario') + cupoTxt + '. Define un presupuesto en el paso 2 para compararla.', 'informative'); return; }
+    host.innerHTML = total > rub ? alertBox('La distribución <b>' + money(total) + '</b> supera el presupuesto <b>' + money(rub) + '</b> en ' + money(total - rub) + recTxt + cupoTxt + '.', 'negative', 'attention')
+      : alertBox('Distribuido <b>' + money(total) + '</b> de <b>' + money(rub) + '</b> · disponible ' + money(rub - total) + recTxt + cupoTxt + '.', 'positive', 'positive');
   }
 
   /* ── Paso 4 · Condiciones ───────────────────────────────────── */
@@ -506,7 +514,7 @@
 
     var d = S.datos, rub = S.rubro;
     var rubTxt = (rub.valor ? money(rub.valor) : 'Sin presupuesto (opcional)') + (totalCupo() ? ' · cupo ' + totalCupo().toLocaleString('es-CO') + ' entregas' : '');
-    var incTxt = S.inc.map(function (i) { return '<div>' + esc(i.nombre || 'Sin nombre') + ' · ' + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + i.frecuencia }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + ' ' + (i.valor ? money(i.valor) : '') + '</div>'; }).join('');
+    var incTxt = S.inc.map(function (i) { var v = Number(i.valor) || 0, c = Number(i.cantidad) || 0; return '<div>' + esc(i.nombre || 'Sin nombre') + ' · ' + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + (i.frecuencia === 'otra' ? 'cada ' + (i.frecuenciaN || '?') + ' ' + (i.frecuenciaU || 'meses') : i.frecuencia) }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + ' ' + (v ? money(v) + (i.modalidad === 'fijo' ? ' por ciclo' : ' total') : '') + (c ? ' · ' + c.toLocaleString('es-CO') + (i.modalidad === 'fijo' ? ' beneficiarios' : ' cupos') + (v ? ' de ' + money2(v / c) : '') : '') + '</div>'; }).join('');
     var benTxt = S.cond.benef.map(function (b) { return BENEFICIARIOS.filter(function (x) { return x[0] === b; })[0][1]; }).join(', ') || '—';
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
       kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Evento', esc(d.evento || '—')) + kv('Responsable', esc(d.responsable || '—')) + kv('Área · Gestor asignado', esc(d.area) + ' · ' + esc(d.gestor)) +
@@ -675,6 +683,8 @@
     if (isMoney) { var d = digits(t.value); if (e.type === 'change' && k.indexOf('cantidad') < 0) t.value = d ? Number(d).toLocaleString('es-CO') : ''; else if (e.type === 'input') t.value = d && (k.indexOf('cantidad') < 0) ? Number(d).toLocaleString('es-CO') : d; }
     setByKey(k, t.value);
     if (k === 'rubro.n') syncInc();
+    var mv = /^inc\.([^.]+)\.(valor|cantidad)$/.exec(k);
+    if (mv) { var msg = document.querySelector('[data-box="inc.' + mv[1] + '.cantidad"] .nwt-input-box__message span'), inc0 = incById(mv[1]); if (msg && inc0) msg.textContent = cupoText(inc0); }
     if (t.dataset.struct && e.type === 'change') { render(true); return; }
     var box = t.closest('.nwt-input-box'); if (box && box.classList.contains('nwt-input-box--error')) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
     if (k.indexOf('rule.') === 0) updateRules();
