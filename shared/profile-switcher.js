@@ -13,12 +13,12 @@
   const STORAGE_KEY = 'naowee-incentivos-role';
 
   const ROLES = {
-    admin:    { name:'Doug Vargas',     label:'Gestor de incentivos', initials:'DV', bg:'#c4b5fd', fg:'#4c1d95', meta:'Parametriza y audita' },
-    operador: { name:'Doug Vargas',     label:'Operador',             initials:'DV', bg:'#ffdfb5', fg:'#92400e', meta:'Asigna incentivos en campo' },
-    gestor:   { name:'Doug Vargas',     label:'Gestor',               initials:'DV', bg:'#ffdfb5', fg:'#92400e', meta:'Asigna y revierte incentivos' },
+    admin:    { name:'Danna Arrieta',    label:'Gestor de incentivos', initials:'DA', bg:'#c4b5fd', fg:'#4c1d95', meta:'Parametriza y audita' },
+    operador: { name:'Jorge Guzman',     label:'Operador',             initials:'JG', bg:'#ffdfb5', fg:'#92400e', meta:'Asigna incentivos en campo' },
+    gestor:   { name:'Danna Arrieta',    label:'Gestor',               initials:'DA', bg:'#ffdfb5', fg:'#92400e', meta:'Asigna y revierte incentivos' },
     // Gestor de programa: sólo ve el(los) programa(s) que tiene asignado(s).
-    // Persona ficticia distinta de Doug para diferenciar visualmente la vista.
-    programa: { name:'Camila Restrepo', label:'Gestor de programa',   initials:'CR', bg:'#bfdbfe', fg:'#1e3a8a', meta:'Gestiona su programa asignado',
+    // Persona ficticia distinta de Danna para diferenciar visualmente la vista.
+    programa: { name:'Isa Pabon',        label:'Gestor de programa',   initials:'IP', bg:'#bfdbfe', fg:'#1e3a8a', meta:'Gestiona su programa asignado',
                 assignedPrograms: ['PRG-2026-003'] }
   };
 

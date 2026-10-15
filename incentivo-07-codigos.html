@@ -470,8 +470,8 @@
     <header class="top-header">
       <div class="profile-switcher">
         <div class="user-chip">
-          <div class="ava"><div class="ava-ring" style="background:#c4b5fd;color:#4c1d95">DV</div><div class="ava-dot"></div></div>
-          <div class="user-info"><span class="user-name">Doug Vargas</span><span class="user-role">Gestor de incentivos</span></div>
+          <div class="ava"><div class="ava-ring" style="background:#c4b5fd;color:#4c1d95">DA</div><div class="ava-dot"></div></div>
+          <div class="user-info"><span class="user-name">Danna Arrieta</span><span class="user-role">Gestor de incentivos</span></div>
           <button class="user-chip__chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         </div>
       </div>
@@ -649,7 +649,7 @@
 <script>
 /* ══ Build full codigos universe from PROGRAMS_DATA ══ */
 const PEOPLE = ['Ana García','Pedro Martínez','Andrés García','María C. Herrera','Laura Meza','Camila Ríos','Santiago López','Valentina Pérez','Juan Rodríguez','Diana Torres','Carlos Guzmán','Natalia Ruiz','Esteban Mora','Isabella Gil','Nicolás Bernal'];
-const OPERATORS = ['Doug Vargas','Laura Meza','Carla Suárez','Andrés Polo'];
+const OPERATORS = ['Jorge Guzman','Laura Meza','Carla Suárez','Andrés Polo'];
 
 function buildCodigos(){
   const all = [];
@@ -717,7 +717,7 @@ function buildCodigos(){
           motivoLabel: m.label,
           solicitante: ['Carlos Pérez','Mariana Soto','Felipe Cárdenas','Andrea López'][i % 4],
           justificacion: m.just,
-          autor: 'Doug Vargas · Gestor de incentivos',
+          autor: 'Danna Arrieta · Gestor de incentivos',
           fecha: `${dayR} ${p.from.split(' ')[1]} 2026 · ${hourR}:${min}`,
           valor: p.unit
         });
@@ -1120,7 +1120,7 @@ function doRevert(){
     motivoLabel: RV_MOTIVOS[motivo] || motivo,
     solicitante,
     justificacion: just,
-    autor: 'Doug Vargas · Gestor de incentivos',
+    autor: 'Danna Arrieta · Gestor de incentivos',
     fecha: (() => {
       const d = new Date();
       const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1362,7 +1362,7 @@ function showRvToast(opts){
         <label class="naowee-textfield__label">Realizado por</label>
         <div class="naowee-textfield__input-wrap rv-readonly">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="rv-readonly__ico"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span class="rv-readonly__val">Doug Vargas · Gestor de incentivos</span>
+          <span class="rv-readonly__val">Danna Arrieta · Gestor de incentivos</span>
         </div>
       </div>
     </div>

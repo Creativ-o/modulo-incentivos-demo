@@ -2483,7 +2483,7 @@
       status,
       event: eventoLbl,
       coverage,
-      responsible: 'Doug Vargas',
+      responsible: 'Danna Arrieta',
       rubro,
       exec: 0,
       unit: parseMoney(getBonoUnitInput()) || (cards[0] ? parseMoney(cards[0].querySelector('.wz-inc-card__unit input')) : 0),

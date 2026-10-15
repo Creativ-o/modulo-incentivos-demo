@@ -155,8 +155,8 @@
     <header class="top-header">
       <div class="profile-switcher">
         <div class="user-chip">
-          <div class="ava"><div class="ava-ring" style="background:#c4b5fd;color:#4c1d95">DV</div><div class="ava-dot"></div></div>
-          <div class="user-info"><span class="user-name">Doug Vargas</span><span class="user-role">Gestor de incentivos</span></div>
+          <div class="ava"><div class="ava-ring" style="background:#c4b5fd;color:#4c1d95">DA</div><div class="ava-dot"></div></div>
+          <div class="user-info"><span class="user-name">Danna Arrieta</span><span class="user-role">Gestor de incentivos</span></div>
           <button class="user-chip__chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         </div>
       </div>
@@ -221,7 +221,7 @@
             </div>
             <div class="detail">
               <dt>Gestor que revertió</dt>
-              <dd>Doug Vargas</dd>
+              <dd>Danna Arrieta</dd>
             </div>
             <div class="detail">
               <dt>Fecha y hora</dt>
@@ -292,7 +292,7 @@ document.getElementById('rDate').textContent = now.toLocaleString('es-CO', {
 /* Hydrate from session storage */
 try{
   const s = JSON.parse(sessionStorage.getItem('revert-complete') || '{}');
-  if(s.name){ document.getElementById('rName').textContent = s.name; document.getElementById('rAva').textContent = s.initials || 'DV'; }
+  if(s.name){ document.getElementById('rName').textContent = s.name; document.getElementById('rAva').textContent = s.initials || 'DA'; }
   if(s.bg) document.getElementById('rAva').style.background = s.bg;
   if(s.doc) document.getElementById('rMeta').textContent = `CC ${s.doc} · ${s.prog || 'Programa'} · ${s.date || ''}`;
   if(s.code){ document.getElementById('rCode').textContent = s.code; document.getElementById('nsCode').textContent = s.code; }
