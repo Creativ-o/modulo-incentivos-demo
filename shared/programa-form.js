@@ -56,8 +56,13 @@
     inc: [newInc()],
     cond: { benef: ['deportista'], modo: 'motor', grupos: [{ op: 'AND', rows: [] }], doc: { req: false, list: [] } },
     codigos: {},
+    crono: { gracia: '3', primer: '', carga: { ini: '', fin: '' }, revision: { ini: '', fin: '' }, asignacion: { ini: '', fin: '' }, motivo: '' },
     activar: 'config'
   };
+  var LOG_KEY = 'inc-crono-log-v1';
+  var PERSONAS = { admin: ['Danna Arrieta', 'Gestor de incentivos'], gestor: ['Danna Arrieta', 'Gestor de incentivos'], programa: ['Isa Pabon', 'Gestor de programa'], operador: ['Jorge Guzman', 'Operador'] };
+  var FASES = [['carga', 'Carga de documentos', 'El beneficiario sube sus soportes'], ['revision', 'Revisión documental', 'El Gestor de programa aprueba o rechaza'], ['asignacion', 'Asignación', 'El Operador entrega el beneficio']];
+  var LOG = [];
   var SNAP = null; // foto del programa publicado (modo edición) para detectar versionamiento
 
   function seedEdit() {
@@ -72,6 +77,9 @@
       doc: { req: true, list: [{ name: 'Documento de identidad', oblig: true }, { name: 'Certificado de resultado', oblig: true }, { name: 'Certificación bancaria', oblig: true }] }
     };
     S.codigos[i2.id] = { modo: 'despues', n: 0 };
+    S.crono = { gracia: '3', primer: '2026-05-01', carga: { ini: '15', fin: '18' }, revision: { ini: '20', fin: '25' }, asignacion: { ini: '25', fin: '30' }, motivo: '' };
+    LOG = [{ ts: '22/04/2026 09:14', user: 'Danna Arrieta', rol: 'Gestor de incentivos', ev: 'Creación del cronograma', det: 'Carga día 15–18 · Revisión día 20–25 · Asignación día 25–30 · Gracia 3 días hábiles', motivo: '—', ip: '190.24.18.07' }];
+    try { LOG = (JSON.parse(localStorage.getItem(LOG_KEY)) || []).concat(LOG); } catch (_) {}
     S.step = 1; S.max = 5;
   }
 
@@ -83,6 +91,8 @@
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function incById(id) { return S.inc.filter(function (i) { return i.id === id; })[0]; }
   function hasModalidad(m) { return S.inc.some(function (i) { return i.modalidad === m; }); }
+  function isRec() { return hasModalidad('fijo'); }
+  function fmtDT(v) { if (!v) return '—'; var a = v.split('T'), d = a[0].split('-'); return d[2] + '/' + d[1] + '/' + d[0] + (a[1] ? ' ' + a[1] : ''); }
   function docRequired() { return S.cond.doc.req || hasModalidad('fijo'); }
   function icon(n) { return '<div class="nwt-icon"><i class="naotech-icon-' + n + '"></i></div>'; }
 
@@ -302,9 +312,53 @@
     }).join('') : '<p class="pf-hint">Agrega al menos un documento obligatorio.</p>') + '</div></div>';
     out += '<div class="pf-row">' + DOC_SUGERIDOS.filter(function (n) { return !d.list.some(function (x) { return x.name === n; }); }).map(function (n) { return tag('+ ' + n, false, 'doc-add-s', null, n); }).join('') + '</div>';
     out += '<div class="pf-add">' + tf({ label: 'Otro documento', k: 'ui.docNuevo', val: '', ph: 'Nombre del documento' }) + btn('Agregar', 'doc-add', { v: 'quiet', s: 'medium', i: 'add' }) + '</div>';
-    out += alertBox('<b>Cronograma:</b> las fechas de cargue, revisión y asignación (y el plazo de gracia de 3 a 5 días hábiles) las fija el <b>Gestor de programa</b> en la pestaña Cronograma del programa. En un programa recurrente se repiten en cada ciclo.', 'caution', 'calendar');
+    out += alertBox('Define más abajo el <b>cronograma</b> de cargue, revisión y asignación.', 'informative', 'calendar');
     return out;
   }
+  /* ── Cronograma (HU-06) ─────────────────────────────────────── */
+  function faseVal(f, w) { var v = S.crono[f][w]; return v; }
+  function cronoSummary(c, rec) {
+    return FASES.map(function (f) { return f[1] + ' ' + (rec ? 'día ' + c[f[0]].ini + '–' + c[f[0]].fin : fmtDT(c[f[0]].ini) + ' → ' + fmtDT(c[f[0]].fin)); }).join(' · ') + ' · Gracia ' + c.gracia + ' días hábiles';
+  }
+  function cronoCard() {
+    var rec = isRec(), c = S.crono;
+    var rows = FASES.map(function (f, i) {
+      var k = f[0];
+      return '<div class="pf-phase"><div class="pf-phase__head"><span class="pf-num">' + (i + 1) + '</span><div><b>' + f[1] + '</b><p class="pf-hint">' + f[2] + '</p></div></div><div class="pf-grid">' +
+        (rec ? tf({ label: 'Desde el día del ciclo', req: 1, type: 'number', k: 'crono.' + k + '.ini', val: c[k].ini, ph: '1' }) + tf({ label: 'Hasta el día del ciclo', req: 1, type: 'number', k: 'crono.' + k + '.fin', val: c[k].fin, ph: '30' })
+          : tf({ label: 'Inicio', req: 1, type: 'datetime-local', k: 'crono.' + k + '.ini', val: c[k].ini }) + tf({ label: 'Cierre', req: 1, type: 'datetime-local', k: 'crono.' + k + '.fin', val: c[k].fin })) +
+      '</div></div>';
+    }).join('');
+    var top = '<div class="pf-grid">' + (rec ? tf({ label: 'Inicio del primer ciclo', req: 1, type: 'date', k: 'crono.primer', val: c.primer, hint: 'Desde esta fecha corre la frecuencia del incentivo fijo.' }) : '<div></div>') +
+      sel({ label: 'Plazo de gracia para subsanar', k: 'crono.gracia', val: c.gracia, opts: [['3', '3 días hábiles'], ['4', '4 días hábiles'], ['5', '5 días hábiles']], hint: 'Excluye sábados, domingos y festivos de Colombia.' }) + '</div>';
+    var note = rec ? alertBox('Programa recurrente: estas fechas se <b>repiten en cada ciclo</b> (' + frecuenciaTxt() + '). El Gestor de programa confirma cada ciclo; no se renueva solo.', 'informative', 'calendar')
+      : alertBox('Fuera de la ventana de cargue el sistema bloquea la postulación, salvo <b>habilitación excepcional</b>.', 'informative', 'calendar');
+    return card('Cronograma', 'Cuándo se carga, se revisa y se asigna. Lo defines al crear el programa y el <b>Gestor de programa puede ajustarlo</b>; cada cambio queda auditado.', '<div class="pf-inc">' + note + top + rows + '<div id="pfCronoChg">' + cronoChgHTML() + '</div></div>', { n: 5, cls: 'pf-new' });
+  }
+  function frecuenciaTxt() { var i = S.inc.filter(function (x) { return x.modalidad === 'fijo'; })[0]; if (!i) return ''; return i.frecuencia === 'otra' ? 'cada ' + (i.frecuenciaN || '?') + ' meses' : i.frecuencia; }
+  function cronoChanges() {
+    if (!SNAP) return [];
+    var out = [], a = SNAP.crono, b = S.crono;
+    FASES.forEach(function (f) { ['ini', 'fin'].forEach(function (w) { if (a[f[0]][w] !== b[f[0]][w]) out.push({ campo: f[1] + (w === 'ini' ? ' · inicio' : ' · cierre'), antes: isRec() ? 'día ' + a[f[0]][w] : fmtDT(a[f[0]][w]), despues: isRec() ? 'día ' + b[f[0]][w] : fmtDT(b[f[0]][w]) }); }); });
+    if (a.gracia !== b.gracia) out.push({ campo: 'Plazo de gracia', antes: a.gracia + ' días hábiles', despues: b.gracia + ' días hábiles' });
+    if (isRec() && a.primer !== b.primer) out.push({ campo: 'Inicio del primer ciclo', antes: fmtDate(a.primer), despues: fmtDate(b.primer) });
+    return out;
+  }
+  function cronoChgHTML() {
+    if (!EDIT) return '';
+    var ch = cronoChanges();
+    if (!ch.length) return '<p class="pf-hint">Sin cambios en el cronograma. Si ajustas una fecha, deberás indicar el motivo y quedará en la bitácora.</p>';
+    return alertBox('Cambios al cronograma (<b>no generan versión</b>, quedan en la bitácora): ' + ch.map(function (x) { return esc(x.campo) + ' <b>' + esc(x.antes) + ' → ' + esc(x.despues) + '</b>'; }).join(' · '), 'caution', 'attention') +
+      ta({ label: 'Motivo del cambio', req: 1, k: 'crono.motivo', val: S.crono.motivo, rows: 2, ph: 'Ej. Ampliación por solicitud de la federación (Res. 123)', hint: 'Obligatorio. Se guarda con usuario, rol, fecha, hora e IP.' });
+  }
+  function logCard() {
+    if (!EDIT) return '';
+    var rows = LOG.map(function (l) {
+      return '<div class="pf-log"><div class="pf-log__top"><b>' + esc(l.ev) + '</b><span class="pf-hint">' + esc(l.ts) + '</span></div><div>' + esc(l.det) + '</div><div class="pf-hint">' + esc(l.user) + ' · ' + esc(l.rol) + ' · IP ' + esc(l.ip) + (l.motivo && l.motivo !== '—' ? ' · <b>Motivo:</b> ' + esc(l.motivo) : '') + '</div></div>';
+    }).join('');
+    return card('Bitácora del cronograma', 'Registro inmutable de cada cambio: quién, cuándo, qué cambió y por qué.', '<div class="pf-sec" style="gap:12px">' + rows + '</div>', { n: 6 });
+  }
+
   function step4() {
     var c = S.cond;
     var manual = c.modo === 'manual';
@@ -317,8 +371,9 @@
       ] }) + (manual ? alertBox('Los beneficiarios se registran <b>uno a uno o por carga masiva</b> (Excel/CSV). Si el programa pide documentos, igual los cargan y se revisan.', 'informative') : ''), { n: 2 }) +
       (manual ? '' : card('Condicionales de elegibilidad', 'Combina cinco familias de condicionales. Grupos con Y / O.', '<div class="pf-sec" id="pfRules">' + groupsHTML() + '</div>', { n: 3, cls: 'pf-new' })) +
       card('Etapa documental', 'Define si el beneficiario debe postularse con documentos.', '<div class="pf-inc" id="pfDoc">' + docsHTML() + '</div>', { n: manual ? 3 : 4, cls: 'pf-new' }) +
-      alertBox('<b>Habilitación excepcional:</b> el Gestor de programa siempre podrá habilitar a una persona concreta que no cumpla fechas o condiciones (individual o masiva, con justificación y auditoría). No es un campo de este formulario.', 'informative') +
-      '</div>';
+      '</div>' +
+      (docRequired() ? cronoCard() : '') + logCard() +
+      alertBox('<b>Habilitación excepcional:</b> el Gestor de programa siempre podrá habilitar a una persona concreta que no cumpla fechas o condiciones (individual o masiva, con justificación y auditoría). No es un campo de este formulario.', 'informative');
     return '<div class="pf-sec">' + head('Condiciones de elegibilidad', 'Quién puede acceder al beneficio y si debe postularse con documentos. <b>Bloqueo estricto:</b> sin cumplir el 100% el sistema impide la operación e indica qué condición falla.') + body + '</div>';
   }
 
@@ -348,7 +403,7 @@
       kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Evento', esc(d.evento || '—')) + kv('Área · Gestor', esc(d.area) + ' · ' + esc(d.gestor)) +
       kv('Vigencia', fmtDate(d.desde) + ' → ' + fmtDate(d.hasta)) + kv('Cobertura', esc(d.cobertura.join(', '))) + kv('Rubro', esc(rubTxt)) + kv('Incentivos', incTxt) +
       kv('Beneficiarios', esc(benTxt)) + kv('Elegibilidad', S.cond.modo === 'manual' ? 'Habilitación manual por el Gestor de programa' : '<span style="font-family:monospace;font-size:12px">' + previewHTML() + '</span>') +
-      kv('Documentos', docRequired() ? S.cond.doc.list.map(function (x) { return esc(x.name) + (x.oblig ? '' : ' (opcional)'); }).join(', ') || '—' : 'No requiere (flujo directo)') +
+      kv('Cronograma', docRequired() ? esc(cronoSummary(S.crono, isRec())) : 'No aplica (flujo directo)') + kv('Documentos', docRequired() ? S.cond.doc.list.map(function (x) { return esc(x.name) + (x.oblig ? '' : ' (opcional)'); }).join(', ') || '—' : 'No requiere (flujo directo)') +
     '</dl></div>', { n: 2 });
     var route = card('Ruta del programa', 'Así fluirá una persona desde la elegibilidad hasta la entrega.', routeHTML(), { n: 3 });
     var ch = EDIT ? versionChanges() : [];
@@ -392,8 +447,33 @@
         S.cond.grupos.forEach(function (g) { g.rows.forEach(function (r) { if (r.f && !ruleText(r)) e.push(['', 'Hay una condición incompleta: ' + FIELDS[r.f].label + '.', 4]); }); });
       }
       if (docRequired() && !S.cond.doc.list.some(function (x) { return x.oblig; })) e.push(['', 'Agrega al menos un documento obligatorio.', 4]);
+      if (docRequired()) cronoErrors(e);
+      if (EDIT && cronoChanges().length && !S.crono.motivo.trim()) e.push(['crono.motivo', 'Indica el motivo del cambio de cronograma.', 4]);
     }
     return e;
+  }
+  function cronoErrors(e) {
+    var c = S.crono, rec = isRec(), prev = null, prevName = '';
+    if (rec && !c.primer) e.push(['crono.primer', 'Indica cuándo inicia el primer ciclo.', 4]);
+    FASES.forEach(function (f) {
+      var k = f[0], a = c[k].ini, b = c[k].fin;
+      if (!a) e.push(['crono.' + k + '.ini', 'Falta el inicio.', 4]);
+      if (!b) e.push(['crono.' + k + '.fin', 'Falta el cierre.', 4]);
+      if (a && b) {
+        if (rec) {
+          if (+a < 1 || +b > 31 || +a < 1) e.push(['crono.' + k + '.fin', 'Usa días entre 1 y 31.', 4]);
+          else if (+b < +a) e.push(['crono.' + k + '.fin', 'El cierre no puede ser antes del inicio.', 4]);
+          else if (prev != null && +a < prev) e.push(['crono.' + k + '.ini', f[1] + ' no puede empezar antes de que cierre ' + prevName + ' (día ' + prev + ').', 4]);
+          if (!(+b < +a)) { prev = +b; prevName = f[1]; }
+        } else {
+          if (b <= a) e.push(['crono.' + k + '.fin', 'El cierre debe ser posterior al inicio.', 4]);
+          else if (prev && a < prev) e.push(['crono.' + k + '.ini', f[1] + ' no puede empezar antes de que cierre ' + prevName + '.', 4]);
+          if (S.datos.desde && a.slice(0, 10) < S.datos.desde) e.push(['crono.' + k + '.ini', 'Queda fuera de la vigencia del programa.', 4]);
+          if (S.datos.hasta && b.slice(0, 10) > S.datos.hasta) e.push(['crono.' + k + '.fin', 'Queda fuera de la vigencia del programa.', 4]);
+          if (b > a) { prev = b; prevName = f[1]; }
+        }
+      }
+    });
   }
   function showErrors(errs, step) {
     document.querySelectorAll('.nwt-input-box--error').forEach(function (b) { b.classList.remove('nwt-input-box--error'); var m = b.querySelector('.pf-err'); if (m) m.remove(); });
@@ -424,9 +504,10 @@
     var host = $('#pfBanner'), h = '';
     if (!EDIT && !CAN_EDIT_PROGRAM) h = alertBox('Tu rol no crea programas: lo hace el Gestor de incentivos, Administrador o Superadmin. Puedes explorar el formulario, pero no guardar.', 'caution', 'padlock-close');
     if (EDIT) {
-      var ch = versionChanges();
+      var ch = versionChanges(), cc = cronoChanges();
       h = ch.length ? alertBox('Editas <b>V1.0 (Activo)</b>. Estos cambios generarán la <b>nueva versión V2.0</b>: ' + ch.join(' · ') + '. Lo ya entregado en V1.0 queda congelado e inmutable.', 'caution', 'attention')
-        : alertBox('Editas <b>V1.0 (Activo)</b>. Cambiar <b>condicionales, frecuencia o documentos</b> crea una nueva versión (V2.0). Cambiar estado, extender vigencia o cargar códigos <b>no versiona</b>.', 'informative');
+        : alertBox('Editas <b>V1.0 (Activo)</b>. Cambiar <b>condicionales, frecuencia o documentos</b> crea una nueva versión (V2.0). Cambiar estado, extender vigencia, <b>ajustar el cronograma</b> o cargar códigos <b>no versiona</b>.', 'informative');
+      if (cc.length && !ch.length) h += alertBox('Ajustas el <b>cronograma</b> (' + cc.length + ' cambio' + (cc.length > 1 ? 's' : '') + '): se conserva V1.0 y queda registrado en la bitácora con tu motivo.', 'caution', 'calendar');
     }
     host.innerHTML = h;
     var fin = $('#pfNext .nwt-button__content');
@@ -442,7 +523,9 @@
     }).join('');
   }
   function render(keepScroll) {
-    $('#pfStep').innerHTML = [step1, step2, step3, step4, step5][S.step - 1]();
+    var html = [step1, step2, step3, step4, step5][S.step - 1]();
+    if (EDIT && role === 'programa' && S.step <= 2) html = alertBox('Los datos y el rubro del programa los edita el Gestor de incentivos. Tu rol <b>solo los visualiza</b>.', 'caution', 'padlock-close') + '<div inert class="pf-sec pf-readonly">' + html + '</div>';
+    $('#pfStep').innerHTML = html;
     renderStepper(); banner();
     $('#pfPrev').style.visibility = S.step === 1 ? 'hidden' : 'visible';
     var nx = $('#pfNext .nwt-button__content');
@@ -478,6 +561,7 @@
     if (p[0] === 'datos') S.datos[p[1]] = raw;
     else if (p[0] === 'rubro') S.rubro[p[1]] = digits(raw);
     else if (p[0] === 'inc') { var i = incById(p[1]); i[p[2]] = (p[2] === 'valor' || p[2] === 'cantidad' || p[2] === 'frecuenciaN') ? digits(raw) : raw; }
+    else if (p[0] === 'crono') { if (p.length === 3) S.crono[p[1]][p[2]] = raw; else S.crono[p[1]] = raw; }
     else if (p[0] === 'rule') {
       var r = S.cond.grupos[+p[1]].rows[+p[2]], f = p[3];
       if (f === 'f') { r.f = raw; var fd = FIELDS[raw]; r.op = fd.type === 'num' ? '≥' : '='; r.v = ''; }
@@ -495,6 +579,7 @@
     if (t.dataset.struct && e.type === 'change') { render(true); return; }
     var box = t.closest('.nwt-input-box'); if (box && box.classList.contains('nwt-input-box--error')) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
     if (k.indexOf('rule.') === 0) updateRules();
+    if (k.indexOf('crono.') === 0 && k !== 'crono.motivo') { var ch = $('#pfCronoChg'); if (ch && e.type === 'change') ch.innerHTML = cronoChgHTML(); banner(); }
     if (S.step === 2) updateKpi();
     if (S.step === 3) updateDist();
     if (EDIT) banner();
@@ -557,11 +642,22 @@
   function finish() {
     S.done = true; try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
     var ver = EDIT && versionChanges().length ? 'V2.0' : 'V1.0';
+    var nlog = 0;
+    if (EDIT) {
+      var who = PERSONAS[role] || PERSONAS.admin, now = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
+      var ts = pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear() + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+      var ch2 = cronoChanges();
+      if (ch2.length) {
+        var entry = { ts: ts, user: who[0], rol: who[1], ev: 'Edición del cronograma', det: ch2.map(function (x) { return x.campo + ': ' + x.antes + ' → ' + x.despues; }).join(' · '), motivo: S.crono.motivo.trim(), ip: '190.24.18.' + (20 + now.getSeconds() % 70) };
+        try { var st = JSON.parse(localStorage.getItem(LOG_KEY)) || []; st.unshift(entry); localStorage.setItem(LOG_KEY, JSON.stringify(st)); } catch (_) {}
+        nlog = ch2.length;
+      }
+    }
     var activo = EDIT || S.activar === 'activo';
     $('#pfBanner').innerHTML = '';
     $('#pfStep').innerHTML = '<div class="pf-ok"><div class="nwt-avatar-icon" nwt-theme="positive">' + icon('positive') + '</div>' +
       '<h2 class="pf-h2">' + (EDIT ? 'Cambios guardados' : 'Programa creado') + '</h2>' +
-      '<p class="pf-lead"><b>' + esc(S.datos.nombre) + '</b> ' + (activo ? 'está <b>Activo · ' + ver + '</b>.' : 'quedó en <b>Configuración</b>. Actívalo cuando esté listo.') + ' Se registró auditoría con usuario, fecha, hora e IP.</p>' +
+      '<p class="pf-lead"><b>' + esc(S.datos.nombre) + '</b> ' + (activo ? 'está <b>Activo · ' + ver + '</b>.' : 'quedó en <b>Configuración</b>. Actívalo cuando esté listo.') + ' Se registró auditoría con usuario, fecha, hora e IP.' + (nlog ? ' <b>' + nlog + ' cambio' + (nlog > 1 ? 's' : '') + ' de cronograma</b> ' + (nlog > 1 ? 'quedaron' : 'quedó') + ' en la bitácora con su motivo.' : '') + '</p>' +
       '<div class="pf-row">' + badge(activo ? 'Activo · ' + ver : 'Configuración', activo ? 'positive' : 'caution') + badge(routeLabel(), 'neutral') + '</div>' +
       '<div class="pf-row"><a class="nwt-button" nwt-variant="loud" nwt-size="medium" href="incentivo-03-programas.html"><span class="nwt-button__content">Ver programas</span></a><a class="nwt-button" nwt-variant="quiet" nwt-size="medium" href="incentivo-04-programa-crear.html"><span class="nwt-button__content">Crear otro</span></a></div></div>';
     $('.pf-footer').hidden = true; $('#pfStepper').innerHTML = ''; window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -591,7 +687,7 @@
   function init() {
     var restored = loadDraft();
     if (EDIT) {
-      seedEdit(); SNAP = clone({ cond: S.cond, inc: S.inc, docReq: docRequired() });
+      seedEdit(); SNAP = clone({ cond: S.cond, inc: S.inc, docReq: docRequired(), crono: S.crono });
       $('#pfCrumb').textContent = S.datos.nombre; $('#pfTitle').textContent = 'Editar programa';
       $('#pfStateBadge').innerHTML = badge('Activo · V1.0', 'positive');
     } else {

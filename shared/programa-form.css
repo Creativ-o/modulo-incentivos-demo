@@ -112,3 +112,11 @@ a.nwt-button{text-decoration:none}
   .pf-stepper-band{top:92px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Cronograma y bitácora */
+.pf-phase{display:flex;flex-direction:column;gap:var(--naotech-sizing-12);padding:var(--naotech-sizing-16);border:1px solid var(--naotech-app-color-300);border-radius:var(--naotech-sizing-16);background:var(--naotech-app-color-100)}
+.pf-phase__head{display:flex;align-items:flex-start;gap:var(--naotech-sizing-12)}
+.pf-phase__head b{font-size:var(--naotech-sizing-16)}
+.pf-phase__head .pf-hint{margin:2px 0 0}
+.pf-log{display:flex;flex-direction:column;gap:4px;padding:var(--naotech-sizing-12) var(--naotech-sizing-16);border-left:3px solid var(--naotech-primary-color-600);background:var(--naotech-app-color-100);border-radius:0 var(--naotech-sizing-12) var(--naotech-sizing-12) 0;font-size:var(--naotech-sizing-14)}
+.pf-log__top{display:flex;justify-content:space-between;gap:var(--naotech-sizing-12);flex-wrap:wrap}
