@@ -257,3 +257,15 @@ a.nwt-button{text-decoration:none}
 /* «Así se leerá la regla»: lenguaje natural (no fórmula) */
 .pf-preview{font-family:var(--naotech-sdk-font-family);font-size:var(--naotech-sizing-14);line-height:1.55;color:var(--naotech-app-color-900)}
 .pf-preview em{font-style:normal;font-weight:var(--naotech-font-weight-semibold);color:var(--naotech-primary-color-700)}
+
+/* Grupos de condiciones plegables */
+.pf-group__toggle{display:flex;align-items:center;gap:var(--naotech-sizing-8);flex:0 1 auto;min-width:0;max-width:100%;padding:0;background:none;border:0;cursor:pointer;font:inherit;color:inherit;text-align:left}
+.pf-group__toggle:focus-visible{outline:2px solid var(--naotech-primary-color-600);outline-offset:3px;border-radius:var(--naotech-sizing-6)}
+.pf-group__chev{display:inline-flex;transition:transform .18s ease;transform:rotate(-90deg);--naotech-icon-dimension:18px;--naotech-icon-color:var(--naotech-app-color-700)}
+.pf-group__chev.is-open{transform:rotate(0)}
+.pf-group__sum{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--naotech-sizing-14);color:var(--naotech-app-color-800)}
+.pf-group__sum em{font-style:normal;font-weight:var(--naotech-font-weight-semibold);color:var(--naotech-primary-color-700)}
+.pf-group--closed .pf-group__head{flex-wrap:nowrap}
+.pf-group--closed .pf-group__toggle{flex:1}
+.pf-group--closed{padding-top:var(--naotech-sizing-12);padding-bottom:var(--naotech-sizing-12)}
+@media (prefers-reduced-motion:reduce){.pf-group__chev{transition:none}}

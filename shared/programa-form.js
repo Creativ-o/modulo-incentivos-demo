@@ -430,15 +430,29 @@
     var t = previewText(inc);
     return t ? 'Podrá recibirlo quien cumpla: ' + t + '.' : '<em>Sin condiciones: cualquier persona podrá acceder a este incentivo.</em>';
   }
+  /* Grupos plegables: solo el Grupo 1 arranca abierto. Es estado de pantalla, no del programa. */
+  var grpOpen = {};
+  function isGrpOpen(id, gi) { var k = id + ':' + gi; return k in grpOpen ? grpOpen[k] : gi === 0; }
+  function grpShift(id, gi, n) { // al quitar el grupo gi, los siguientes conservan su estado
+    for (var i = gi; i < n; i++) { var nx = id + ':' + (i + 1); if (nx in grpOpen) grpOpen[id + ':' + i] = grpOpen[nx]; else delete grpOpen[id + ':' + i]; }
+    delete grpOpen[id + ':' + n];
+  }
+  function groupSummary(g) {
+    var t = g.rows.map(ruleNat).filter(Boolean).map(esc);
+    return t.length ? t.join(g.op === 'AND' ? ' <em>y</em> ' : ' <em>o</em> ') : '<span class="pf-hint" style="display:inline">Sin condiciones</span>';
+  }
   function groupsHTML(inc) {
     var used = famInUse(inc), id = inc.id;
     return '<div class="pf-families">' + Object.keys(FAMILIAS).map(function (f) { return '<span class="nwt-tag' + (used[f] ? ' nwt-tag--active' : '') + '" nwt-size="small">' + FAMILIAS[f] + '</span>'; }).join('') + '</div>' +
       inc.grupos.map(function (g, gi) {
-        return (gi > 0 ? '<div class="pf-or">— O —</div>' : '') + '<div class="pf-group"><div class="pf-group__head"><span class="pf-group__label">Grupo ' + (gi + 1) + '</span>' +
-          tag('Todas deben cumplirse (Y)', g.op === 'AND', 'grp-op', id, gi + ':AND') + tag('Basta una (O)', g.op === 'OR', 'grp-op', id, gi + ':OR') +
-          '<span style="flex:1"></span>' + (inc.grupos.length > 1 ? btn('Quitar grupo', 'grp-del', { v: 'mute', d: id, x: gi, i: 'delete' }) : '') + '</div>' +
-          g.rows.map(function (r, ri) { return ruleRow(inc, gi, ri, r); }).join('') +
-          btn('Añadir condición', 'rule-add', { d: id, x: gi, i: 'add' }) + '</div>';
+        var open = isGrpOpen(id, gi);
+        return (gi > 0 ? '<div class="pf-or">— O —</div>' : '') + '<div class="pf-group' + (open ? '' : ' pf-group--closed') + '"><div class="pf-group__head">' +
+          '<button type="button" class="pf-group__toggle" data-act="grp-toggle" data-i="' + id + '" data-x="' + gi + '" aria-expanded="' + open + '">' +
+            '<span class="pf-group__chev' + (open ? ' is-open' : '') + '">' + icon('chevron-down') + '</span><span class="pf-group__label">Grupo ' + (gi + 1) + '</span>' +
+            (open ? '' : '<span class="pf-group__sum">' + groupSummary(g) + '</span>') + '</button>' +
+          (open ? tag('Todas deben cumplirse (Y)', g.op === 'AND', 'grp-op', id, gi + ':AND') + tag('Basta una (O)', g.op === 'OR', 'grp-op', id, gi + ':OR') : '') +
+          (open ? '<span style="flex:1"></span>' : '') + (inc.grupos.length > 1 ? btn('Quitar grupo', 'grp-del', { v: 'mute', d: id, x: gi, i: 'delete' }) : '') + '</div>' +
+          (open ? g.rows.map(function (r, ri) { return ruleRow(inc, gi, ri, r); }).join('') + btn('Añadir condición', 'rule-add', { d: id, x: gi, i: 'add' }) : '') + '</div>';
       }).join('') +
       '<div>' + btn('Agregar grupo alternativo (O)', 'grp-add', { d: id, i: 'add' }) + '</div>' +
       '<div><span class="pf-label">Así se leerá la regla</span><div class="pf-preview" id="pfPreview-' + id + '">' + previewHTML(inc) + '</div></div>';
@@ -732,8 +746,9 @@
     'inc-modalidad': function (x, i) { var n = incById(i); if (modsOf(n).indexOf(x) < 0) return; n.modalidad = x; n.foto = (x === 'codigo'); if (x === 'fijo') { n.doc.req = true; if (!n.doc.list.length) n.doc.list = [{ name: 'Documento de identidad', oblig: true }]; } render(true); },
     'inc-foto': function (x, i) { var n = incById(i); n.foto = !n.foto; render(true); },
     'grp-op': function (x, id) { var p = x.split(':'); incById(id).grupos[+p[0]].op = p[1]; render(true); },
-    'grp-add': function (x, id) { incById(id).grupos.push({ op: 'AND', rows: [{ f: '', op: '=', v: '' }] }); render(true); },
-    'grp-del': function (x, id) { incById(id).grupos.splice(+x, 1); render(true); },
+    'grp-toggle': function (x, id) { grpOpen[id + ':' + x] = !isGrpOpen(id, +x); render(true); },
+    'grp-add': function (x, id) { var n = incById(id).grupos.push({ op: 'AND', rows: [{ f: '', op: '=', v: '' }] }); grpOpen[id + ':' + (n - 1)] = true; render(true); }, // el grupo nuevo se abre
+    'grp-del': function (x, id) { var n = incById(id).grupos.length; incById(id).grupos.splice(+x, 1); grpShift(id, +x, n - 1); render(true); },
     'rule-add': function (x, id) { incById(id).grupos[+x].rows.push({ f: '', op: '=', v: '' }); render(true); },
     'rule-del': function (x, id) { var p = x.split('.'); incById(id).grupos[+p[0]].rows.splice(+p[1], 1); render(true); },
     'rule-multi': function (x, key) { var p = key.split('.'), r = incById(p[0]).grupos[+p[1]].rows[+p[2]]; if (!Array.isArray(r.v)) r.v = []; var i = r.v.indexOf(x); if (i > -1) r.v.splice(i, 1); else r.v.push(x); render(true); },
@@ -775,6 +790,11 @@
   function next() {
     if (S.done) return;
     var errs = validate(S.step), general = showErrors(errs, S.step);
+    if (S.step === 4 && errs.some(function (x) { return x[2] === 4; })) { // abre los grupos que tengan una condición incompleta
+      var reveal = false;
+      S.inc.forEach(function (inc) { inc.grupos.forEach(function (g, gi) { if (g.rows.some(function (r) { return r.f && !ruleNat(r); }) && !isGrpOpen(inc.id, gi)) { grpOpen[inc.id + ':' + gi] = true; reveal = true; } }); });
+      if (reveal) render(true);
+    }
     if (errs.some(function (x) { return x[2] === S.step; })) {
       toast(general.length ? general[0] : 'Revisa los campos marcados para continuar.', 'negative');
       var b = $('#pfNext'); b.classList.remove('pf-shake'); void b.offsetWidth; return;
