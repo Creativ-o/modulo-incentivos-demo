@@ -52,7 +52,7 @@
   var S = {
     step: 1, max: 1, done: false,
     datos: { nombre: '', desc: '', evento: '', area: '', gestor: '', desde: '', hasta: '', activacion: '', cobertura: ['Nacional'], justificacion: '', anexo: null, responsable: '' },
-    rubro: { on: true, modo: 'presupuesto', valor: '', cupo: '' },
+    rubro: { valor: '' },
     inc: [newInc()],
     cond: { benef: ['deportista'], modo: 'motor', grupos: [{ op: 'AND', rows: [] }], doc: { req: false, list: [] } },
     codigos: {},
@@ -69,7 +69,7 @@
     var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'Beca'; i1.modalidad = 'fijo'; i1.valor = '1000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
     var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.categoria = 'Kit'; i2.modalidad = 'codigo'; i2.valor = '350000'; i2.cantidad = '150'; i2.foto = true;
     S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], area: AREAS[0], gestor: 'Isa Pabon', desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', cobertura: ['Nacional'], justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 }, responsable: 'Danna Arrieta · Gestor de incentivos' };
-    S.rubro = { on: true, modo: 'presupuesto', valor: '252500000', cupo: '' };
+    S.rubro = { valor: '252500000' };
     S.inc = [i1, i2];
     S.cond = {
       benef: ['deportista'], modo: 'motor',
@@ -112,8 +112,8 @@
       '</div></div>';
   }
   function tf(o) {
-    var control = (o.ico ? icon(o.ico) : '') + '<input class="nwt-text-field__input" type="' + (o.type || 'text') + '" data-k="' + esc(o.k) + '" value="' + esc(o.val) + '" placeholder="' + esc(o.ph || '') + '"' + (o.mode ? ' inputmode="' + o.mode + '"' : '') + (o.ro ? ' readonly tabindex="-1"' : '') + '/>';
-    return '<div class="nwt-text-field' + (o.ro ? ' nwt-text-field--readonly' : '') + (o.ico ? ' pf-tf-ico' : '') + '" nwt-size="medium">' + inputBox(o.label, o.req, control, o.hint, o.k, o.ro ? 'nwt-input-box--disabled pf-ro-box' : '') + '</div>';
+    var control = (o.ico ? icon(o.ico) : '') + (o.pre ? '<span class="pf-pre">' + esc(o.pre) + '</span>' : '') + '<input class="nwt-text-field__input" type="' + (o.type || 'text') + '" data-k="' + esc(o.k) + '" value="' + esc(o.val) + '" placeholder="' + esc(o.ph || '') + '"' + (o.mode ? ' inputmode="' + o.mode + '"' : '') + (o.ro ? ' readonly tabindex="-1"' : '') + '/>';
+    return '<div class="nwt-text-field' + (o.ro ? ' nwt-text-field--readonly' : '') + (o.ico || o.pre ? ' pf-tf-ico' : '') + '" nwt-size="medium">' + inputBox(o.label, o.req, control, o.hint, o.k, o.ro ? 'nwt-input-box--disabled pf-ro-box' : '') + '</div>';
   }
   function ta(o) {
     var control = '<textarea class="nwt-text-area__input" rows="' + (o.rows || 3) + '" data-k="' + esc(o.k) + '" placeholder="' + esc(o.ph || '') + '">' + esc(o.val) + '</textarea>';
@@ -261,20 +261,12 @@
   /* ── Paso 2 · Rubro ─────────────────────────────────────────── */
   function step2() {
     var r = S.rubro;
-    var body = '<div class="pf-switch-row">' + toggle(r.on, 'rubro-on') + '<span>Definir presupuesto o cupo para este programa</span></div>';
-    if (r.on) {
-      body += radios({ act: 'rubro-modo', value: r.modo, dir: 'horizontal', compact: 1, options: [{ v: 'presupuesto', l: 'Presupuesto ($)' }, { v: 'cupo', l: 'Cupo de entregas' }, { v: 'ambos', l: 'Ambos' }] });
-      body += '<div class="pf-grid">' +
-        (r.modo !== 'cupo' ? tf({ label: 'Valor presupuestal asignado', req: 1, k: 'rubro.valor', val: r.valor ? Number(r.valor).toLocaleString('es-CO') : '', ph: '0', mode: 'numeric', hint: 'Pesos colombianos. Se distribuye entre los incentivos en el paso 3.' }) : '') +
-        (r.modo !== 'presupuesto' ? tf({ label: 'Cupo máximo de entregas', req: 1, k: 'rubro.cupo', val: r.cupo, ph: '0', mode: 'numeric', hint: 'Número total de entregas del programa.' }) : '') +
-      '</div>' +
-      '<div class="pf-grid" id="pfKpi">' + ['Inicial', 'Ejecutado', 'Disponible'].map(function () { return ''; }).join('') + '</div>' +
-      alertBox('El sistema calcula en tiempo real <b>inicial, ejecutado y disponible</b>, bloquea nuevas asignaciones cuando llegue a cero y reintegra el saldo al revertir una entrega.', 'informative');
-    } else {
-      body += alertBox('Por ahora el rubro es <b>opcional</b>. Sin rubro no se controla presupuesto ni cupo del programa; podrás definirlo después sin crear una versión.', 'caution', 'attention');
-    }
-    return '<div class="pf-sec">' + head('Rubro', 'Establece el dinero o los cupos disponibles para evidenciar su uso. <b>La fuente presupuestal no se solicita</b> (se oculta en esta versión).') +
-      card('Presupuesto y cupo', '', '<div class="pf-inc">' + body + '</div>', { n: 1 }) + '</div>';
+    return '<div class="pf-sec">' + head('Rubro', 'Monto que el Ministerio destina al programa. Se descuenta con cada entrega y luego lo repartes entre los incentivos en el paso 3. <b>La fuente presupuestal no se solicita</b>.') +
+      card('Presupuesto total', '', '<div class="pf-inc">' +
+        '<div class="pf-grid">' + tf({ label: 'Presupuesto total del programa (COP)', k: 'rubro.valor', val: r.valor ? Number(r.valor).toLocaleString('es-CO') : '', ph: '0', mode: 'numeric', pre: '$', hint: 'Opcional por ahora. Monto asignado por el Ministerio; se descuenta por cada asignación.' }) + '</div>' +
+        alertBox('Con presupuesto, el sistema calcula <b>inicial, ejecutado y disponible</b> en tiempo real, bloquea asignaciones cuando llega a cero y reintegra el saldo al revertir una entrega.', 'informative') +
+        alertBox('El <b>cupo de entregas</b> no se define aquí: sale de la cantidad de cada incentivo (paso 3). Sin presupuesto el programa no controla saldo en pesos; podrás definirlo después sin crear una versión.', 'informative') +
+      '</div>', { n: 1 }) + '</div>';
   }
 
   /* ── Paso 3 · Tipos ─────────────────────────────────────────── */
@@ -318,14 +310,16 @@
       '<div><button type="button" class="nwt-button" nwt-variant="quiet" nwt-size="medium" data-act="inc-add"><span class="nwt-button__content">' + icon('add') + 'Agregar otro incentivo</span></button></div>' +
       '<div id="pfDist"></div></div>';
   }
+  function totalCupo() { return S.inc.reduce(function (a, i) { return a + (Number(i.cantidad) || 0); }, 0); }
   function updateDist() {
     var host = $('#pfDist'); if (!host) return;
     var total = S.inc.reduce(function (a, i) { return a + (Number(i.valor) || 0) * (Number(i.cantidad) || 0); }, 0);
-    var rub = S.rubro.on && S.rubro.modo !== 'cupo' ? Number(S.rubro.valor) || 0 : 0;
-    if (!total) { host.innerHTML = ''; return; }
-    if (!rub) { host.innerHTML = alertBox('Distribución estimada: <b>' + money(total) + '</b> (valor × cantidad). Define un presupuesto en el paso 2 para compararla.', 'informative'); return; }
-    host.innerHTML = total > rub ? alertBox('La distribución estimada <b>' + money(total) + '</b> supera el presupuesto <b>' + money(rub) + '</b> en ' + money(total - rub) + '.', 'negative', 'attention')
-      : alertBox('Distribuido <b>' + money(total) + '</b> de <b>' + money(rub) + '</b> · disponible ' + money(rub - total) + '.', 'positive', 'positive');
+    var cupo = totalCupo(), rub = Number(S.rubro.valor) || 0;
+    var cupoTxt = cupo ? ' · cupo de <b>' + cupo.toLocaleString('es-CO') + ' entregas</b>' : '';
+    if (!total && !cupo) { host.innerHTML = ''; return; }
+    if (!rub) { host.innerHTML = alertBox((total ? 'Distribución estimada: <b>' + money(total) + '</b> (valor × cantidad)' : 'Sin valor monetario') + cupoTxt + '. Define un presupuesto en el paso 2 para compararla.', 'informative'); return; }
+    host.innerHTML = total > rub ? alertBox('La distribución estimada <b>' + money(total) + '</b> supera el presupuesto <b>' + money(rub) + '</b> en ' + money(total - rub) + cupoTxt + '.', 'negative', 'attention')
+      : alertBox('Distribuido <b>' + money(total) + '</b> de <b>' + money(rub) + '</b> · disponible ' + money(rub - total) + cupoTxt + '.', 'positive', 'positive');
   }
 
   /* ── Paso 4 · Condiciones ───────────────────────────────────── */
@@ -485,7 +479,7 @@
     }).join('') : alertBox('Ningún incentivo de este programa usa códigos: no hay inventario que cargar.', 'informative');
 
     var d = S.datos, rub = S.rubro;
-    var rubTxt = !rub.on ? 'Sin rubro (opcional)' : [rub.modo !== 'cupo' ? money(rub.valor) : '', rub.modo !== 'presupuesto' ? (rub.cupo || 0) + ' entregas' : ''].filter(Boolean).join(' · ');
+    var rubTxt = (rub.valor ? money(rub.valor) : 'Sin presupuesto (opcional)') + (totalCupo() ? ' · cupo ' + totalCupo().toLocaleString('es-CO') + ' entregas' : '');
     var incTxt = S.inc.map(function (i) { return '<div>' + esc(i.nombre || 'Sin nombre') + ' · ' + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + i.frecuencia }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + ' ' + (i.valor ? money(i.valor) : '') + '</div>'; }).join('');
     var benTxt = S.cond.benef.map(function (b) { return BENEFICIARIOS.filter(function (x) { return x[0] === b; })[0][1]; }).join(', ') || '—';
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
@@ -519,10 +513,6 @@
       if (!d.hasta) e.push(['datos.hasta', 'Indica la fecha de fin.', 1]);
       if (d.desde && d.hasta && d.hasta < d.desde) e.push(['datos.hasta', 'La fecha de fin debe ser posterior al inicio.', 1]);
       if (d.activacion && d.desde && d.activacion < d.desde) e.push(['datos.activacion', 'La activación no puede ser anterior a la vigencia.', 1]);
-    }
-    if (step >= 2 && S.rubro.on) {
-      if (S.rubro.modo !== 'cupo' && !Number(S.rubro.valor)) e.push(['rubro.valor', 'Define el valor presupuestal.', 2]);
-      if (S.rubro.modo !== 'presupuesto' && !Number(S.rubro.cupo)) e.push(['rubro.cupo', 'Define el cupo de entregas.', 2]);
     }
     if (step >= 3) S.inc.forEach(function (i) {
       if (!i.nombre.trim()) e.push(['inc.' + i.id + '.nombre', 'Nombra el incentivo.', 3]);
@@ -621,18 +611,10 @@
     $('#pfPrev').style.visibility = S.step === 1 ? 'hidden' : 'visible';
     var nx = $('#pfNext .nwt-button__content');
     if (S.step < 5) nx.innerHTML = 'Continuar' + icon('arrow-right');
-    if (S.step === 2) updateKpi();
     if (S.step === 3) updateDist();
     if (S.step === 5) { banner(); issues(); }
     if (!keepScroll) $('#pfScroll').scrollTo({ top: 0, behavior: 'smooth' });
     saveDraft(true);
-  }
-  function updateKpi() {
-    var host = $('#pfKpi'); if (!host) return;
-    var v = S.rubro.modo !== 'cupo' ? Number(S.rubro.valor) || 0 : null, c = S.rubro.modo !== 'presupuesto' ? Number(S.rubro.cupo) || 0 : null;
-    var cell = function (l, a, b) { return '<div class="pf-modal-box" style="gap:4px"><span class="pf-hint">' + l + '</span><b style="font-size:20px">' + a + '</b>' + (b ? '<span class="pf-hint">' + b + '</span>' : '') + '</div>'; };
-    host.style.gridTemplateColumns = 'repeat(3,minmax(0,1fr))';
-    host.innerHTML = cell('Inicial', v != null ? money(v) : c + ' entregas', v != null && c != null ? c + ' entregas' : '') + cell('Ejecutado', v != null ? money(0) : '0 entregas', 'al crear: 0') + cell('Disponible', v != null ? money(v) : c + ' entregas', v != null && c != null ? c + ' entregas' : '');
   }
   function issues() {
     var host = $('#pfIssues'); if (!host) return;
@@ -664,13 +646,12 @@
     var k = t.dataset.k;
     if (k === 'ui.docNuevo') return;
     var isMoney = /(\.valor|\.cantidad|^rubro\.)/.test(k);
-    if (isMoney) { var d = digits(t.value); if (e.type === 'change' && k.indexOf('cantidad') < 0 && k !== 'rubro.cupo') t.value = d ? Number(d).toLocaleString('es-CO') : ''; else if (e.type === 'input') t.value = d && (k.indexOf('cantidad') < 0 && k !== 'rubro.cupo') ? Number(d).toLocaleString('es-CO') : d; }
+    if (isMoney) { var d = digits(t.value); if (e.type === 'change' && k.indexOf('cantidad') < 0) t.value = d ? Number(d).toLocaleString('es-CO') : ''; else if (e.type === 'input') t.value = d && (k.indexOf('cantidad') < 0) ? Number(d).toLocaleString('es-CO') : d; }
     setByKey(k, t.value);
     if (t.dataset.struct && e.type === 'change') { render(true); return; }
     var box = t.closest('.nwt-input-box'); if (box && box.classList.contains('nwt-input-box--error')) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
     if (k.indexOf('rule.') === 0) updateRules();
     if (k.indexOf('crono.') === 0 && k !== 'crono.motivo') { var ch = $('#pfCronoChg'); if (ch && e.type === 'change') ch.innerHTML = cronoChgHTML(); banner(); }
-    if (S.step === 2) updateKpi();
     if (S.step === 3) updateDist();
     if (EDIT) banner();
     refreshDraftBtn();
@@ -682,8 +663,6 @@
     'cob-opt': function (x) { cobSet(x); },
     'cob-del': function (x) { cobSet(x); },
     'anexo-del': function () { S.datos.anexo = null; saveDraft(true); anexoRedraw(); },
-    'rubro-on': function () { S.rubro.on = !S.rubro.on; render(true); },
-    'rubro-modo': function (x) { S.rubro.modo = x; render(true); },
     'inc-add': function () { S.inc.push(newInc()); render(true); var c = document.querySelectorAll('#pfIncs > .nwt-card'); if (c.length) c[c.length - 1].scrollIntoView({ block: 'center', behavior: 'smooth' }); },
     'inc-del': function (x, i) { S.inc = S.inc.filter(function (n) { return n.id !== i; }); render(true); },
     'inc-modalidad': function (x, i) { var n = incById(i); n.modalidad = x; if (x !== 'codigo') n.foto = false; else n.foto = true; render(true); },
@@ -796,7 +775,7 @@
     try {
       var raw = localStorage.getItem(DRAFT_KEY); if (!raw) return false;
       var o = JSON.parse(raw); if (!o.S || o.S.done) return false;
-      S = o.S; uid = o.uid || uid; return true;
+      S = o.S; uid = o.uid || uid; S.rubro = { valor: (S.rubro && S.rubro.valor) || '' }; return true;
     } catch (_) { return false; }
   }
 

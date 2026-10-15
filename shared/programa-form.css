@@ -235,3 +235,6 @@ a.nwt-button{text-decoration:none}
 .pf-ms__list .nwt-dropdown__option--disabled{cursor:not-allowed}
 .pf-ms__list .nwt-dropdown__option--disabled .nwt-dropdown__option-checkbox{background:var(--naotech-app-color-100);border-color:var(--naotech-app-color-300);opacity:.6}
 .pf-ms__ph{color:var(--naotech-app-color-700);font-size:var(--naotech-sizing-14)}
+
+/* Prefijo de texto en campos (p. ej. «$» en el presupuesto) */
+.pf-pre{flex:0 0 auto;color:var(--naotech-app-color-700);font-weight:var(--naotech-font-weight-semibold)}
