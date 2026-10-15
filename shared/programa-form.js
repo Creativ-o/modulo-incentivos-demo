@@ -51,7 +51,7 @@
 
   var S = {
     step: 1, max: 1, done: false,
-    datos: { nombre: '', desc: '', evento: '', area: '', gestor: '', desde: '', hasta: '', activacion: '', cobertura: ['Nacional'] },
+    datos: { nombre: '', desc: '', evento: '', area: '', gestor: '', desde: '', hasta: '', activacion: '', cobertura: ['Nacional'], justificacion: '', anexo: null },
     rubro: { on: true, modo: 'presupuesto', valor: '', cupo: '' },
     inc: [newInc()],
     cond: { benef: ['deportista'], modo: 'motor', grupos: [{ op: 'AND', rows: [] }], doc: { req: false, list: [] } },
@@ -68,7 +68,7 @@
   function seedEdit() {
     var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'Beca'; i1.modalidad = 'fijo'; i1.valor = '1000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
     var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.categoria = 'Kit'; i2.modalidad = 'codigo'; i2.valor = '350000'; i2.cantidad = '150'; i2.foto = true;
-    S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], area: AREAS[0], gestor: 'Isa Pabon', desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', cobertura: ['Nacional'] };
+    S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], area: AREAS[0], gestor: 'Isa Pabon', desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', cobertura: ['Nacional'], justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 } };
     S.rubro = { on: true, modo: 'presupuesto', valor: '252500000', cupo: '' };
     S.inc = [i1, i2];
     S.cond = {
@@ -166,7 +166,38 @@
         tf({ label: 'Fecha de activación', type: 'date', k: 'datos.activacion', val: d.activacion, hint: 'Opcional. Si la dejas vacía, activas manualmente en el paso final.' }) +
         '<div class="pf-ro"><div><span class="pf-label">Estado inicial</span>' + badge('Configuración', 'caution') + '</div></div>' +
         '<div class="pf-span2"><div class="nwt-dropdown pf-ms" id="pfCob" nwt-size="medium">' + cobInner() + '</div></div>' +
-      '</div>', { n: 3 }) + '</div>';
+      '</div>', { n: 3 }) +
+      card('Soporte del programa', 'Acto administrativo que respalda el programa. Es opcional.', '<div class="pf-inc">' +
+        ta({ label: 'Justificación / acto administrativo', k: 'datos.justificacion', val: d.justificacion, rows: 3, ph: 'Resolución / acto administrativo que soporta el programa...' }) +
+        '<div id="pfAnexo">' + anexoInner() + '</div></div>', { n: 4 }) + '</div>';
+  }
+
+  /* ── Documentación de la resolución (carga opcional; simula progreso como en la demo original) ── */
+  var ANEXO_OK = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'], ANEXO_MAX = 10 * 1024 * 1024, anexoUp = null, anexoTimer = null;
+  function fmtSize(b) { return b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+  function anexoInner() {
+    var a = S.datos.anexo, up = anexoUp;
+    var name = up ? up.name : (a ? a.name : '');
+    var control = '<div class="nwt-file-field__content"><div class="nwt-file-field__icon">' + icon('attach') + '</div>' +
+      '<input class="nwt-file-field__picker" id="pfAnexoInput" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"/>' +
+      '<input class="nwt-file-field__display" type="text" readonly placeholder="Sin archivo adjunto" value="' + esc(name) + '"/>' +
+      '<div class="nwt-file-field__button">' + icon('upload') + '</div></div>';
+    var out = '<div class="nwt-file-field" nwt-size="medium">' + inputBox('Documentación de la resolución', false, control, 'Opcional · PDF, DOC, DOCX, JPG, PNG · máx 10 MB', 'datos.anexo') + '</div>';
+    if (up) out += '<div class="pf-anexo"><div class="nwt-progress-bar" role="progressbar" aria-valuenow="' + up.pct + '" aria-valuemin="0" aria-valuemax="100" nwt-size="medium"><div class="nwt-progress-bar__track"><div class="nwt-progress-bar__fill" style="width:' + up.pct + '%"></div></div></div><span class="pf-hint">Subiendo ' + esc(up.name) + '… ' + up.pct + '%</span></div>';
+    else if (a) out += '<div class="pf-anexo pf-anexo--row">' + badge('Cargado', 'positive') + '<span class="pf-hint">' + esc(a.name) + ' · ' + fmtSize(a.size) + '</span>' + btn('Quitar', 'anexo-del', { v: 'mute', i: 'delete' }) + '</div>';
+    return out;
+  }
+  function anexoRedraw() { var el = $('#pfAnexo'); if (el) el.innerHTML = anexoInner(); }
+  function anexoStart(f) {
+    var ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (ANEXO_OK.indexOf(ext) < 0 || f.size > ANEXO_MAX) { toast('Archivo no válido: usa PDF, DOC, DOCX, JPG o PNG de hasta 10 MB.', 'negative'); return; }
+    if (anexoTimer) clearInterval(anexoTimer);
+    anexoUp = { name: f.name, pct: 0 }; S.datos.anexo = null; anexoRedraw();
+    anexoTimer = setInterval(function () {
+      anexoUp.pct = Math.min(100, anexoUp.pct + Math.round(6 + Math.random() * 10));
+      if (anexoUp.pct >= 100) { clearInterval(anexoTimer); anexoTimer = null; S.datos.anexo = { name: f.name, size: f.size }; anexoUp = null; saveDraft(true); }
+      anexoRedraw();
+    }, 120);
   }
 
   /* ── Cobertura territorial: dropdown con multiselección (composición SDK: nwt-dropdown + opciones con checkbox) ── */
@@ -450,7 +481,7 @@
     var benTxt = S.cond.benef.map(function (b) { return BENEFICIARIOS.filter(function (x) { return x[0] === b; })[0][1]; }).join(', ') || '—';
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
       kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Evento', esc(d.evento || '—')) + kv('Área · Gestor', esc(d.area) + ' · ' + esc(d.gestor)) +
-      kv('Vigencia', fmtDate(d.desde) + ' → ' + fmtDate(d.hasta)) + kv('Cobertura', esc(d.cobertura.join(', '))) + kv('Rubro', esc(rubTxt)) + kv('Incentivos', incTxt) +
+      kv('Vigencia', fmtDate(d.desde) + ' → ' + fmtDate(d.hasta)) + kv('Cobertura', esc(d.cobertura.join(', '))) + kv('Justificación', d.justificacion.trim() ? esc(d.justificacion) : '<span style="color:var(--naotech-app-color-600);font-weight:400">No registrada</span>') + kv('Doc. de la resolución', d.anexo ? esc(d.anexo.name) + ' (' + fmtSize(d.anexo.size) + ')' : '<span style="color:var(--naotech-app-color-600);font-weight:400">Sin archivo adjunto</span>') + kv('Rubro', esc(rubTxt)) + kv('Incentivos', incTxt) +
       kv('Beneficiarios', esc(benTxt)) + kv('Elegibilidad', S.cond.modo === 'manual' ? 'Habilitación manual por el Gestor de programa' : '<span style="font-family:monospace;font-size:12px">' + previewHTML() + '</span>') +
       kv('Cronograma', docRequired() ? esc(cronoSummary(S.crono, isRec())) : 'No aplica (flujo directo)') + kv('Documentos', docRequired() ? S.cond.doc.list.map(function (x) { return esc(x.name) + (x.oblig ? '' : ' (opcional)'); }).join(', ') || '—' : 'No requiere (flujo directo)') +
     '</dl></div>', { n: 2 });
@@ -639,6 +670,7 @@
     'cob-toggle': function () { cobOpen = !cobOpen; cobRedraw(); },
     'cob-opt': function (x) { cobSet(x); },
     'cob-del': function (x) { cobSet(x); },
+    'anexo-del': function () { S.datos.anexo = null; saveDraft(true); anexoRedraw(); },
     'rubro-on': function () { S.rubro.on = !S.rubro.on; render(true); },
     'rubro-modo': function (x) { S.rubro.modo = x; render(true); },
     'inc-add': function () { S.inc.push(newInc()); render(true); var c = document.querySelectorAll('#pfIncs > .nwt-card'); if (c.length) c[c.length - 1].scrollIntoView({ block: 'center', behavior: 'smooth' }); },
@@ -674,6 +706,15 @@
     var fn = ACT[t.dataset.act]; if (!fn) return;
     if (t.tagName === 'LABEL') e.preventDefault();
     fn(t.dataset.x, t.dataset.i);
+  }
+  function onAnexoClick(e) {
+    var c = e.target.closest && e.target.closest('#pfAnexo .nwt-file-field__content');
+    if (!c || e.target.id === 'pfAnexoInput') return;
+    var inp = $('#pfAnexoInput'); if (inp) inp.click();
+  }
+  function onAnexoChange(e) {
+    if (!e.target || e.target.id !== 'pfAnexoInput') return;
+    var f = e.target.files && e.target.files[0]; if (f) anexoStart(f); e.target.value = '';
   }
   function onKey(e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.nwt-tag[data-act], .nwt-checkbox[data-act], .nwt-switch[data-act], .pf-ms__content')) { e.preventDefault(); e.target.click(); } if (e.key === 'Escape' && cobOpen) { cobOpen = false; cobRedraw(); } }
 
@@ -761,6 +802,7 @@
     if (h >= 1 && h <= 5) { S.step = h; if (h > S.max) S.max = h; }
     var root = $('#pfStep');
     root.addEventListener('input', onInput); root.addEventListener('change', onInput);
+    root.addEventListener('click', onAnexoClick); root.addEventListener('change', onAnexoChange);
     document.addEventListener('click', onClick); document.addEventListener('keydown', onKey);
     root.addEventListener('focusin', function (e) { var b = e.target.closest('.nwt-input-box'); if (b) { b.classList.add('nwt-input-box--focused'); var f = e.target.closest('.nwt-text-field,.nwt-select,.nwt-text-area'); if (f) f.classList.add(f.className.split(' ')[0] + '--focused'); } });
     root.addEventListener('focusout', function (e) { var b = e.target.closest('.nwt-input-box'); if (b) { b.classList.remove('nwt-input-box--focused'); var f = e.target.closest('.nwt-text-field,.nwt-select,.nwt-text-area'); if (f) f.classList.remove(f.className.split(' ')[0] + '--focused'); } });

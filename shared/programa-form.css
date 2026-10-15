@@ -199,3 +199,9 @@ a.nwt-button{text-decoration:none}
 /* DC-016 · Franja de pasos: alto fijo de 64px y contenido centrado vertical y horizontalmente */
 .pf-stepper-band{display:flex;align-items:center;height:var(--naotech-sizing-64);box-sizing:border-box;padding-top:0;padding-bottom:0}
 .pf-stepper-band .nwt-stepper{margin:0 auto}
+
+/* Documentación de la resolución: progreso y archivo cargado */
+.pf-anexo{display:flex;flex-direction:column;gap:var(--naotech-sizing-8)}
+.pf-anexo--row{flex-direction:row;align-items:center;gap:var(--naotech-sizing-12);flex-wrap:wrap}
+.pf-anexo--row .pf-hint{flex:1;min-width:0;word-break:break-all}
+.nwt-file-field__content{cursor:pointer}
