@@ -315,13 +315,6 @@
   }
 
   /* ── Paso 3 · Tipos ─────────────────────────────────────────── */
-  /* Resumen (solo lectura) de lo que un incentivo recurrente exige y se configura en el paso 4 */
-  function recSummary() {
-    var d = S.cond.doc.list, ob = d.filter(function (x) { return x.oblig; }).length, c = S.crono;
-    var cr = FASES.every(function (f) { return c[f[0]].ini && c[f[0]].fin; });
-    var txt = '<b>Documentos:</b> ' + (d.length ? d.length + ' (' + ob + ' obligatorios)' : 'sin definir') + ' · <b>Cronograma por ciclo:</b> ' + (cr ? FASES.map(function (f) { return f[1].split(' ')[0].toLowerCase() + ' día ' + c[f[0]].ini + '–' + c[f[0]].fin; }).join(', ') : 'sin definir');
-    return '<div class="pf-types-bar">' + alertBox('Documentación y ciclos de este incentivo se configuran en el <b>paso 4</b>. ' + txt, 'informative', 'calendar') + (S.max >= 4 ? btn('Ir al paso 4', 'goto', { v: 'quiet', s: 'medium', x: '4', i: 'arrow-right' }) : '') + '</div>';
-  }
   function incCard(inc, idx) {
     var m = inc.modalidad, k = 'inc.' + inc.id + '.';
     var ALL_MODS = [
@@ -339,11 +332,11 @@
       extra = alertBox('Los códigos se cargan en el paso 5 o después, y no se pueden eliminar si ya registran entregas.', 'informative');
     } else if (m === 'certificado') {
       extra = '<div class="pf-grid">' + sel({ label: 'Plantilla institucional del certificado', k: k + 'plantilla', val: inc.plantilla, opts: ['Diploma institucional', 'Reconocimiento al mérito deportivo'] }) +
-        '<div>' + alertBox('Incluye firma digital y <b>código QR</b> de verificación. La firma digital la define el Ministerio (pendiente).', 'caution', 'attention') + '</div></div>';
+        '<div>' + alertBox('Incluye firma digital y <b>código QR</b> de verificación.', 'caution', 'attention') + '</div></div>';
     } else {
       extra = '<div class="pf-grid">' + sel({ label: 'Frecuencia de recurrencia', req: 1, k: k + 'frecuencia', val: inc.frecuencia, opts: FRECUENCIAS, attrs: ' data-struct="1"' }) +
         (inc.frecuencia === 'otra' ? '<div class="pf-grid" style="grid-template-columns:1fr 1fr">' + tf({ label: 'Cada', req: 1, type: 'number', k: k + 'frecuenciaN', val: inc.frecuenciaN, ph: '2' }) + sel({ label: 'Unidad', k: k + 'frecuenciaU', val: inc.frecuenciaU, opts: ['días', 'semanas', 'meses'] }) + '</div>' : '<div></div>') + '</div>' +
-        alertBox('No requiere código y <b>exige registro y aprobación documental previa</b>. Cada ciclo lo confirma el Gestor de programa; cambiar la frecuencia crea una nueva versión del programa.', 'informative') + recSummary();
+        alertBox('No requiere código y <b>exige registro y aprobación documental previa</b>.', 'informative');
     }
     var foto = '<div class="pf-switch-row">' + toggle(inc.foto, 'inc-foto', inc.id) + '<span>Exige fotografía de evidencia en la entrega</span></div>';
     var cantLabel = m === 'codigo' ? 'Cantidad / stock de códigos' : (m === 'fijo' ? 'Cantidad de beneficiarios' : 'Cantidad');
