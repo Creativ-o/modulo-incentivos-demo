@@ -425,7 +425,7 @@
   }
   function previewHTML(inc) {
     var t = previewText(inc);
-    return t ? 'Podrá recibirlo quien cumpla: ' + t + '.' : '<em>Sin condiciones: cualquier persona podrá acceder a este incentivo.</em>';
+    return t ? 'Podrá recibirlo quien cumpla: ' + t + '.' : '<span class="pf-pv-empty">Sin condiciones: cualquier persona podrá acceder a este incentivo.</span>';
   }
   function groupsHTML(inc) {
     var id = inc.id;

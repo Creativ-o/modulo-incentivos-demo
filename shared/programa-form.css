@@ -272,3 +272,15 @@ a.nwt-button{text-decoration:none}
 .pf-type--closed .nwt-card__header{padding-bottom:var(--naotech-sizing-12)}
 .pf-type .pf-card-head-row{gap:var(--naotech-sizing-12)}
 @media (prefers-reduced-motion:reduce){.pf-type__chev{transition:none}}
+
+/* ── Jerarquía de color (revisión UI): el naranja queda para la acción principal y los estados activos.
+   Acciones secundarias = neutro; eliminar = gris (rojo solo al pasar el cursor). ── */
+.pf-group .nwt-button[data-act="rule-add"],.pf-inc .nwt-button[data-act="grp-add"],.pf-inc .nwt-button[data-act="doc-add"]{color:var(--naotech-app-color-800)}
+.pf-inc .nwt-button[data-act="doc-add"]{background:transparent;box-shadow:inset 0 0 0 1px var(--naotech-app-color-300)}
+.pf-inc .nwt-button[data-act="doc-add"]:hover{background:var(--naotech-app-color-100)}
+.pf-inc .nwt-button[data-act="grp-del"],.pf-inc .nwt-icon-button[nwt-variant="mute"]{color:var(--naotech-app-color-500)}
+.pf-inc .nwt-button[data-act="grp-del"]:hover,.pf-inc .nwt-icon-button[nwt-variant="mute"]:hover{color:var(--naotech-negative-color-700);background:transparent}
+.pf-inc .nwt-button[data-act="grp-del"] *,.pf-inc .nwt-icon-button[nwt-variant="mute"] *{color:inherit}
+.pf-preview{color:var(--naotech-app-color-900)}
+.pf-preview em{font-weight:700;color:var(--naotech-app-color-600);text-transform:uppercase;font-size:.85em;letter-spacing:.04em}
+.pf-pv-empty{color:var(--naotech-app-color-600)}
