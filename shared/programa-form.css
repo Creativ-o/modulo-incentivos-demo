@@ -246,3 +246,14 @@ a.nwt-button{text-decoration:none}
 /* Modalidades que no aplican a la categoría elegida: visibles pero deshabilitadas */
 .pf .nwt-radio-group__option--disabled{opacity:.5;cursor:not-allowed;background:var(--naotech-app-color-100)}
 .pf .nwt-radio-group__option--disabled .nwt-radio-group__option-label{cursor:not-allowed}
+
+/* Paso 4 por tipo de incentivo: secciones dentro de cada tarjeta */
+.pf-subsec{display:flex;flex-direction:column;gap:var(--naotech-sizing-12)}
+.pf-subsec + .pf-subsec,.pf-sec > .pf-subsec + .pf-subsec,.pf-inc > .pf-subsec{padding-top:var(--naotech-sizing-16);border-top:1px solid var(--naotech-app-color-200)}
+.pf-inc > .pf-sec > .pf-subsec:first-child{padding-top:0;border-top:0}
+.pf-sub{margin:0;font-size:var(--naotech-sizing-16);font-weight:var(--naotech-font-weight-bold);color:var(--naotech-app-color-900);min-height:0}
+.pf-card-head-row > .pf-row{flex-shrink:0}
+
+/* «Así se leerá la regla»: lenguaje natural (no fórmula) */
+.pf-preview{font-family:var(--naotech-sdk-font-family);font-size:var(--naotech-sizing-14);line-height:1.55;color:var(--naotech-app-color-900)}
+.pf-preview em{font-style:normal;font-weight:var(--naotech-font-weight-semibold);color:var(--naotech-primary-color-700)}
