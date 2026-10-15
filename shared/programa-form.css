@@ -191,3 +191,9 @@ a.nwt-button{text-decoration:none}
 ::view-transition-new(root){animation:220ms ease both pf-fade-in}
 @keyframes pf-fade-out{to{opacity:0}}
 @keyframes pf-fade-in{from{opacity:0}}
+
+/* DC-013 · Franja de pasos más sutil: gris más claro, círculos más chicos y barra separadora más delgada */
+.pf-stepper-band{background:var(--naotech-app-color-050);border-bottom-color:var(--naotech-app-color-200)}
+.pf-stepper-band .nwt-stepper{--pvt-badge-dimension:28px;--pvt-badge-font-size:12px}
+.pf-stepper-band .nwt-stepper__item:not(:last-child)::after{height:2px;border-radius:1px}
+.pf-stepper-band .nwt-stepper__item__content{column-gap:var(--naotech-sizing-8)}
