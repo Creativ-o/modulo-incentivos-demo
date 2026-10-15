@@ -17,7 +17,7 @@
   var CONDITIONS_LOCKED = EDIT && role === 'programa'; // el Gestor de programa solo lee condicionales (HU-03)
 
   /* ── Catálogos ─────────────────────────────────────────────── */
-  var EVENTOS = ['Juegos Intercolegiados Nacionales 2026', 'Juegos Deportivos Nacionales 2026', 'Juegos Paranacionales 2026', 'Campeonato nacional de atletismo 2026', 'Sin evento asociado (programa permanente)'];
+  var EVENTOS = ['Juegos Intercolegiados Nacionales 2026', 'Juegos Deportivos Nacionales 2026', 'Juegos Paranacionales 2026', 'Campeonato nacional de atletismo 2026', 'Sin evento asociado'];
   var AREAS = ['Dirección de Fomento y Desarrollo', 'Alto rendimiento', 'Viceministerio del Deporte'];
   var GESTORES = ['Isa Pabon', 'Laura Meza', 'Carla Suárez', 'Andrés Polo'];
   var REGIONES = ['Nacional', 'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bogotá D.C.', 'Bolívar', 'Boyacá', 'Caldas', 'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda', 'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada']; // Nacional + 32 departamentos + Bogotá D.C.
@@ -104,16 +104,16 @@
     return '<button type="button" class="nwt-button" nwt-variant="' + (o.v || 'quiet') + '" nwt-size="' + (o.s || 'small') + '" data-act="' + act + '"' + (o.d != null ? ' data-i="' + esc(o.d) + '"' : '') + (o.x != null ? ' data-x="' + esc(o.x) + '"' : '') + '><span class="nwt-button__content">' + (o.i ? icon(o.i) : '') + label + '</span></button>';
   }
   function iconBtn(ic, act, label, d, x) { return '<span class="nwt-icon-button" nwt-variant="mute" nwt-size="small"><button type="button" class="nwt-icon-button__content" aria-label="' + esc(label) + '" data-act="' + act + '"' + (d != null ? ' data-i="' + esc(d) + '"' : '') + (x != null ? ' data-x="' + esc(x) + '"' : '') + '>' + icon(ic) + '</button></span>'; }
-  function inputBox(label, req, control, hint, k) {
-    return '<div class="nwt-input-box" data-box="' + esc(k || '') + '"><div class="nwt-input-box__content">' +
+  function inputBox(label, req, control, hint, k, cls) {
+    return '<div class="nwt-input-box' + (cls ? ' ' + cls : '') + '" data-box="' + esc(k || '') + '"><div class="nwt-input-box__content">' +
       (label ? '<label class="nwt-input-box__label">' + esc(label) + (req ? '<span class="nwt-input-box__required">*</span>' : '') + '</label>' : '') +
       '<div class="nwt-input-box__control">' + control + '</div>' +
       (hint ? '<div class="nwt-input-box__message"><span>' + esc(hint) + '</span></div>' : '') +
       '</div></div>';
   }
   function tf(o) {
-    var control = (o.ico ? icon(o.ico) : '') + '<input class="nwt-text-field__input" type="' + (o.type || 'text') + '" data-k="' + esc(o.k) + '" value="' + esc(o.val) + '" placeholder="' + esc(o.ph || '') + '"' + (o.mode ? ' inputmode="' + o.mode + '"' : '') + (o.ro ? ' readonly' : '') + '/>';
-    return '<div class="nwt-text-field' + (o.ro ? ' nwt-text-field--readonly' : '') + (o.ico ? ' pf-tf-ico' : '') + '" nwt-size="medium">' + inputBox(o.label, o.req, control, o.hint, o.k) + '</div>';
+    var control = (o.ico ? icon(o.ico) : '') + '<input class="nwt-text-field__input" type="' + (o.type || 'text') + '" data-k="' + esc(o.k) + '" value="' + esc(o.val) + '" placeholder="' + esc(o.ph || '') + '"' + (o.mode ? ' inputmode="' + o.mode + '"' : '') + (o.ro ? ' readonly tabindex="-1"' : '') + '/>';
+    return '<div class="nwt-text-field' + (o.ro ? ' nwt-text-field--readonly' : '') + (o.ico ? ' pf-tf-ico' : '') + '" nwt-size="medium">' + inputBox(o.label, o.req, control, o.hint, o.k, o.ro ? 'nwt-input-box--disabled pf-ro-box' : '') + '</div>';
   }
   function ta(o) {
     var control = '<textarea class="nwt-text-area__input" rows="' + (o.rows || 3) + '" data-k="' + esc(o.k) + '" placeholder="' + esc(o.ph || '') + '">' + esc(o.val) + '</textarea>';
@@ -830,7 +830,7 @@
     root.addEventListener('click', onAnexoClick); root.addEventListener('change', onAnexoChange);
     root.addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('pf-ms__q')) { cobQuery = e.target.value; var ul = $('#pfCobOpts'); if (ul) ul.innerHTML = cobOptsHTML(); } });
     document.addEventListener('click', onClick); document.addEventListener('keydown', onKey);
-    root.addEventListener('focusin', function (e) { var b = e.target.closest('.nwt-input-box'); if (b) { b.classList.add('nwt-input-box--focused'); var f = e.target.closest('.nwt-text-field,.nwt-select,.nwt-text-area'); if (f) f.classList.add(f.className.split(' ')[0] + '--focused'); } });
+    root.addEventListener('focusin', function (e) { var b = e.target.closest('.nwt-input-box'); if (b && !b.classList.contains('pf-ro-box')) { b.classList.add('nwt-input-box--focused'); var f = e.target.closest('.nwt-text-field,.nwt-select,.nwt-text-area'); if (f) f.classList.add(f.className.split(' ')[0] + '--focused'); } });
     root.addEventListener('focusout', function (e) { var b = e.target.closest('.nwt-input-box'); if (b) { b.classList.remove('nwt-input-box--focused'); var f = e.target.closest('.nwt-text-field,.nwt-select,.nwt-text-area'); if (f) f.classList.remove(f.className.split(' ')[0] + '--focused'); } });
     $('#pfPrev').addEventListener('click', function () { if (S.step > 1) go(S.step - 1); });
     $('#pfNext').addEventListener('click', next);

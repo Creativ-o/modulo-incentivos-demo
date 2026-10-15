@@ -221,3 +221,12 @@ a.nwt-button{text-decoration:none}
 .pf-ms__q::placeholder{color:var(--naotech-app-color-600)}
 /* DC-018 · estado deshabilitado del botón (SDK: .nwt-button:disabled) */
 .pf-hdr-actions .nwt-button:disabled{cursor:not-allowed}
+
+/* Campos de solo lectura (Responsable): recuadro gris del SDK, sin cursor de edición */
+.pf-ro-box .nwt-input-box__control{cursor:default}
+.pf-ro-box .nwt-text-field__input{cursor:default;color:var(--naotech-app-color-800)}
+
+/* Check de las opciones del menú: centrado exacto dentro de su caja */
+.nwt-dropdown__option-checkbox{position:relative;box-sizing:border-box}
+.nwt-dropdown__option-checkbox .nwt-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;padding:0}
+.nwt-dropdown__option-checkbox .nwt-icon i{display:block;line-height:1;margin:0;transform:translate(1.5px,1.5px)} /* el glifo del check viene dibujado 1.5px arriba-izquierda en la fuente de íconos (medido por píxeles) */
