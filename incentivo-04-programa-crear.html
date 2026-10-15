@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="shared/sdk/icons.css"/>
 <!-- Shell compartido (barra lateral + encabezado) = mismas vistas del módulo -->
 <link rel="stylesheet" href="shared/shell.css"/>
-<link rel="stylesheet" href="shared/programa-form.css?v=14"/>
+<link rel="stylesheet" href="shared/programa-form.css?v=15"/>
 </head>
 <body>
 
@@ -111,7 +111,11 @@
 
 <div class="pf-toast" id="pfToast" aria-live="polite"></div>
 
-<script>function fadeAndGo(u){ window.location.href = u; }</script>
+<script>
+function fadeAndGo(u){ window.location.href = u; }
+/* Al salir del formulario la vista siguiente aplica la misma transición (barra quieta, solo contenido). */
+window.addEventListener('pagehide',function(){ try{ sessionStorage.setItem('inc-vt-form','1'); }catch(_){} });
+</script>
 <script src="shared/profile-switcher.js?v=role-9" defer></script>
 <script src="shared/programa-form.js?v=14"></script>
 </body>

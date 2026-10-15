@@ -176,3 +176,18 @@ a.nwt-button{text-decoration:none}
 
 /* El SDK da min-height:48px a los h1/h2: se anula para que el texto quede centrado en su caja */
 .pf-title,.pf-h2{min-height:0}
+
+/* Migas del encabezado: peso regular y el primer nivel en gris (el actual conserva su acento) */
+.pf-hdr-left .nwt-breadcrumb__link{font-weight:var(--naotech-font-weight-regular);color:var(--naotech-app-color-600)}
+.pf-hdr-left .nwt-breadcrumb__link:hover{color:var(--naotech-primary-color-normal)}
+.pf-hdr-left .nwt-breadcrumb__text{font-weight:var(--naotech-font-weight-regular)}
+.pf-hdr-left .nwt-breadcrumb__item::before{font-weight:var(--naotech-font-weight-regular);color:var(--naotech-app-color-500)}
+
+/* Entrar al formulario: la barra lateral NO se mueve (sin deslizar el indicador ni fundir el menú);
+   solo cambia el contenido con un cross-fade simple, sin el hueco en blanco intermedio. */
+::view-transition-group(shell-nav-indicator){animation-duration:0s}
+::view-transition-old(shell-sidebar),::view-transition-new(shell-sidebar){animation:none}
+::view-transition-old(root){animation:220ms ease both pf-fade-out}
+::view-transition-new(root){animation:220ms ease both pf-fade-in}
+@keyframes pf-fade-out{to{opacity:0}}
+@keyframes pf-fade-in{from{opacity:0}}

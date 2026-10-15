@@ -9,6 +9,18 @@
 (function () {
   'use strict';
   var KEY_IN = 'inc-enter', KEY_BACK = 'inc-back';
+  /* Venimos del formulario: misma regla que al entrar (barra quieta, solo cambia el contenido con cross-fade simple). */
+  try {
+    if (sessionStorage.getItem('inc-vt-form')) {
+      sessionStorage.removeItem('inc-vt-form');
+      var vt = document.createElement('style');
+      vt.textContent = '::view-transition-group(shell-nav-indicator){animation-duration:0s!important}' +
+        '::view-transition-old(shell-sidebar),::view-transition-new(shell-sidebar){animation:none!important}' +
+        '::view-transition-old(root){animation:220ms ease both shell-fade-out!important}' +
+        '::view-transition-new(root){animation:220ms ease both shell-fade-in!important}';
+      document.documentElement.appendChild(vt);
+    }
+  } catch (_) {}
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var ROLE_LABEL = { admin: 'Gestor de incentivos', gestor: 'Gestor de incentivos', programa: 'Gestor de programa', operador: 'Operador' };
 
