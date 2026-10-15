@@ -137,8 +137,8 @@
         <div class="profile-dd__item${isActive}" data-role="${key}">
           <div class="ava"><div class="ava-ring" style="background:${r.bg};color:${r.fg};width:28px;height:28px;font-size:11px">${r.initials}</div></div>
           <div class="role-meta">
-            <strong>${r.label}</strong>
-            <small>${r.meta}</small>
+            <strong>${r.name}</strong>
+            <small>${r.label} · ${r.meta}</small>
           </div>
           <svg class="dd-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>`;
