@@ -537,15 +537,6 @@
   }
 
   /* ── Paso 5 · Códigos y revisión ────────────────────────────── */
-  function routeHTML() {
-    return '<div class="pf-sec" style="gap:12px">' + S.inc.map(function (inc) {
-      var steps = [previewText(inc) ? 'Motor valida elegibilidad' : 'Sin condiciones'];
-      if (docOn(inc)) steps.push('Beneficiario carga soportes', 'Gestor de programa revisa');
-      steps.push('Operador asigna');
-      if (isRec(inc)) steps.push('Gestor confirma ciclo');
-      return '<div><b>' + esc(inc.nombre || 'Sin nombre') + '</b><div class="pf-route" style="margin-top:6px">' + steps.map(function (s, i) { return (i ? '<span class="pf-arrow">→</span>' : '') + badge(s, i === steps.length - 1 ? 'positive' : 'neutral'); }).join('') + '</div></div>';
-    }).join('') + '</div>';
-  }
   function kv(k, v) { return '<div class="pf-kv"><dt>' + esc(k) + '</dt><dd>' + v + '</dd></div>'; }
   function codState(id) {
     var c = S.codigos[id] || (S.codigos[id] = { modo: 'despues', n: 0 });
@@ -590,17 +581,16 @@
       kv('Elegibilidad por tipo', S.inc.map(function (i) { return '<div><b>' + esc(i.nombre || 'Sin nombre') + ':</b> <span style="font-weight:400">' + previewHTML(i) + '</span></div>'; }).join('')) +
       kv('Documentos y etapas por tipo', S.inc.map(function (i) { return '<div><b>' + esc(i.nombre || 'Sin nombre') + ':</b> <span style="font-weight:400">' + (docOn(i) ? esc(i.doc.list.map(function (x) { return x.name + (x.oblig ? '' : ' (opcional)'); }).join(', ') || '—') + ' · ' + esc(cronoSummary(i)) : 'No pide documentos (flujo directo)') + '</span></div>'; }).join('')) +
     '</dl></div>', { n: 2 });
-    var route = card('Ruta de cada tipo', 'Así fluirá una persona desde la elegibilidad hasta la entrega.', routeHTML(), { n: 3 });
     var ch = EDIT ? versionChanges() : [];
     var act = EDIT ? card('Versión resultante', 'Las reglas de versionamiento del programa Activo.', ch.length
       ? alertBox('Se publicará la <b>versión V2.0</b>. Cambios que la generan: <b>' + ch.join(' · ') + '</b>. La V1.0 y todo lo entregado bajo ella quedan congelados e inmutables; si cambian los documentos, las aprobaciones previas pasan a «Expirada / Histórica por nueva versión» al iniciar el siguiente ciclo.', 'caution', 'attention')
-      : alertBox('Sin cambios de fondo: se conserva la <b>versión V1.0</b>. Solo se registra la edición en la bitácora de auditoría.', 'positive', 'positive'), { n: 4 })
+      : alertBox('Sin cambios de fondo: se conserva la <b>versión V1.0</b>. Solo se registra la edición en la bitácora de auditoría.', 'positive', 'positive'), { n: 3 })
     : card('Activación', 'El programa solo opera cuando está <b>Activo</b>. Al activarlo queda en <b>versión V1.0</b>.', radios({ act: 'activar', value: S.activar, options: [
       { v: 'config', l: 'Guardar en Configuración', s: 'Queda como borrador operativo. Puedes terminar de parametrizar y activar después.' },
       { v: 'activo', l: d.activacion ? 'Activar el ' + fmtDate(d.activacion) : 'Activar ahora', s: 'Habilita postulaciones y asignaciones. Se registra auditoría con usuario, fecha, hora e IP.' }
-    ] }), { n: 4 });
+    ] }), { n: 3 });
     return '<div class="pf-sec">' + head('Códigos y revisión', 'Carga el inventario de códigos (solo incentivos con código) y revisa el programa completo.') +
-      card('Inventario de códigos', 'Aplica solo a incentivos de entrega única con código.', '<div class="pf-inc">' + codHTML + '</div>', { n: 1 }) + rev + route + act + '<div id="pfIssues"></div></div>';
+      card('Inventario de códigos', 'Aplica solo a incentivos de entrega única con código.', '<div class="pf-inc">' + codHTML + '</div>', { n: 1 }) + rev + act + '<div id="pfIssues"></div></div>';
   }
 
   /* ── Validación por paso ────────────────────────────────────── */
