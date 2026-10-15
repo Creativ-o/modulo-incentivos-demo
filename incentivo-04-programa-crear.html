@@ -16,14 +16,14 @@
 <link rel="stylesheet" href="shared/sdk/icons.css"/>
 <!-- Shell compartido (barra lateral + encabezado) = mismas vistas del módulo -->
 <link rel="stylesheet" href="shared/shell.css"/>
-<link rel="stylesheet" href="shared/programa-form.css?v=12"/>
+<link rel="stylesheet" href="shared/programa-form.css?v=14"/>
 </head>
 <body>
 
 <div class="shell">
 
-  <!-- ═══ SIDEBAR (idéntico al de las demás vistas; arranca contraído) ═══ -->
-  <aside class="sidebar collapsed" id="sidebar">
+  <!-- ═══ SIDEBAR (idéntico al de las demás vistas) ═══ -->
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <button class="burger-btn" onclick="document.getElementById('sidebar').classList.toggle('collapsed')" aria-label="Toggle sidebar">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="#282834" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -82,13 +82,6 @@
         <a class="nwt-button" nwt-variant="mute" nwt-size="medium" href="incentivo-03-programas.html"><span class="nwt-button__content">Cancelar</span></a>
         <button class="nwt-button" nwt-variant="quiet" nwt-size="medium" type="button" data-act="save-draft"><span class="nwt-button__content"><div class="nwt-icon nwt-button__icon"><i class="naotech-icon-bookmark"></i></div>Guardar borrador</span></button>
       </div>
-      <div class="profile-switcher">
-        <div class="user-chip">
-          <div class="ava"><div class="ava-ring" style="background:#c4b5fd;color:#4c1d95">DA</div><div class="ava-dot"></div></div>
-          <div class="user-info"><span class="user-name">Danna Arrieta</span><span class="user-role">Gestor de incentivos</span></div>
-          <button class="user-chip__chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
-        </div>
-      </div>
     </header>
 
     <!-- Contenedor con scroll: el encabezado de pasos se fija arriba -->
@@ -118,23 +111,8 @@
 
 <div class="pf-toast" id="pfToast" aria-live="polite"></div>
 
-<script>
-/* Salir del formulario: primero se EXPANDE la barra lateral (misma animación que al contraerla) y luego navega. */
-function pfLeave(u){
-  var sb=document.getElementById('sidebar');
-  try{ sessionStorage.setItem('inc-novt','1'); }catch(_){}
-  if(!sb||!sb.classList.contains('collapsed')||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){ location.href=u; return; }
-  sb.classList.remove('collapsed');
-  setTimeout(function(){ location.href=u; },400);
-}
-function fadeAndGo(u){ pfLeave(u); }
-document.addEventListener('click',function(e){
-  var a=e.target.closest&&e.target.closest('a[href]'); if(!a||e.metaKey||e.ctrlKey||e.shiftKey) return;
-  var u=a.getAttribute('href')||'';
-  if(/^incentivo-(0[2-35-9]|1\d)/.test(u)||u==='index.html'&&false){ e.preventDefault(); pfLeave(u); }
-});
-</script>
+<script>function fadeAndGo(u){ window.location.href = u; }</script>
 <script src="shared/profile-switcher.js?v=role-9" defer></script>
-<script src="shared/programa-form.js?v=13"></script>
+<script src="shared/programa-form.js?v=14"></script>
 </body>
 </html>

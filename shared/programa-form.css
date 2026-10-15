@@ -127,8 +127,6 @@ a.nwt-button{text-decoration:none}
 
 
 
-/* Al ir al formulario solo se contrae la barra: sin cross-fade del resto de la vista */
-::view-transition-old(root),::view-transition-new(root){animation:none}
 /* Toast dentro del área de contenido */
 .pf-toast{top:104px}
 @media (max-width:760px){.pf-toolbar{padding:var(--naotech-sizing-12) var(--naotech-sizing-16)}}
@@ -156,3 +154,25 @@ a.nwt-button{text-decoration:none}
 /* En el contenedor flex-columna con scroll, nada debe encogerse */
 .pf-footer,.pf-head{flex:0 0 auto}
 .pf-main{flex:1 0 auto}
+
+/* DC-011 · Encabezado: bloque centrado verticalmente; etiqueta de estado alineada al título */
+.pf-hdr-left{align-self:center;justify-content:center}
+.pf-hdr-left .nwt-breadcrumb,.pf-hdr-left .nwt-breadcrumb__list{margin:0;line-height:1.2}
+.pf-hdr-left .pf-toolbar__title{flex-wrap:nowrap;align-items:center;gap:var(--naotech-sizing-12);line-height:1}
+.pf-title{line-height:1.2;margin:0;white-space:nowrap}
+#pfStateBadge{display:inline-flex;align-items:center}
+#pfStateBadge .nwt-badge{margin:0}
+
+/* DC-012 · Pasos: círculo + «PASO N» y debajo el nombre de la sección, uno al lado del otro */
+.pf-stepper-band .nwt-stepper{--pvt-badge-dimension:36px;--pvt-badge-font-size:14px;min-width:780px;column-gap:var(--naotech-sizing-16)}
+.pf-stepper-band .nwt-stepper__item{align-items:center;column-gap:var(--naotech-sizing-16)}
+.pf-stepper-band .nwt-stepper__item:not(:last-child)::after{margin-top:0}
+.pf-stepper-band .nwt-stepper__item__content{flex-direction:row;align-items:center;column-gap:var(--naotech-sizing-10)}
+.pf-step__text{display:flex;flex-direction:column;gap:2px;line-height:1.15;text-align:left}
+.pf-step__kicker{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--naotech-app-color-600)}
+.pf-stepper-band .nwt-stepper__item--active .pf-step__kicker{color:var(--naotech-theme-color-700)}
+.pf-stepper-band .nwt-stepper__item--done .pf-step__kicker{color:var(--naotech-positive-color-700)}
+.pf-stepper-band .nwt-stepper__item--disabled .pf-step__kicker{color:var(--naotech-app-color-500)}
+
+/* El SDK da min-height:48px a los h1/h2: se anula para que el texto quede centrado en su caja */
+.pf-title,.pf-h2{min-height:0}

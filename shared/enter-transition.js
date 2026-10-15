@@ -9,15 +9,6 @@
 (function () {
   'use strict';
   var KEY_IN = 'inc-enter', KEY_BACK = 'inc-back';
-  /* Al volver del formulario la barra ya se expandió: se evita el fade de la vista para que sea simétrico al colapso. */
-  try {
-    if (sessionStorage.getItem('inc-novt')) {
-      sessionStorage.removeItem('inc-novt');
-      var st = document.createElement('style');
-      st.textContent = '::view-transition-old(root),::view-transition-new(root){animation:none!important}';
-      document.documentElement.appendChild(st);
-    }
-  } catch (_) {}
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var ROLE_LABEL = { admin: 'Gestor de incentivos', gestor: 'Gestor de incentivos', programa: 'Gestor de programa', operador: 'Operador' };
 
@@ -89,14 +80,6 @@
       setTimeout(function () { o._t.style.opacity = '1'; }, 220);
       setTimeout(function () { location.href = url; }, 700);
     }); });
-  };
-  /* Ir al formulario: primero se COLAPSA la barra lateral (animación de la vista actual) y luego
-     la navegación hace el cross-fade con la barra persistente (view transitions del shell). */
-  window.incGoForm = function (url) {
-    var sb = document.querySelector('.sidebar');
-    if (reduced || !sb || sb.classList.contains('collapsed')) { location.href = url; return; }
-    sb.classList.add('collapsed');
-    setTimeout(function () { location.href = url; }, 400);
   };
   window.addEventListener('pageshow', function (e) { if (e.persisted) document.querySelectorAll('body > div[aria-hidden="true"][style*="2147483000"]').forEach(remove); });
 })();

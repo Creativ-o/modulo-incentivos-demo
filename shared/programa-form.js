@@ -541,7 +541,7 @@
   function renderStepper() {
     $('#pfStepper').innerHTML = STEPS.map(function (l, i) {
       var n = i + 1, act = S.step === n, dn = S.step > n;
-      return '<div class="nwt-stepper__item' + (act ? ' nwt-stepper__item--active' : '') + (dn ? ' nwt-stepper__item--done' : '') + (n > S.max ? ' nwt-stepper__item--disabled' : '') + '" data-act="goto" data-x="' + n + '"><div class="nwt-stepper__item__content"><div class="nwt-stepper__item__badge">' + (dn ? icon('positive') : n) + '</div><span class="nwt-stepper__item__label">' + l + '</span></div></div>';
+      return '<div class="nwt-stepper__item' + (act ? ' nwt-stepper__item--active' : '') + (dn ? ' nwt-stepper__item--done' : '') + (n > S.max ? ' nwt-stepper__item--disabled' : '') + '" data-act="goto" data-x="' + n + '"><div class="nwt-stepper__item__content"><div class="nwt-stepper__item__badge">' + (dn ? icon('positive') : n) + '</div><span class="pf-step__text"><span class="pf-step__kicker">Paso ' + n + '</span><span class="nwt-stepper__item__label">' + l + '</span></span></div></div>';
     }).join('');
   }
   function render(keepScroll) {
