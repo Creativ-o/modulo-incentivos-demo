@@ -531,8 +531,8 @@
   }
   function step4() {
     var lockMsg = CONDITIONS_LOCKED ? alertBox('Tu rol <b>solo visualiza</b> las condiciones y los documentos. Puedes ajustar las <b>etapas</b>; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
-    return '<div class="pf-sec">' + head('Condiciones de elegibilidad', 'Para <b>cada tipo de incentivo</b> define quién puede recibirlo, si pide documentos y, si es recurrente, las etapas de cada ciclo. <b>Bloqueo estricto:</b> sin cumplir el 100% el sistema impide la operación e indica qué condición falla.') + lockMsg +
-      (S.inc.length >= 3 ? '<div class="pf-row" style="justify-content:flex-end">' + btn('Abrir todos', 'tipo-all', { v: 'mute', d: 'open', i: 'chevron-down' }) + btn('Plegar todos', 'tipo-all', { v: 'mute', d: 'close', i: 'chevron-up' }) + '</div>' : '') +
+    return '<div class="pf-sec">' + head('Condiciones de elegibilidad', 'Define condiciones por cada tipo de incentivo. Dentro de un grupo todas las condiciones se cumplen simultáneamente (Y). Agrega otro grupo si aceptas reglas alternativas (O entre grupos).') + lockMsg +
+      (S.inc.length >= 3 ? '<div class="pf-row" style="justify-content:flex-end">' + btn('Abrir todos', 'tipo-all', { v: 'mute', d: 'open', i: 'chevron-down' }) + btn('Colapsar', 'tipo-all', { v: 'mute', d: 'close', i: 'chevron-up' }) + '</div>' : '') +
       S.inc.map(incPanel).join('') + logCard() + '</div>';
   }
 
