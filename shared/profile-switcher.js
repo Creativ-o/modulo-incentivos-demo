@@ -149,23 +149,6 @@
     return dd;
   }
 
-  // «Cambiar de rol»: vuelve a la portada con la transición inversa (se reduce hasta la tarjeta del rol).
-  function backItem(){
-    const el = document.createElement('div');
-    el.className = 'profile-dd__item';
-    el.dataset.back = '1';
-    el.style.borderTop = '1px solid #e7e9f3';
-    el.style.marginTop = '4px';
-    el.style.paddingTop = '10px';
-    el.innerHTML = `
-      <div class="ava"><div class="ava-ring" style="background:#f3f4f9;color:#646587;width:28px;height:28px;font-size:11px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></div></div>
-      <div class="role-meta"><strong>Cambiar de rol</strong><small>Volver a la portada</small></div>`;
-    el.addEventListener('click', () => {
-      if(window.incGoLanding) window.incGoLanding(el); else window.location.href = 'index.html';
-    });
-    return el;
-  }
-
   function mountSwitcher(sw){
     if(sw.dataset.wzMounted === '1') return;
     sw.dataset.wzMounted = '1';
@@ -194,13 +177,12 @@
       const dd = buildProfileDD(currentRole());
       sw.appendChild(dd);
     }
-    const ddEl = sw.querySelector('.profile-dd');
-    if(ddEl && !ddEl.querySelector('[data-back]')) ddEl.appendChild(backItem());
+
 
     // Wire-up de los items del dropdown. Skipeamos si ya tienen onclick
     // inline (páginas legacy) para evitar doble-fire de switchRole.
     sw.querySelectorAll('.profile-dd__item').forEach(item => {
-      if(item.dataset.back || item.dataset.wzClick || item.hasAttribute('onclick')) return;
+      if(item.dataset.wzClick || item.hasAttribute('onclick')) return;
       item.dataset.wzClick = '1';
       item.addEventListener('click', () => switchRole(item.dataset.role));
     });

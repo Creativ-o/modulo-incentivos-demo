@@ -707,15 +707,33 @@
     scrim.addEventListener('click', function () { setDrawer(false); });
     function toLanding(e) { e.preventDefault(); if (window.incGoLanding) window.incGoLanding(e.currentTarget); else location.href = 'index.html'; }
     $('#pfLogout').addEventListener('click', toLanding);
-    /* Chip de usuario: persona del rol actual + menú «Cambiar de rol» */
-    var who = PERSONAS[role] || PERSONAS.admin, ub = $('#pfUserBtn'), um = $('#pfUserMenu');
-    $('#pfUserName').textContent = who[0]; $('#pfUserRole').textContent = who[1];
-    $('#pfUserIni').textContent = who[0].split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2);
+    /* Chip de usuario + menú «Cambiar de perfil» (mismas opciones que las demás vistas) */
+    var PERFILES = [
+      { k: 'admin', n: 'Danna Arrieta', l: 'Gestor de incentivos', m: 'Parametriza y audita', bg: '#c4b5fd', fg: '#4c1d95', home: 'incentivo-02-dashboard.html' },
+      { k: 'programa', n: 'Isa Pabon', l: 'Gestor de programa', m: 'Gestiona su programa asignado', bg: '#bfdbfe', fg: '#1e3a8a', home: 'incentivo-03-programas.html' },
+      { k: 'operador', n: 'Jorge Guzman', l: 'Operador', m: 'Asigna incentivos en campo', bg: '#ffdfb5', fg: '#92400e', home: 'incentivo-08-asignar-buscar.html' }
+    ];
+    var cur = PERFILES.filter(function (p) { return p.k === (role === 'gestor' ? 'admin' : role); })[0] || PERFILES[0];
+    var ub = $('#pfUserBtn'), um = $('#pfUserMenu');
+    var ini = function (p) { return p.n.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2); };
+    $('#pfUserName').textContent = cur.n; $('#pfUserRole').textContent = cur.l; $('#pfUserIni').textContent = ini(cur);
+    um.innerHTML = '<span class="pf-user__label">Cambiar de perfil</span>' + PERFILES.map(function (p) {
+      return '<button type="button" class="pf-user__item' + (p.k === cur.k ? ' is-active' : '') + '" role="menuitem" data-perfil="' + p.k + '">' +
+        '<span class="pf-user__ava" style="background:' + p.bg + ';color:' + p.fg + '">' + ini(p) + '</span>' +
+        '<span class="pf-user__text"><strong>' + p.n + '</strong><small>' + p.l + ' · ' + p.m + '</small></span>' +
+        (p.k === cur.k ? '<span class="pf-user__check">' + icon('positive') + '</span>' : '') + '</button>';
+    }).join('');
     function setMenu(o) { um.hidden = !o; ub.setAttribute('aria-expanded', String(o)); }
     ub.addEventListener('click', function (e) { e.stopPropagation(); setMenu(um.hidden); });
+    um.addEventListener('click', function (e) {
+      var it = e.target.closest('[data-perfil]'); if (!it) return;
+      var p = PERFILES.filter(function (x) { return x.k === it.dataset.perfil; })[0];
+      setMenu(false); if (p.k === cur.k) return;
+      try { localStorage.setItem('naowee-incentivos-role', p.k); } catch (_) {}
+      location.href = p.home; // igual que el selector de perfil de las vistas: cada perfil vive en su inicio
+    });
     document.addEventListener('click', function (e) { if (!$('#pfUser').contains(e.target)) setMenu(false); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
-    $('#pfRole').addEventListener('click', function (e) { setMenu(false); if (window.incGoLanding) window.incGoLanding(ub); else location.href = 'index.html'; });
     if (mq.addEventListener) mq.addEventListener('change', apply); apply();
     /* Encabezado: sombra + compactación al hacer scroll (histéresis para evitar parpadeo) */
     var on = false;
