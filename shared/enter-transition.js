@@ -81,5 +81,13 @@
       setTimeout(function () { location.href = url; }, 700);
     }); });
   };
+  /* Ir al formulario: primero se COLAPSA la barra lateral (animación de la vista actual) y luego
+     la navegación hace el cross-fade con la barra persistente (view transitions del shell). */
+  window.incGoForm = function (url) {
+    var sb = document.querySelector('.sidebar');
+    if (reduced || !sb || sb.classList.contains('collapsed')) { location.href = url; return; }
+    sb.classList.add('collapsed');
+    setTimeout(function () { location.href = url; }, 400);
+  };
   window.addEventListener('pageshow', function (e) { if (e.persisted) document.querySelectorAll('body > div[aria-hidden="true"][style*="2147483000"]').forEach(remove); });
 })();

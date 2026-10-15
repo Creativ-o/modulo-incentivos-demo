@@ -696,17 +696,26 @@
       tgl.querySelector('i').className = 'naotech-icon-' + (open ? 'chevron-right' : 'drawer');
     }
     function setDrawer(open) { side.classList.toggle('is-open', open); scrim.hidden = !open; }
-    var saved = false; try { saved = localStorage.getItem(SIDE_KEY) === '1'; } catch (_) {}
+    var saved = false;
     function apply() { if (mq.matches) { setExpanded(true); setDrawer(false); } else { setExpanded(saved); setDrawer(false); } }
     tgl.addEventListener('click', function () {
       if (mq.matches) { setDrawer(false); return; }
-      saved = side.classList.contains('nwt-sidebar--collapsed'); try { localStorage.setItem(SIDE_KEY, saved ? '1' : '0'); } catch (_) {}
+      saved = side.classList.contains('nwt-sidebar--collapsed');
       setExpanded(saved);
     });
     burger.addEventListener('click', function () { setDrawer(true); });
     scrim.addEventListener('click', function () { setDrawer(false); });
     function toLanding(e) { e.preventDefault(); if (window.incGoLanding) window.incGoLanding(e.currentTarget); else location.href = 'index.html'; }
-    $('#pfLogout').addEventListener('click', toLanding); $('#pfRole').addEventListener('click', toLanding);
+    $('#pfLogout').addEventListener('click', toLanding);
+    /* Chip de usuario: persona del rol actual + menú «Cambiar de rol» */
+    var who = PERSONAS[role] || PERSONAS.admin, ub = $('#pfUserBtn'), um = $('#pfUserMenu');
+    $('#pfUserName').textContent = who[0]; $('#pfUserRole').textContent = who[1];
+    $('#pfUserIni').textContent = who[0].split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2);
+    function setMenu(o) { um.hidden = !o; ub.setAttribute('aria-expanded', String(o)); }
+    ub.addEventListener('click', function (e) { e.stopPropagation(); setMenu(um.hidden); });
+    document.addEventListener('click', function (e) { if (!$('#pfUser').contains(e.target)) setMenu(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
+    $('#pfRole').addEventListener('click', function (e) { setMenu(false); if (window.incGoLanding) window.incGoLanding(ub); else location.href = 'index.html'; });
     if (mq.addEventListener) mq.addEventListener('change', apply); apply();
     /* Encabezado: sombra + compactación al hacer scroll (histéresis para evitar parpadeo) */
     var on = false;
