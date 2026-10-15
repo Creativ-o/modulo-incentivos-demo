@@ -205,3 +205,8 @@ a.nwt-button{text-decoration:none}
 .pf-anexo--row{flex-direction:row;align-items:center;gap:var(--naotech-sizing-12);flex-wrap:wrap}
 .pf-anexo--row .pf-hint{flex:1;min-width:0;word-break:break-all}
 .nwt-file-field__content{cursor:pointer}
+
+/* Campo de solo lectura con ícono inicial (Responsable) */
+.pf-tf-ico .nwt-input-box__control{display:flex;align-items:center;gap:var(--naotech-sizing-8)}
+.pf-tf-ico .nwt-icon{--naotech-icon-color:var(--naotech-app-color-700);flex:0 0 auto}
+.pf-tf-ico .nwt-text-field__input{flex:1;min-width:0}

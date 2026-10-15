@@ -51,7 +51,7 @@
 
   var S = {
     step: 1, max: 1, done: false,
-    datos: { nombre: '', desc: '', evento: '', area: '', gestor: '', desde: '', hasta: '', activacion: '', cobertura: ['Nacional'], justificacion: '', anexo: null },
+    datos: { nombre: '', desc: '', evento: '', area: '', gestor: '', desde: '', hasta: '', activacion: '', cobertura: ['Nacional'], justificacion: '', anexo: null, responsable: '' },
     rubro: { on: true, modo: 'presupuesto', valor: '', cupo: '' },
     inc: [newInc()],
     cond: { benef: ['deportista'], modo: 'motor', grupos: [{ op: 'AND', rows: [] }], doc: { req: false, list: [] } },
@@ -68,7 +68,7 @@
   function seedEdit() {
     var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'Beca'; i1.modalidad = 'fijo'; i1.valor = '1000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
     var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.categoria = 'Kit'; i2.modalidad = 'codigo'; i2.valor = '350000'; i2.cantidad = '150'; i2.foto = true;
-    S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], area: AREAS[0], gestor: 'Isa Pabon', desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', cobertura: ['Nacional'], justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 } };
+    S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], area: AREAS[0], gestor: 'Isa Pabon', desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', cobertura: ['Nacional'], justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 }, responsable: 'Danna Arrieta · Gestor de incentivos' };
     S.rubro = { on: true, modo: 'presupuesto', valor: '252500000', cupo: '' };
     S.inc = [i1, i2];
     S.cond = {
@@ -112,8 +112,8 @@
       '</div></div>';
   }
   function tf(o) {
-    var control = '<input class="nwt-text-field__input" type="' + (o.type || 'text') + '" data-k="' + esc(o.k) + '" value="' + esc(o.val) + '" placeholder="' + esc(o.ph || '') + '"' + (o.mode ? ' inputmode="' + o.mode + '"' : '') + (o.ro ? ' readonly' : '') + '/>';
-    return '<div class="nwt-text-field' + (o.ro ? ' nwt-text-field--readonly' : '') + '" nwt-size="medium">' + inputBox(o.label, o.req, control, o.hint, o.k) + '</div>';
+    var control = (o.ico ? icon(o.ico) : '') + '<input class="nwt-text-field__input" type="' + (o.type || 'text') + '" data-k="' + esc(o.k) + '" value="' + esc(o.val) + '" placeholder="' + esc(o.ph || '') + '"' + (o.mode ? ' inputmode="' + o.mode + '"' : '') + (o.ro ? ' readonly' : '') + '/>';
+    return '<div class="nwt-text-field' + (o.ro ? ' nwt-text-field--readonly' : '') + (o.ico ? ' pf-tf-ico' : '') + '" nwt-size="medium">' + inputBox(o.label, o.req, control, o.hint, o.k) + '</div>';
   }
   function ta(o) {
     var control = '<textarea class="nwt-text-area__input" rows="' + (o.rows || 3) + '" data-k="' + esc(o.k) + '" placeholder="' + esc(o.ph || '') + '">' + esc(o.val) + '</textarea>';
@@ -153,11 +153,12 @@
       card('Información general', '', '<div class="pf-grid">' +
         '<div class="pf-span2">' + tf({ label: 'Nombre del programa', req: 1, k: 'datos.nombre', val: d.nombre, ph: 'Ej. Becas deportivas medallistas 2026', hint: 'Aparecerá en listados, reportes y notificaciones.' }) + '</div>' +
         '<div class="pf-span2">' + ta({ label: 'Descripción breve', k: 'datos.desc', val: d.desc, ph: 'A quién va dirigido y para qué.' }) + '</div>' +
-        sel({ label: 'Evento / categoría asociado', k: 'datos.evento', val: d.evento, ph: 'Selecciona un evento', opts: EVENTOS, hint: 'Útil para reportería. Un programa puede existir sin evento.' }) +
-        sel({ label: 'Área responsable', req: 1, k: 'datos.area', val: d.area, ph: 'Selecciona el área', opts: AREAS }) +
+        tf({ label: 'Responsable', k: 'datos.responsable', val: d.responsable, ro: 1, ico: 'user', hint: 'Se asigna automáticamente: es quien parametriza el programa.' }) +
+        sel({ label: 'Área responsable', req: 1, k: 'datos.area', val: d.area, ph: 'Selecciona el área', opts: AREAS, hint: 'Área del Ministerio dueña del programa.' }) +
+        '<div class="pf-span2">' + sel({ label: 'Evento / categoría asociado', k: 'datos.evento', val: d.evento, ph: 'Selecciona un evento', opts: EVENTOS, hint: 'Útil para reportería. Un programa puede existir sin evento.' }) + '</div>' +
       '</div>', { n: 1 }) +
       card('Gestor de programa', 'Quien revisa documentación y entrega beneficios. Solo verá y gestionará los programas que tiene a cargo.', '<div class="pf-grid">' +
-        sel({ label: 'Gestor de programa responsable', req: 1, k: 'datos.gestor', val: d.gestor, ph: 'Asigna un gestor', opts: GESTORES }) +
+        sel({ label: 'Gestor de programa asignado', req: 1, k: 'datos.gestor', val: d.gestor, ph: 'Asigna un gestor', opts: GESTORES }) +
         '<div>' + alertBox('El Gestor de programa <b>solo lee</b> las condiciones; editarlas es de Superadmin, Administrador y Gestor de incentivos.', 'informative') + '</div>' +
       '</div>', { n: 2 }) +
       card('Vigencia y activación', 'Al cumplirse la fecha de fin el programa se inactiva solo.', '<div class="pf-grid">' +
@@ -480,7 +481,7 @@
     var incTxt = S.inc.map(function (i) { return '<div>' + esc(i.nombre || 'Sin nombre') + ' · ' + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + i.frecuencia }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + ' ' + (i.valor ? money(i.valor) : '') + '</div>'; }).join('');
     var benTxt = S.cond.benef.map(function (b) { return BENEFICIARIOS.filter(function (x) { return x[0] === b; })[0][1]; }).join(', ') || '—';
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
-      kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Evento', esc(d.evento || '—')) + kv('Área · Gestor', esc(d.area) + ' · ' + esc(d.gestor)) +
+      kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Evento', esc(d.evento || '—')) + kv('Responsable', esc(d.responsable || '—')) + kv('Área · Gestor asignado', esc(d.area) + ' · ' + esc(d.gestor)) +
       kv('Vigencia', fmtDate(d.desde) + ' → ' + fmtDate(d.hasta)) + kv('Cobertura', esc(d.cobertura.join(', '))) + kv('Justificación', d.justificacion.trim() ? esc(d.justificacion) : '<span style="color:var(--naotech-app-color-600);font-weight:400">No registrada</span>') + kv('Doc. de la resolución', d.anexo ? esc(d.anexo.name) + ' (' + fmtSize(d.anexo.size) + ')' : '<span style="color:var(--naotech-app-color-600);font-weight:400">Sin archivo adjunto</span>') + kv('Rubro', esc(rubTxt)) + kv('Incentivos', incTxt) +
       kv('Beneficiarios', esc(benTxt)) + kv('Elegibilidad', S.cond.modo === 'manual' ? 'Habilitación manual por el Gestor de programa' : '<span style="font-family:monospace;font-size:12px">' + previewHTML() + '</span>') +
       kv('Cronograma', docRequired() ? esc(cronoSummary(S.crono, isRec())) : 'No aplica (flujo directo)') + kv('Documentos', docRequired() ? S.cond.doc.list.map(function (x) { return esc(x.name) + (x.oblig ? '' : ' (opcional)'); }).join(', ') || '—' : 'No requiere (flujo directo)') +
@@ -791,6 +792,7 @@
   /* ── Arranque ───────────────────────────────────────────────── */
   function init() {
     var restored = loadDraft();
+    if (!EDIT) { var _w = PERSONAS[role] || PERSONAS.admin; S.datos.responsable = _w[0] + ' · ' + _w[1]; } // responsable = usuario logueado
     if (EDIT) {
       seedEdit(); SNAP = clone({ cond: S.cond, inc: S.inc, docReq: docRequired(), crono: S.crono });
       $('#pfCrumb').textContent = S.datos.nombre; $('#pfTitle').textContent = 'Editar programa';
