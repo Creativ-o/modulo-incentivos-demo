@@ -69,8 +69,9 @@ a.nwt-button{text-decoration:none}
 .pf-or{align-self:stretch;display:flex;align-items:center;gap:var(--naotech-sizing-12);font-size:var(--naotech-sizing-12);font-weight:700;color:var(--naotech-app-color-600);letter-spacing:.08em;text-transform:uppercase}
 .pf-or::before,.pf-or::after{content:'';flex:1;border-top:1px dashed var(--naotech-app-color-300)}
 .pf-or span{border:1px solid var(--naotech-app-color-300);border-radius:999px;padding:4px 12px;background:var(--naotech-app-background)}
-.pf-group .nwt-button[data-act="rule-add"],.pf-inc .nwt-button[data-act="grp-add"]{background:transparent;box-shadow:none;align-self:flex-start;padding-left:0}
-.pf-group .nwt-button[data-act="rule-add"]:hover,.pf-inc .nwt-button[data-act="grp-add"]:hover{background:transparent;text-decoration:underline}
+.pf-group .nwt-button[data-act="rule-add"]{background:transparent;box-shadow:none;align-self:flex-start;padding-left:0}
+.pf-group .nwt-button[data-act="rule-add"]:hover{background:transparent;text-decoration:underline}
+.pf-inc .nwt-button[data-act="grp-add"]{align-self:flex-start}
 .pf-preview{font-family:'JetBrains Mono','SF Mono',monospace;font-size:var(--naotech-sizing-12);line-height:1.6;padding:var(--naotech-sizing-12) var(--naotech-sizing-16);background:var(--naotech-app-color-100);border-radius:var(--naotech-sizing-12);color:var(--naotech-primary-color-700);word-break:break-word}
 .pf-preview em{font-style:normal;color:var(--naotech-app-color-600)}
 .pf-families{display:flex;flex-wrap:wrap;gap:var(--naotech-sizing-8)}
@@ -275,7 +276,7 @@ a.nwt-button{text-decoration:none}
 
 /* ── Jerarquía de color (revisión UI): el naranja queda para la acción principal y los estados activos.
    Acciones secundarias = neutro; eliminar = gris (rojo solo al pasar el cursor). ── */
-.pf-group .nwt-button[data-act="rule-add"],.pf-inc .nwt-button[data-act="grp-add"],.pf-inc .nwt-button[data-act="doc-add"]{color:var(--naotech-app-color-800)}
+.pf-inc .nwt-button[data-act="doc-add"]{color:var(--naotech-app-color-800)}
 .pf-inc .nwt-button[data-act="doc-add"]{background:transparent;box-shadow:inset 0 0 0 1px var(--naotech-app-color-300)}
 .pf-inc .nwt-button[data-act="doc-add"]:hover{background:var(--naotech-app-color-100)}
 .pf-inc .nwt-button[data-act="grp-del"],.pf-inc .nwt-icon-button[nwt-variant="mute"]{color:var(--naotech-app-color-500)}
