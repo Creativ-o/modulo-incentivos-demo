@@ -534,7 +534,7 @@
     if (S.step === 2) updateKpi();
     if (S.step === 3) updateDist();
     if (S.step === 5) { banner(); issues(); }
-    if (!keepScroll) window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!keepScroll) $('#pfScroll').scrollTo({ top: 0, behavior: 'smooth' });
     saveDraft(true);
   }
   function updateKpi() {
@@ -660,7 +660,7 @@
       '<p class="pf-lead"><b>' + esc(S.datos.nombre) + '</b> ' + (activo ? 'está <b>Activo · ' + ver + '</b>.' : 'quedó en <b>Configuración</b>. Actívalo cuando esté listo.') + ' Se registró auditoría con usuario, fecha, hora e IP.' + (nlog ? ' <b>' + nlog + ' cambio' + (nlog > 1 ? 's' : '') + ' de cronograma</b> ' + (nlog > 1 ? 'quedaron' : 'quedó') + ' en la bitácora con su motivo.' : '') + '</p>' +
       '<div class="pf-row">' + badge(activo ? 'Activo · ' + ver : 'Configuración', activo ? 'positive' : 'caution') + badge(routeLabel(), 'neutral') + '</div>' +
       '<div class="pf-row"><a class="nwt-button" nwt-variant="loud" nwt-size="medium" href="incentivo-03-programas.html"><span class="nwt-button__content">Ver programas</span></a><a class="nwt-button" nwt-variant="quiet" nwt-size="medium" href="incentivo-04-programa-crear.html"><span class="nwt-button__content">Crear otro</span></a></div></div>';
-    $('.pf-footer').hidden = true; $('#pfStepper').innerHTML = ''; window.scrollTo({ top: 0, behavior: 'smooth' });
+    $('.pf-footer').hidden = true; $('#pfStepper').innerHTML = ''; $('#pfScroll').scrollTo({ top: 0, behavior: 'smooth' });
   }
   function routeLabel() { return (hasModalidad('fijo') ? 'Recurrente' : 'Pago único') + ' · ' + (docRequired() ? 'Con documentos' : 'Flujo directo'); }
 
@@ -684,65 +684,15 @@
   }
 
 
-  /* ── Barra lateral (SDK nwt-sidebar) + encabezado fijo ───────── */
+  /* ── Encabezado de pasos: sombra + compactación al hacer scroll del contenedor ── */
   function initChrome() {
-    var pf = $('.pf'), side = $('#pfSide'), tgl = $('#pfSideToggle'), scrim = $('#pfScrim');
-    var SIDE_KEY = 'inc-sidebar-open', mq = window.matchMedia('(max-width: 760px)');
-    var burger = document.createElement('button'); burger.type = 'button'; burger.className = 'pf-burger'; burger.setAttribute('aria-label', 'Abrir menú'); burger.innerHTML = icon('drawer'); pf.appendChild(burger);
-    function setExpanded(open) {
-      side.classList.toggle('nwt-sidebar--collapsed', !open);
-      tgl.setAttribute('aria-pressed', String(!open)); tgl.setAttribute('aria-label', open ? 'Colapsar menú' : 'Expandir menú');
-      tgl.querySelector('.nwt-icon').classList.toggle('nwt-sidebar__toolbar__toggle--back', open);
-      tgl.querySelector('i').className = 'naotech-icon-' + (open ? 'chevron-right' : 'drawer');
-    }
-    function setDrawer(open) { side.classList.toggle('is-open', open); scrim.hidden = !open; }
-    var saved = false;
-    function apply() { if (mq.matches) { setExpanded(true); setDrawer(false); } else { setExpanded(saved); setDrawer(false); } }
-    tgl.addEventListener('click', function () {
-      if (mq.matches) { setDrawer(false); return; }
-      saved = side.classList.contains('nwt-sidebar--collapsed');
-      setExpanded(saved);
-    });
-    burger.addEventListener('click', function () { setDrawer(true); });
-    scrim.addEventListener('click', function () { setDrawer(false); });
-    function toLanding(e) { e.preventDefault(); if (window.incGoLanding) window.incGoLanding(e.currentTarget); else location.href = 'index.html'; }
-    $('#pfLogout').addEventListener('click', toLanding);
-    /* Chip de usuario + menú «Cambiar de perfil» (mismas opciones que las demás vistas) */
-    var PERFILES = [
-      { k: 'admin', n: 'Danna Arrieta', l: 'Gestor de incentivos', m: 'Parametriza y audita', bg: '#c4b5fd', fg: '#4c1d95', home: 'incentivo-02-dashboard.html' },
-      { k: 'programa', n: 'Isa Pabon', l: 'Gestor de programa', m: 'Gestiona su programa asignado', bg: '#bfdbfe', fg: '#1e3a8a', home: 'incentivo-03-programas.html' },
-      { k: 'operador', n: 'Jorge Guzman', l: 'Operador', m: 'Asigna incentivos en campo', bg: '#ffdfb5', fg: '#92400e', home: 'incentivo-08-asignar-buscar.html' }
-    ];
-    var cur = PERFILES.filter(function (p) { return p.k === (role === 'gestor' ? 'admin' : role); })[0] || PERFILES[0];
-    var ub = $('#pfUserBtn'), um = $('#pfUserMenu');
-    var ini = function (p) { return p.n.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2); };
-    $('#pfUserName').textContent = cur.n; $('#pfUserRole').textContent = cur.l; $('#pfUserIni').textContent = ini(cur);
-    um.innerHTML = '<span class="pf-user__label">Cambiar de perfil</span>' + PERFILES.map(function (p) {
-      return '<button type="button" class="pf-user__item' + (p.k === cur.k ? ' is-active' : '') + '" role="menuitem" data-perfil="' + p.k + '">' +
-        '<span class="pf-user__ava" style="background:' + p.bg + ';color:' + p.fg + '">' + ini(p) + '</span>' +
-        '<span class="pf-user__text"><strong>' + p.n + '</strong><small>' + p.l + ' · ' + p.m + '</small></span>' +
-        (p.k === cur.k ? '<span class="pf-user__check">' + icon('positive') + '</span>' : '') + '</button>';
-    }).join('');
-    function setMenu(o) { um.hidden = !o; ub.setAttribute('aria-expanded', String(o)); }
-    ub.addEventListener('click', function (e) { e.stopPropagation(); setMenu(um.hidden); });
-    um.addEventListener('click', function (e) {
-      var it = e.target.closest('[data-perfil]'); if (!it) return;
-      var p = PERFILES.filter(function (x) { return x.k === it.dataset.perfil; })[0];
-      setMenu(false); if (p.k === cur.k) return;
-      try { localStorage.setItem('naowee-incentivos-role', p.k); } catch (_) {}
-      location.href = p.home; // igual que el selector de perfil de las vistas: cada perfil vive en su inicio
-    });
-    document.addEventListener('click', function (e) { if (!$('#pfUser').contains(e.target)) setMenu(false); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
-    if (mq.addEventListener) mq.addEventListener('change', apply); apply();
-    /* Encabezado: sombra + compactación al hacer scroll (histéresis para evitar parpadeo) */
-    var on = false;
+    var sc = $('#pfScroll'), pf = sc, on = false;
     function onScroll() {
-      var y = window.scrollY;
+      var y = sc.scrollTop;
       if (!on && y > 24) { on = true; pf.classList.add('is-scrolled'); }
       else if (on && y < 4) { on = false; pf.classList.remove('is-scrolled'); }
     }
-    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+    sc.addEventListener('scroll', onScroll, { passive: true }); onScroll();
   }
 
   /* ── Arranque ───────────────────────────────────────────────── */

@@ -1,26 +1,16 @@
-/* Layout de la pantalla "Parametrizar programa". Componentes y tokens = SDK Naowee (nwt-* / --naotech-*). */
-html,body{margin:0;min-height:100%}
-body{background:var(--naotech-app-background);color:var(--naotech-app-color-900);font-family:var(--naotech-sdk-font-family)}
-:root{--naotech-logo-background:url("../logos/naowee.svg")}
-.pf{--naotech-toolbar-height:5rem;min-height:100vh;display:flex;align-items:flex-start}
-.pf-side{position:sticky;top:0;height:100vh;flex:0 0 auto;z-index:30}
-.pf-side .nwt-sidebar__toolbar,.pf-toolbar{height:var(--naotech-toolbar-height);transition:height .2s var(--naotech-animation-standard,ease)}
-.pf-side .nwt-sidebar__toolbar__logo .nwt-logo-naowee{--naotech-logo-width:7rem}
-.pf-page{flex:1 1 0;min-width:0;min-height:100vh;display:flex;flex-direction:column}
-.pf-scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:29}
-.pf-scrim[hidden]{display:none}
-/* Encabezado fijo: se compacta y gana sombra al hacer scroll */
-.pf-head{position:sticky;top:0;z-index:20;background:var(--naotech-app-background);transition:box-shadow .2s ease}
+/* Pantalla "Parametrizar programa" sobre el shell compartido (sidebar + header de las demás vistas).
+   Componentes y tokens del formulario = SDK Naowee (nwt-* / --naotech-*). */
+.shell .nwt-toolbar,.shell .nwt-stepper,.shell .nwt-card,.shell .nwt-alert{font-family:var(--naotech-sdk-font-family)}
+.page.pf{padding:0;display:flex;flex-direction:column;background:var(--naotech-app-background);color:var(--naotech-app-color-900);font-size:14px;scroll-behavior:auto}
+.pf-footer .nwt-button,.pf .nwt-button{font-family:var(--naotech-sdk-font-family)}
+
+/* Estructura: título (scrollea) · pasos (fijos arriba) · contenido · pie fijo abajo */
+.pf-head{position:sticky;top:0;z-index:15;background:var(--naotech-app-background);transition:box-shadow .2s ease}
 .pf.is-scrolled .pf-head{box-shadow:0 6px 18px rgba(16,24,40,.10)}
-.pf.is-scrolled{--naotech-toolbar-height:4.25rem}
-.pf-title{transform-origin:left center;transition:transform .2s ease}
-.pf.is-scrolled .pf-title{transform:scale(.88)}
-.pf-toolbar .nwt-breadcrumb{transition:opacity .2s ease}
-.pf.is-scrolled .pf-toolbar .nwt-breadcrumb{opacity:.0;pointer-events:none}
 .pf-stepper-band{transition:padding .2s ease}
 .pf.is-scrolled .pf-stepper-band{padding-top:var(--naotech-sizing-8);padding-bottom:var(--naotech-sizing-8)}
+.pf-toolbar{height:auto;padding:var(--naotech-sizing-16) var(--naotech-sizing-32)}
 
-.pf-toolbar{padding-top:0;padding-bottom:0}
 .pf-toolbar__body{flex-direction:column;align-items:flex-start;gap:var(--naotech-sizing-4)}
 .pf-toolbar__title{display:flex;align-items:center;gap:var(--naotech-sizing-12);flex-wrap:wrap}
 .pf-title{margin:0;font-size:var(--naotech-sizing-20);line-height:1.2;font-weight:var(--naotech-font-weight-bold)}
@@ -120,10 +110,6 @@ a.nwt-button{text-decoration:none}
 [inert]{pointer-events:none}
 
 @media (max-width:760px){
-  .pf-side{position:fixed;left:0;top:0;transform:translateX(-100%);transition:transform .24s var(--naotech-animation-standard,ease);box-shadow:var(--naotech-shadow-large)}
-  .pf-side.is-open{transform:none}
-  .pf-toolbar{padding-left:var(--naotech-sizing-64)}
-  .pf-burger{display:flex!important}
   .pf-grid{grid-template-columns:1fr}
   .pf-rule{grid-template-columns:1fr}
   .pf-h2{font-size:var(--naotech-sizing-24)}
@@ -141,28 +127,11 @@ a.nwt-button{text-decoration:none}
 .pf-log{display:flex;flex-direction:column;gap:4px;padding:var(--naotech-sizing-12) var(--naotech-sizing-16);border-left:3px solid var(--naotech-primary-color-600);background:var(--naotech-app-color-100);border-radius:0 var(--naotech-sizing-12) var(--naotech-sizing-12) 0;font-size:var(--naotech-sizing-14)}
 .pf-log__top{display:flex;justify-content:space-between;gap:var(--naotech-sizing-12);flex-wrap:wrap}
 
-.pf-burger{display:none;position:fixed;left:var(--naotech-sizing-12);top:calc(var(--naotech-sizing-12) + 2px);z-index:25;background:none;border:0;cursor:pointer;color:var(--naotech-app-color-900)}
 
-/* Ancho del riel = barra colapsada de las vistas (72px) para que la contracción termine justo en el riel */
-.pf-side{--pvt-rail-width:4.5rem}
 
-/* Chip de usuario (encabezado) */
-.pf-user{position:relative}
-.pf-user__chip{display:flex;align-items:center;gap:var(--naotech-sizing-8);padding:4px var(--naotech-sizing-12) 4px 4px;background:var(--naotech-app-background);border:1px solid var(--naotech-app-color-300);border-radius:999px;cursor:pointer;font:inherit;text-align:left;color:inherit}
-.pf-user__chip:hover{border-color:var(--naotech-app-color-500)}
-.pf-user__text{display:flex;flex-direction:column;gap:1px;min-width:0}
-.pf-user__text strong{font-size:var(--naotech-sizing-14);line-height:1.2}
-.pf-user__text small{font-size:var(--naotech-sizing-12);color:var(--naotech-app-color-700);line-height:1.2}
-.pf-user__arrow{transition:transform .2s ease}
-.pf-user__chip[aria-expanded=true] .pf-user__arrow{transform:rotate(180deg)}
-.pf-user__menu{position:absolute;right:0;top:calc(100% + 8px);width:260px;padding:var(--naotech-sizing-8);background:var(--naotech-app-background);border:1px solid var(--naotech-app-color-300);border-radius:var(--naotech-sizing-20);box-shadow:var(--naotech-shadow-medium);z-index:40;display:flex;flex-direction:column;gap:2px}
-.pf-user__menu[hidden]{display:none}
-.pf-user__label{padding:var(--naotech-sizing-6) var(--naotech-sizing-8);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--naotech-app-color-600)}
-.pf-user__item{display:flex;align-items:center;gap:var(--naotech-sizing-12);padding:var(--naotech-sizing-8);background:none;border:0;border-radius:var(--naotech-sizing-12);cursor:pointer;font:inherit;text-align:left;color:inherit}
-.pf-user__item:hover{background:var(--naotech-app-color-100)}
-.pf-user__item .nwt-avatar-icon{--naotech-avatar-icon-dimension:2rem}
-@media (max-width:760px){.pf-user__text,.pf-user__arrow{display:none}.pf-user__chip{padding:4px}}
 
-.pf-user__ava{flex:0 0 auto;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
-.pf-user__item.is-active{background:var(--naotech-app-color-100)}
-.pf-user__check{margin-left:auto;color:var(--naotech-primary-color-700)}
+/* Al ir al formulario solo se contrae la barra: sin cross-fade del resto de la vista */
+::view-transition-old(root),::view-transition-new(root){animation:none}
+/* Toast dentro del área de contenido */
+.pf-toast{top:104px}
+@media (max-width:760px){.pf-toolbar{padding:var(--naotech-sizing-12) var(--naotech-sizing-16)}}

@@ -1,54 +1,83 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="shared/enter-transition.js?v=1"></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Naowee Incentivos — Parametrizar programa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
-<!-- SDK Naowee · sdk-frontend-foundations (compilado en shared/sdk) -->
+<!-- SDK Naowee · sdk-frontend-foundations (compilado en shared/sdk) — componentes del formulario -->
 <link rel="stylesheet" href="shared/sdk/inter.css"/>
 <link rel="stylesheet" href="shared/sdk/styles.css"/>
 <link rel="stylesheet" href="shared/sdk/components.css"/>
 <link rel="stylesheet" href="shared/sdk/icons.css"/>
-<script src="shared/enter-transition.js?v=1"></script>
-<!-- Solo layout de esta pantalla; todo componente/token viene del SDK -->
-<link rel="stylesheet" href="shared/programa-form.css?v=7"/>
+<!-- Shell compartido (barra lateral + encabezado) = mismas vistas del módulo -->
+<link rel="stylesheet" href="shared/shell.css"/>
+<link rel="stylesheet" href="shared/programa-form.css?v=8"/>
 </head>
 <body>
 
-<div class="pf">
+<div class="shell">
 
-  <!-- Barra lateral SDK (nwt-sidebar): riel colapsado por defecto, se expande con el botón -->
-  <aside class="nwt-sidebar nwt-sidebar--mode-fixed nwt-sidebar--collapsed pf-side" id="pfSide">
-    <div class="nwt-sidebar__toolbar">
-      <button class="nwt-sidebar__toolbar__button" type="button" id="pfSideToggle" aria-label="Expandir menú" aria-pressed="true">
-        <div class="nwt-icon nwt-sidebar__toolbar__toggle"><i class="naotech-icon-drawer"></i></div>
+  <!-- ═══ SIDEBAR (idéntico al de las demás vistas; arranca contraído) ═══ -->
+  <aside class="sidebar collapsed" id="sidebar">
+    <div class="sidebar-logo">
+      <button class="burger-btn" onclick="document.getElementById('sidebar').classList.toggle('collapsed')" aria-label="Toggle sidebar">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="#282834" stroke-width="1.8" stroke-linecap="round"/></svg>
       </button>
-      <div class="nwt-sidebar__toolbar__logo"><div class="nwt-logo-naowee" role="img" aria-label="Naowee"></div></div>
+      <img src="shared/logos/ministerio.svg" alt="Ministerio del Deporte" class="sb-logo-img"/>
+      <div class="logo-sep"></div>
+      <img src="shared/logos/suid.png" alt="SUID" class="sb-logo-img"/>
     </div>
-    <div class="nwt-sidebar__content">
-      <nav class="nwt-sidebar__menu" aria-label="Menú principal">
-        <ul class="nwt-sidebar__menu__list">
-            <li class="nwt-sidebar__menu__item"><a class="nwt-sidebar__menu__link" href="incentivo-02-dashboard.html" aria-label="Dashboard"><div class="nwt-sidebar__menu__content"><div class="nwt-icon nwt-sidebar__menu__icon"><i class="naotech-icon-home"></i></div><span class="nwt-sidebar__menu__label">Dashboard</span></div></a><span aria-hidden="true" class="nwt-sidebar__tooltip">Dashboard</span></li>
-            <li class="nwt-sidebar__menu__item nwt-sidebar__menu__item--active"><span aria-hidden="true" class="nwt-sidebar__menu__indicator"></span><a class="nwt-sidebar__menu__link" href="incentivo-03-programas.html" aria-label="Programas"><div class="nwt-sidebar__menu__content"><div class="nwt-icon nwt-sidebar__menu__icon"><i class="naotech-icon-categories"></i></div><span class="nwt-sidebar__menu__label">Programas</span></div></a><span aria-hidden="true" class="nwt-sidebar__tooltip">Programas</span></li>
-            <li class="nwt-sidebar__menu__item"><a class="nwt-sidebar__menu__link" href="incentivo-07-codigos.html" aria-label="Inventario de códigos"><div class="nwt-sidebar__menu__content"><div class="nwt-icon nwt-sidebar__menu__icon"><i class="naotech-icon-deals"></i></div><span class="nwt-sidebar__menu__label">Inventario de códigos</span></div></a><span aria-hidden="true" class="nwt-sidebar__tooltip">Inventario de códigos</span></li>
-</ul>
-      </nav>
-      <div class="nwt-sidebar__footer">
-        <button class="nwt-sidebar__footer__logout" type="button" id="pfLogout" aria-label="Cerrar sesión">
-          <div class="nwt-icon nwt-sidebar__menu__icon"><i class="naotech-icon-logout"></i></div>
-          <span class="nwt-sidebar__footer__logout__label">Cerrar sesión</span>
-          <span aria-hidden="true" class="nwt-sidebar__tooltip">Cerrar sesión</span>
-        </button>
+    <nav class="sidebar-nav">
+      <div class="nav-section">INCENTIVOS</div>
+      <div class="nav-row" data-role="admin" onclick="fadeAndGo('incentivo-02-dashboard.html')">
+        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="11" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="16" width="8" height="5" rx="1.5"/><rect x="13" y="11" width="8" height="10" rx="1.5"/></svg></div>
+        <span class="lbl">Dashboard</span>
+      </div>
+      <div class="nav-row active" data-role="all" onclick="fadeAndGo('incentivo-03-programas.html')">
+        <div class="active-bar"></div>
+        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d74009" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M6 7V5a1 1 0 011-1h10a1 1 0 011 1v2"/><line x1="3" y1="12" x2="21" y2="12"/></svg></div>
+        <span class="lbl" id="navProgramasLbl">Programas</span>
+      </div>
+      <div class="nav-row" data-role="admin" onclick="fadeAndGo('incentivo-07-codigos.html')">
+        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 012-2h14a2 2 0 012 2v2a1.5 1.5 0 000 3v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a1.5 1.5 0 000-3V8z"/><line x1="13" y1="6" x2="13" y2="9" stroke-dasharray="1.5 1.5"/><line x1="13" y1="11" x2="13" y2="13" stroke-dasharray="1.5 1.5"/><line x1="13" y1="15" x2="13" y2="18" stroke-dasharray="1.5 1.5"/></svg></div>
+        <span class="lbl">Códigos</span>
+      </div>
+      <div class="nav-row" data-role="admin" onclick="fadeAndGo('incentivo-12-asignaciones.html')">
+        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><line x1="6" y1="7.5" x2="6" y2="10.5"/><line x1="6" y1="13.5" x2="6" y2="16.5"/><line x1="11" y1="6" x2="20" y2="6"/><line x1="11" y1="12" x2="18" y2="12"/><line x1="11" y1="18" x2="16" y2="18"/></svg></div>
+        <span class="lbl">Historial</span>
+      </div>
+      <div class="nav-row" data-role="admin" onclick="fadeAndGo('incentivo-15-reporteria.html')">
+        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-5"/><circle cx="18" cy="9" r="1.5"/></svg></div>
+        <span class="lbl">Reportería</span>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="nav-row" onclick="window.incGoLanding ? incGoLanding(this) : (location.href='index.html')">
+        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="#B5B9D4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="lbl">Cerrar sesión</span>
       </div>
     </div>
   </aside>
-  <div class="pf-scrim" id="pfScrim" hidden></div>
 
-  <div class="pf-page">
+  <div class="main">
+    <header class="top-header">
+      <div class="profile-switcher">
+        <div class="user-chip">
+          <div class="ava"><div class="ava-ring" style="background:#c4b5fd;color:#4c1d95">DA</div><div class="ava-dot"></div></div>
+          <div class="user-info"><span class="user-name">Danna Arrieta</span><span class="user-role">Gestor de incentivos</span></div>
+          <button class="user-chip__chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </div>
+      </div>
+    </header>
 
-    <!-- Encabezado + pasos: se fijan arriba al hacer scroll -->
-    <div class="pf-head" id="pfHead">
+    <!-- Contenedor con scroll: el encabezado de pasos se fija arriba -->
+    <div class="page pf" id="pfScroll">
+
       <header class="nwt-toolbar pf-toolbar">
         <div class="nwt-toolbar__content">
           <div class="nwt-toolbar__body pf-toolbar__body">
@@ -65,40 +94,38 @@
           </div>
           <div class="nwt-toolbar__actions">
             <a class="nwt-button" nwt-variant="mute" nwt-size="medium" href="incentivo-03-programas.html"><span class="nwt-button__content">Cancelar</span></a>
-            <button class="nwt-button" nwt-variant="quiet" nwt-size="medium" type="button" data-act="save-draft"><span class="nwt-button__content"><div class="nwt-icon nwt-button__icon"><i class="naotech-icon-bookmark"></i></div>Guardar borrador</span></button>
-            <div class="pf-user" id="pfUser">
-              <button type="button" class="pf-user__chip" id="pfUserBtn" aria-haspopup="menu" aria-expanded="false">
-                <div class="nwt-avatar" nwt-size="small" nwt-variant="quiet" nwt-color="orange"><div class="nwt-avatar__content"><span id="pfUserIni">DA</span></div></div>
-                <span class="pf-user__text"><strong id="pfUserName">Danna Arrieta</strong><small id="pfUserRole">Gestor de incentivos</small></span>
-                <div class="nwt-icon pf-user__arrow"><i class="naotech-icon-chevron-down"></i></div>
-              </button>
-              <div class="pf-user__menu" id="pfUserMenu" role="menu" hidden></div>
-            </div>
           </div>
         </div>
       </header>
-      <div class="pf-stepper-band"><div class="nwt-stepper" id="pfStepper"></div></div>
+
+      <!-- Pasos: se fijan arriba al hacer scroll -->
+      <div class="pf-head" id="pfHead">
+        <div class="pf-stepper-band"><div class="nwt-stepper" id="pfStepper"></div></div>
+      </div>
+
+      <main class="pf-main" id="pfMain">
+        <div class="pf-col">
+          <div id="pfBanner"></div>
+          <div id="pfStep"></div>
+        </div>
+      </main>
+
+      <footer class="pf-footer">
+        <span class="pf-footer__info" id="pfFooterInfo"></span>
+        <div class="pf-footer__actions">
+          <button class="nwt-button" nwt-variant="mute" nwt-size="medium" type="button" data-act="save-draft"><span class="nwt-button__content"><div class="nwt-icon nwt-button__icon"><i class="naotech-icon-bookmark"></i></div>Guardar borrador</span></button>
+          <button class="nwt-button" nwt-variant="quiet" nwt-size="medium" type="button" id="pfPrev"><span class="nwt-button__content"><div class="nwt-icon nwt-button__icon"><i class="naotech-icon-arrow-left"></i></div>Anterior</span></button>
+          <button class="nwt-button" nwt-variant="loud" nwt-size="medium" type="button" id="pfNext"><span class="nwt-button__content">Continuar<div class="nwt-icon nwt-button__icon"><i class="naotech-icon-arrow-right"></i></div></span></button>
+        </div>
+      </footer>
     </div>
-
-    <main class="pf-main" id="pfMain">
-      <div class="pf-col">
-        <div id="pfBanner"></div>
-        <div id="pfStep"></div>
-      </div>
-    </main>
-
-    <footer class="pf-footer">
-      <span class="pf-footer__info" id="pfFooterInfo"></span>
-      <div class="pf-footer__actions">
-        <button class="nwt-button" nwt-variant="quiet" nwt-size="medium" type="button" id="pfPrev"><span class="nwt-button__content"><div class="nwt-icon nwt-button__icon"><i class="naotech-icon-arrow-left"></i></div>Anterior</span></button>
-        <button class="nwt-button" nwt-variant="loud" nwt-size="medium" type="button" id="pfNext"><span class="nwt-button__content">Continuar<div class="nwt-icon nwt-button__icon"><i class="naotech-icon-arrow-right"></i></div></span></button>
-      </div>
-    </footer>
   </div>
-
-  <div class="pf-toast" id="pfToast" aria-live="polite"></div>
 </div>
 
-<script src="shared/programa-form.js?v=9"></script>
+<div class="pf-toast" id="pfToast" aria-live="polite"></div>
+
+<script>function fadeAndGo(u){ window.location.href = u; }</script>
+<script src="shared/profile-switcher.js?v=role-9" defer></script>
+<script src="shared/programa-form.js?v=10"></script>
 </body>
 </html>
