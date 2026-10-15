@@ -107,7 +107,7 @@
   function cupoText(inc) {
     var v = Number(inc.valor) || 0, c = Number(inc.cantidad) || 0, fijo = inc.modalidad === 'fijo', who = fijo ? 'beneficiario' : 'cupo';
     if (!conValor(inc)) return 'Número de cupos de este tipo. No tiene valor monetario.';
-    if (v && c) return 'Cada ' + who + (fijo ? ' recibe ' : ' es de ') + money2(v / c) + (fijo ? ' por ciclo' : '') + ' (' + money2(v) + ' ÷ ' + c.toLocaleString('es-CO') + ').';
+    if (v && c) return 'Cada ' + who + (fijo ? ' recibe ' : ' es de ') + money2(v / c) + (fijo ? ' por ciclo' : '');
     return 'Con el valor total y la cantidad se calcula el valor de cada ' + who + '.';
   }
   function digits(s) { return String(s || '').replace(/\D/g, ''); }
