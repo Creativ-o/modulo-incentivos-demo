@@ -1,7 +1,7 @@
 /* Pantalla "Parametrizar programa" sobre el shell compartido (sidebar + header de las demás vistas).
    Componentes y tokens del formulario = SDK Naowee (nwt-* / --naotech-*). */
 .shell .nwt-toolbar,.shell .nwt-stepper,.shell .nwt-card,.shell .nwt-alert{font-family:var(--naotech-sdk-font-family)}
-.page.pf{padding:0;display:flex;flex-direction:column;background:var(--naotech-app-background);color:var(--naotech-app-color-900);font-size:14px;scroll-behavior:auto}
+.page.pf{--pf-bar-h:61px;padding:0;display:flex;flex-direction:column;background:var(--naotech-app-background);color:var(--naotech-app-color-900);font-size:14px;scroll-behavior:auto}
 .pf-footer .nwt-button,.pf .nwt-button{font-family:var(--naotech-sdk-font-family)}
 
 /* Estructura: título (scrollea) · pasos (fijos arriba) · contenido · pie fijo abajo */
@@ -96,9 +96,7 @@ a.nwt-button{text-decoration:none}
 .pf-ok .nwt-avatar-icon{--naotech-avatar-icon-dimension:5rem}
 
 /* Footer fijo */
-.pf-footer{position:sticky;bottom:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:var(--naotech-sizing-12);padding:var(--naotech-sizing-12) var(--naotech-sizing-24);background:var(--naotech-app-background);border-top:1px solid var(--naotech-app-color-300)}
-.pf-footer__info{font-size:var(--naotech-sizing-14);color:var(--naotech-app-color-700)}
-.pf-footer__info b{color:var(--naotech-app-color-900)}
+.pf-footer{position:sticky;bottom:0;z-index:20;display:flex;align-items:center;justify-content:flex-end;gap:var(--naotech-sizing-12);height:var(--pf-bar-h);box-sizing:border-box;padding:0 var(--naotech-sizing-24);background:var(--naotech-app-background);border-top:1px solid var(--border,#e7e9f3)}
 .pf-footer__actions{display:flex;gap:var(--naotech-sizing-12)}
 .pf-footer[hidden]{display:none}
 
@@ -113,8 +111,7 @@ a.nwt-button{text-decoration:none}
   .pf-grid{grid-template-columns:1fr}
   .pf-rule{grid-template-columns:1fr}
   .pf-h2{font-size:var(--naotech-sizing-24)}
-  .pf-footer{padding:var(--naotech-sizing-8) var(--naotech-sizing-12)}
-  .pf-footer__info{display:none}
+  .pf-footer{padding:0 var(--naotech-sizing-12)}
   .pf-footer__actions{width:100%;justify-content:space-between}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -135,3 +132,27 @@ a.nwt-button{text-decoration:none}
 /* Toast dentro del área de contenido */
 .pf-toast{top:104px}
 @media (max-width:760px){.pf-toolbar{padding:var(--naotech-sizing-12) var(--naotech-sizing-16)}}
+
+/* Encabezado único (el del shell): migas + título · acciones · perfil */
+.top-header{justify-content:flex-start}
+.pf-hdr-left{display:flex;flex-direction:column;gap:2px;min-width:0;margin-right:auto}
+.pf-hdr-left .pf-toolbar__title{display:flex;align-items:center;gap:var(--naotech-sizing-12);flex-wrap:wrap}
+.pf-hdr-left .nwt-breadcrumb{font-family:var(--naotech-sdk-font-family)}
+.pf-hdr-actions{display:flex;align-items:center;gap:var(--naotech-sizing-8);flex-shrink:0}
+@media (max-width:1100px){.pf-hdr-actions .nwt-button:not([nwt-variant=mute]) .nwt-button__content{font-size:13px}}
+@media (max-width:900px){.pf-hdr-left .nwt-breadcrumb{display:none}.pf-title{font-size:var(--naotech-sizing-16)}.pf-hdr-actions [data-act=save-draft] .nwt-button__content{font-size:0}.pf-hdr-actions [data-act=save-draft] .nwt-icon{font-size:initial}}
+
+/* Cobertura territorial: dropdown multiselección */
+.pf-ms{position:relative}
+.pf-ms__content{cursor:pointer;min-height:var(--naotech-sizing-32);outline:none}
+.pf-ms__chips{display:flex;flex-wrap:wrap;gap:var(--naotech-sizing-6);flex:1;align-items:center;padding:var(--naotech-sizing-4) 0}
+.pf-ms__x{margin-left:var(--naotech-sizing-6);font-weight:700;cursor:pointer;line-height:1}
+.pf-ms__x:hover{color:var(--naotech-primary-color-700)}
+.pf-ms__list{top:calc(100% - var(--naotech-sizing-4));margin-top:var(--naotech-sizing-4);z-index:30}
+.pf-ms.nwt-dropdown--open .nwt-input-box{border-color:var(--naotech-primary-color-600)}
+
+.pf-ms__list{scroll-margin-bottom:80px}
+
+/* En el contenedor flex-columna con scroll, nada debe encogerse */
+.pf-footer,.pf-head{flex:0 0 auto}
+.pf-main{flex:1 0 auto}

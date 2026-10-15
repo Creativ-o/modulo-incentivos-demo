@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="shared/sdk/icons.css"/>
 <!-- Shell compartido (barra lateral + encabezado) = mismas vistas del módulo -->
 <link rel="stylesheet" href="shared/shell.css"/>
-<link rel="stylesheet" href="shared/programa-form.css?v=8"/>
+<link rel="stylesheet" href="shared/programa-form.css?v=12"/>
 </head>
 <body>
 
@@ -66,6 +66,22 @@
 
   <div class="main">
     <header class="top-header">
+      <div class="pf-hdr-left">
+        <nav class="nwt-breadcrumb" aria-label="breadcrumb">
+          <ol class="nwt-breadcrumb__list">
+            <li class="nwt-breadcrumb__item"><a class="nwt-breadcrumb__link" href="incentivo-03-programas.html">Programas</a></li>
+            <li class="nwt-breadcrumb__item"><span class="nwt-breadcrumb__text nwt-breadcrumb__text--active" id="pfCrumb">Nuevo programa</span></li>
+          </ol>
+        </nav>
+        <div class="pf-toolbar__title">
+          <h1 class="pf-title" id="pfTitle">Parametrizar programa de incentivos</h1>
+          <span id="pfStateBadge"></span>
+        </div>
+      </div>
+      <div class="pf-hdr-actions">
+        <a class="nwt-button" nwt-variant="mute" nwt-size="medium" href="incentivo-03-programas.html"><span class="nwt-button__content">Cancelar</span></a>
+        <button class="nwt-button" nwt-variant="quiet" nwt-size="medium" type="button" data-act="save-draft"><span class="nwt-button__content"><div class="nwt-icon nwt-button__icon"><i class="naotech-icon-bookmark"></i></div>Guardar borrador</span></button>
+      </div>
       <div class="profile-switcher">
         <div class="user-chip">
           <div class="ava"><div class="ava-ring" style="background:#c4b5fd;color:#4c1d95">DA</div><div class="ava-dot"></div></div>
@@ -77,26 +93,6 @@
 
     <!-- Contenedor con scroll: el encabezado de pasos se fija arriba -->
     <div class="page pf" id="pfScroll">
-
-      <header class="nwt-toolbar pf-toolbar">
-        <div class="nwt-toolbar__content">
-          <div class="nwt-toolbar__body pf-toolbar__body">
-            <nav class="nwt-breadcrumb" aria-label="breadcrumb">
-              <ol class="nwt-breadcrumb__list">
-                <li class="nwt-breadcrumb__item"><a class="nwt-breadcrumb__link" href="incentivo-03-programas.html">Programas</a></li>
-                <li class="nwt-breadcrumb__item"><span class="nwt-breadcrumb__text nwt-breadcrumb__text--active" id="pfCrumb">Nuevo programa</span></li>
-              </ol>
-            </nav>
-            <div class="pf-toolbar__title">
-              <h1 class="pf-title" id="pfTitle">Parametrizar programa de incentivos</h1>
-              <span id="pfStateBadge"></span>
-            </div>
-          </div>
-          <div class="nwt-toolbar__actions">
-            <a class="nwt-button" nwt-variant="mute" nwt-size="medium" href="incentivo-03-programas.html"><span class="nwt-button__content">Cancelar</span></a>
-          </div>
-        </div>
-      </header>
 
       <!-- Pasos: se fijan arriba al hacer scroll -->
       <div class="pf-head" id="pfHead">
@@ -111,9 +107,7 @@
       </main>
 
       <footer class="pf-footer">
-        <span class="pf-footer__info" id="pfFooterInfo"></span>
         <div class="pf-footer__actions">
-          <button class="nwt-button" nwt-variant="mute" nwt-size="medium" type="button" data-act="save-draft"><span class="nwt-button__content"><div class="nwt-icon nwt-button__icon"><i class="naotech-icon-bookmark"></i></div>Guardar borrador</span></button>
           <button class="nwt-button" nwt-variant="quiet" nwt-size="medium" type="button" id="pfPrev"><span class="nwt-button__content"><div class="nwt-icon nwt-button__icon"><i class="naotech-icon-arrow-left"></i></div>Anterior</span></button>
           <button class="nwt-button" nwt-variant="loud" nwt-size="medium" type="button" id="pfNext"><span class="nwt-button__content">Continuar<div class="nwt-icon nwt-button__icon"><i class="naotech-icon-arrow-right"></i></div></span></button>
         </div>
@@ -124,8 +118,23 @@
 
 <div class="pf-toast" id="pfToast" aria-live="polite"></div>
 
-<script>function fadeAndGo(u){ window.location.href = u; }</script>
+<script>
+/* Salir del formulario: primero se EXPANDE la barra lateral (misma animación que al contraerla) y luego navega. */
+function pfLeave(u){
+  var sb=document.getElementById('sidebar');
+  try{ sessionStorage.setItem('inc-novt','1'); }catch(_){}
+  if(!sb||!sb.classList.contains('collapsed')||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){ location.href=u; return; }
+  sb.classList.remove('collapsed');
+  setTimeout(function(){ location.href=u; },400);
+}
+function fadeAndGo(u){ pfLeave(u); }
+document.addEventListener('click',function(e){
+  var a=e.target.closest&&e.target.closest('a[href]'); if(!a||e.metaKey||e.ctrlKey||e.shiftKey) return;
+  var u=a.getAttribute('href')||'';
+  if(/^incentivo-(0[2-35-9]|1\d)/.test(u)||u==='index.html'&&false){ e.preventDefault(); pfLeave(u); }
+});
+</script>
 <script src="shared/profile-switcher.js?v=role-9" defer></script>
-<script src="shared/programa-form.js?v=10"></script>
+<script src="shared/programa-form.js?v=13"></script>
 </body>
 </html>

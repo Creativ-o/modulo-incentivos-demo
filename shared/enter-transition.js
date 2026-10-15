@@ -9,6 +9,15 @@
 (function () {
   'use strict';
   var KEY_IN = 'inc-enter', KEY_BACK = 'inc-back';
+  /* Al volver del formulario la barra ya se expandió: se evita el fade de la vista para que sea simétrico al colapso. */
+  try {
+    if (sessionStorage.getItem('inc-novt')) {
+      sessionStorage.removeItem('inc-novt');
+      var st = document.createElement('style');
+      st.textContent = '::view-transition-old(root),::view-transition-new(root){animation:none!important}';
+      document.documentElement.appendChild(st);
+    }
+  } catch (_) {}
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var ROLE_LABEL = { admin: 'Gestor de incentivos', gestor: 'Gestor de incentivos', programa: 'Gestor de programa', operador: 'Operador' };
 

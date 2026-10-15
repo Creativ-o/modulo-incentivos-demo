@@ -42,7 +42,7 @@
     document.querySelectorAll('.user-chip .user-role').forEach(lbl => {
       lbl.textContent = r.label;
     });
-    // Actualiza el nombre del usuario (varía entre Doug y Camila según rol)
+    // Actualiza el nombre del usuario (varía según el rol: Danna, Isa o Jorge)
     document.querySelectorAll('.user-chip .user-name').forEach(lbl => {
       lbl.textContent = r.name;
     });

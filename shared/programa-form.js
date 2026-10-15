@@ -165,8 +165,30 @@
         tf({ label: 'Vigencia hasta', req: 1, type: 'date', k: 'datos.hasta', val: d.hasta }) +
         tf({ label: 'Fecha de activación', type: 'date', k: 'datos.activacion', val: d.activacion, hint: 'Opcional. Si la dejas vacía, activas manualmente en el paso final.' }) +
         '<div class="pf-ro"><div><span class="pf-label">Estado inicial</span>' + badge('Configuración', 'caution') + '</div></div>' +
-        '<div class="pf-span2"><span class="pf-label">Cobertura territorial</span><div class="pf-row" id="pfCobertura">' + REGIONES.map(function (r) { return tag(r, d.cobertura.indexOf(r) > -1, 'cobertura', null, r); }).join('') + '</div><p class="pf-hint" style="margin-top:8px">«Nacional» incluye todas las regiones.</p></div>' +
+        '<div class="pf-span2"><div class="nwt-dropdown pf-ms" id="pfCob" nwt-size="medium">' + cobInner() + '</div></div>' +
       '</div>', { n: 3 }) + '</div>';
+  }
+
+  /* ── Cobertura territorial: dropdown con multiselección (composición SDK: nwt-dropdown + opciones con checkbox) ── */
+  var cobOpen = false;
+  function cobInner() {
+    var sel = S.datos.cobertura;
+    var chips = sel.map(function (r) {
+      return '<span class="nwt-tag nwt-tag--active" nwt-size="small">' + esc(r) + (r === 'Nacional' ? '' : '<span class="pf-ms__x" role="button" aria-label="Quitar ' + esc(r) + '" data-act="cob-del" data-x="' + esc(r) + '">×</span>') + '</span>';
+    }).join('');
+    var control = '<div class="nwt-dropdown__content pf-ms__content" role="combobox" tabindex="0" aria-expanded="' + cobOpen + '" data-act="cob-toggle"><div class="pf-ms__chips">' + chips + '</div><div class="nwt-dropdown__chevron' + (cobOpen ? ' nwt-dropdown__chevron--open' : '') + '">' + icon('chevron-down') + '</div></div>';
+    var list = cobOpen ? '<div class="nwt-dropdown__list pf-ms__list"><ul class="nwt-dropdown__options">' + REGIONES.map(function (r) {
+      var on = sel.indexOf(r) > -1;
+      return '<li class="nwt-dropdown__option" role="option" aria-selected="' + on + '" data-act="cob-opt" data-x="' + esc(r) + '"><span class="nwt-dropdown__option-checkbox' + (on ? ' nwt-dropdown__option-checkbox--selected' : '') + '">' + (on ? icon('positive') : '') + '</span><span>' + esc(r) + '</span></li>';
+    }).join('') + '</ul></div>' : '';
+    return inputBox('Cobertura territorial', false, control, '«Nacional» incluye todas las regiones. Puedes elegir varias.', 'datos.cobertura') + list;
+  }
+  function cobRedraw() { var el = $('#pfCob'); if (el) { el.classList.toggle('nwt-dropdown--open', cobOpen); el.innerHTML = cobInner(); if (cobOpen) { var l = el.querySelector('.pf-ms__list'); if (l) l.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } } }
+  function cobSet(r) {
+    var c = S.datos.cobertura;
+    if (r === 'Nacional') c = ['Nacional'];
+    else { c = c.filter(function (x) { return x !== 'Nacional'; }); var i = c.indexOf(r); if (i > -1) c.splice(i, 1); else c.push(r); if (!c.length) c = ['Nacional']; }
+    S.datos.cobertura = c; cobRedraw(); saveDraft(true);
   }
 
   /* ── Paso 2 · Rubro ─────────────────────────────────────────── */
@@ -523,6 +545,7 @@
     }).join('');
   }
   function render(keepScroll) {
+    cobOpen = false;
     var html = [step1, step2, step3, step4, step5][S.step - 1]();
     if (EDIT && role === 'programa' && S.step <= 2) html = alertBox('Los datos y el rubro del programa los edita el Gestor de incentivos. Tu rol <b>solo los visualiza</b>.', 'caution', 'padlock-close') + '<div inert class="pf-sec pf-readonly">' + html + '</div>';
     $('#pfStep').innerHTML = html;
@@ -530,7 +553,6 @@
     $('#pfPrev').style.visibility = S.step === 1 ? 'hidden' : 'visible';
     var nx = $('#pfNext .nwt-button__content');
     if (S.step < 5) nx.innerHTML = 'Continuar' + icon('arrow-right');
-    $('#pfFooterInfo').innerHTML = 'Paso ' + S.step + ' de 5 · <b>' + STEPS[S.step - 1] + '</b>';
     if (S.step === 2) updateKpi();
     if (S.step === 3) updateDist();
     if (S.step === 5) { banner(); issues(); }
@@ -587,7 +609,9 @@
 
   /* ── Acciones ───────────────────────────────────────────────── */
   var ACT = {
-    cobertura: function (x) { var c = S.datos.cobertura, i = c.indexOf(x); if (x === 'Nacional') { S.datos.cobertura = ['Nacional']; } else { if (i > -1) c.splice(i, 1); else c.push(x); S.datos.cobertura = c.filter(function (r) { return r !== 'Nacional'; }); if (!S.datos.cobertura.length) S.datos.cobertura = ['Nacional']; } render(true); },
+    'cob-toggle': function () { cobOpen = !cobOpen; cobRedraw(); },
+    'cob-opt': function (x) { cobSet(x); },
+    'cob-del': function (x) { cobSet(x); },
     'rubro-on': function () { S.rubro.on = !S.rubro.on; render(true); },
     'rubro-modo': function (x) { S.rubro.modo = x; render(true); },
     'inc-add': function () { S.inc.push(newInc()); render(true); var c = document.querySelectorAll('#pfIncs > .nwt-card'); if (c.length) c[c.length - 1].scrollIntoView({ block: 'center', behavior: 'smooth' }); },
@@ -617,13 +641,14 @@
     noop: function () {}
   };
   function onClick(e) {
+    if (cobOpen && !e.target.closest('#pfCob')) { cobOpen = false; cobRedraw(); }
     var t = e.target.closest('[data-act]'); if (!t) return;
     if (t.closest('[inert]')) return;
     var fn = ACT[t.dataset.act]; if (!fn) return;
     if (t.tagName === 'LABEL') e.preventDefault();
     fn(t.dataset.x, t.dataset.i);
   }
-  function onKey(e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.nwt-tag[data-act], .nwt-checkbox[data-act], .nwt-switch[data-act]')) { e.preventDefault(); e.target.click(); } }
+  function onKey(e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.nwt-tag[data-act], .nwt-checkbox[data-act], .nwt-switch[data-act], .pf-ms__content')) { e.preventDefault(); e.target.click(); } if (e.key === 'Escape' && cobOpen) { cobOpen = false; cobRedraw(); } }
 
   function go(n) { S.step = n; if (n > S.max) S.max = n; render(); }
   function next() {
