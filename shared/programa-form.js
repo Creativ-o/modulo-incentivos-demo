@@ -430,29 +430,15 @@
     var t = previewText(inc);
     return t ? 'Podrá recibirlo quien cumpla: ' + t + '.' : '<em>Sin condiciones: cualquier persona podrá acceder a este incentivo.</em>';
   }
-  /* Grupos plegables: solo el Grupo 1 arranca abierto. Es estado de pantalla, no del programa. */
-  var grpOpen = {};
-  function isGrpOpen(id, gi) { var k = id + ':' + gi; return k in grpOpen ? grpOpen[k] : gi === 0; }
-  function grpShift(id, gi, n) { // al quitar el grupo gi, los siguientes conservan su estado
-    for (var i = gi; i < n; i++) { var nx = id + ':' + (i + 1); if (nx in grpOpen) grpOpen[id + ':' + i] = grpOpen[nx]; else delete grpOpen[id + ':' + i]; }
-    delete grpOpen[id + ':' + n];
-  }
-  function groupSummary(g) {
-    var t = g.rows.map(ruleNat).filter(Boolean).map(esc);
-    return t.length ? t.join(g.op === 'AND' ? ' <em>y</em> ' : ' <em>o</em> ') : '<span class="pf-hint" style="display:inline">Sin condiciones</span>';
-  }
   function groupsHTML(inc) {
     var used = famInUse(inc), id = inc.id;
     return '<div class="pf-families">' + Object.keys(FAMILIAS).map(function (f) { return '<span class="nwt-tag' + (used[f] ? ' nwt-tag--active' : '') + '" nwt-size="small">' + FAMILIAS[f] + '</span>'; }).join('') + '</div>' +
       inc.grupos.map(function (g, gi) {
-        var open = isGrpOpen(id, gi);
-        return (gi > 0 ? '<div class="pf-or">— O —</div>' : '') + '<div class="pf-group' + (open ? '' : ' pf-group--closed') + '"><div class="pf-group__head">' +
-          '<button type="button" class="pf-group__toggle" data-act="grp-toggle" data-i="' + id + '" data-x="' + gi + '" aria-expanded="' + open + '">' +
-            '<span class="pf-group__chev' + (open ? ' is-open' : '') + '">' + icon('chevron-down') + '</span><span class="pf-group__label">Grupo ' + (gi + 1) + '</span>' +
-            (open ? '' : '<span class="pf-group__sum">' + groupSummary(g) + '</span>') + '</button>' +
-          (open ? tag('Todas deben cumplirse (Y)', g.op === 'AND', 'grp-op', id, gi + ':AND') + tag('Basta una (O)', g.op === 'OR', 'grp-op', id, gi + ':OR') : '') +
-          (open ? '<span style="flex:1"></span>' : '') + (inc.grupos.length > 1 ? btn('Quitar grupo', 'grp-del', { v: 'mute', d: id, x: gi, i: 'delete' }) : '') + '</div>' +
-          (open ? g.rows.map(function (r, ri) { return ruleRow(inc, gi, ri, r); }).join('') + btn('Añadir condición', 'rule-add', { d: id, x: gi, i: 'add' }) : '') + '</div>';
+        return (gi > 0 ? '<div class="pf-or">— O —</div>' : '') + '<div class="pf-group"><div class="pf-group__head"><span class="pf-group__label">Grupo ' + (gi + 1) + '</span>' +
+          tag('Todas deben cumplirse (Y)', g.op === 'AND', 'grp-op', id, gi + ':AND') + tag('Basta una (O)', g.op === 'OR', 'grp-op', id, gi + ':OR') +
+          '<span style="flex:1"></span>' + (inc.grupos.length > 1 ? btn('Quitar grupo', 'grp-del', { v: 'mute', d: id, x: gi, i: 'delete' }) : '') + '</div>' +
+          g.rows.map(function (r, ri) { return ruleRow(inc, gi, ri, r); }).join('') +
+          btn('Añadir condición', 'rule-add', { d: id, x: gi, i: 'add' }) + '</div>';
       }).join('') +
       '<div>' + btn('Agregar grupo alternativo (O)', 'grp-add', { d: id, i: 'add' }) + '</div>' +
       '<div><span class="pf-label">Así se leerá la regla</span><div class="pf-preview" id="pfPreview-' + id + '">' + previewHTML(inc) + '</div></div>';
@@ -516,19 +502,42 @@
     return card('Bitácora de etapas', 'Registro inmutable de cada cambio: quién, cuándo, qué cambió y por qué.', '<div class="pf-sec" style="gap:12px">' + rows + '</div>', { n: S.inc.length + 1 });
   }
 
+  /* Tipos plegables en el paso 4: solo el primero arranca abierto. Es estado de pantalla, no del programa. */
+  var tipoOpen = {};
+  function isTipoOpen(inc, idx) { return inc.id in tipoOpen ? tipoOpen[inc.id] : idx === 0; }
+  function incIssues(inc) { // pendientes del tipo (para avisar aunque esté plegado)
+    var e = [];
+    inc.grupos.forEach(function (g) { g.rows.forEach(function (r) { if (r.f && !ruleNat(r)) e.push(1); }); });
+    if (docOn(inc) && !inc.doc.list.some(function (x) { return x.oblig; })) e.push(1);
+    if (docOn(inc)) cronoErrors(e, inc);
+    if (EDIT && cronoChanges(inc).length && !inc.crono.motivo.trim()) e.push(1);
+    return e;
+  }
+  function incSummary(inc) {
+    var nr = inc.grupos.reduce(function (a, g) { return a + g.rows.filter(ruleNat).length; }, 0), on = docOn(inc);
+    var etapas = on ? (FASES.every(function (f) { return inc.crono[f[0]].ini && inc.crono[f[0]].fin; }) ? 'etapas definidas' : 'etapas sin definir') : null;
+    return [nr ? nr + (nr > 1 ? ' condiciones' : ' condición') : 'sin condiciones', on ? inc.doc.list.length + (inc.doc.list.length === 1 ? ' documento' : ' documentos') : 'sin documentos', etapas].filter(Boolean).join(' · ');
+  }
   function incPanel(inc, idx) {
-    var cat = catOf(inc), rec = isRec(inc);
-    var badges = '<span class="pf-row" style="gap:6px">' + (cat ? badge(cat.l, 'neutral') : '') + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt(inc) }[inc.modalidad], rec ? 'caution' : 'neutral') + '</span>';
+    var cat = catOf(inc), rec = isRec(inc), open = isTipoOpen(inc, idx), issues = incIssues(inc).length;
+    var badges = '<span class="pf-row" style="gap:6px;flex-shrink:0">' + (issues ? badge('Incompleto', 'caution') : '') + (cat ? badge(cat.l, 'neutral') : '') + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt(inc) }[inc.modalidad], rec ? 'caution' : 'neutral') + '</span>';
     var locked = CONDITIONS_LOCKED;
     var body = '<div class="pf-inc"><div ' + (locked ? 'inert class="pf-sec pf-readonly"' : 'class="pf-sec"') + '>' +
       '<div class="pf-subsec"><h4 class="pf-sub">Condiciones de elegibilidad</h4><p class="pf-hint">Quién puede recibir este incentivo. Se combinan con Y; si falla una, el sistema <b>bloquea y dice cuál</b>.</p>' + groupsHTML(inc) + '</div>' +
       '<div class="pf-subsec"><h4 class="pf-sub">Documentación</h4>' + docsHTML(inc) + '</div>' +
       '</div>' + (docOn(inc) ? cronoBlock(inc) : '') + '</div>';
-    return card(inc.nombre || ('Tipo de incentivo #' + (idx + 1)), (S.inc.length > 1 ? 'Tipo ' + (idx + 1) + ' de ' + S.inc.length + ' · ' : '') + 'Sus propias condiciones, documentos y etapas.', body, { n: idx + 1, right: badges });
+    var title = esc(inc.nombre || ('Tipo de incentivo #' + (idx + 1)));
+    return '<div class="nwt-card pf-type' + (open ? '' : ' pf-type--closed') + '" nwt-variant="quiet" nwt-size="medium"><div class="nwt-card__body">' +
+      '<div class="nwt-card__header"><div class="pf-card-head-row">' +
+        '<button type="button" class="pf-type-toggle" data-act="tipo-toggle" data-i="' + inc.id + '" aria-expanded="' + open + '">' +
+          '<span class="pf-type__chev' + (open ? ' is-open' : '') + '">' + icon('chevron-down') + '</span><span class="pf-num">' + (idx + 1) + '</span><span class="pf-type__name">' + title + '</span></button>' + badges +
+      '</div>' + (open ? '<p class="pf-card-sub">' + (S.inc.length > 1 ? 'Tipo ' + (idx + 1) + ' de ' + S.inc.length + ' · ' : '') + 'Sus propias condiciones, documentos y etapas.</p>' : '<p class="pf-card-sub pf-type__sum">' + esc(incSummary(inc)) + '</p>') + '</div>' +
+      (open ? '<div class="nwt-card__content">' + body + '</div>' : '') + '<div class="nwt-card__footer"></div></div></div>';
   }
   function step4() {
     var lockMsg = CONDITIONS_LOCKED ? alertBox('Tu rol <b>solo visualiza</b> las condiciones y los documentos. Puedes ajustar las <b>etapas</b>; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
     return '<div class="pf-sec">' + head('Condiciones de elegibilidad', 'Para <b>cada tipo de incentivo</b> define quién puede recibirlo, si pide documentos y, si es recurrente, las etapas de cada ciclo. <b>Bloqueo estricto:</b> sin cumplir el 100% el sistema impide la operación e indica qué condición falla.') + lockMsg +
+      (S.inc.length >= 3 ? '<div class="pf-row" style="justify-content:flex-end">' + btn('Abrir todos', 'tipo-all', { v: 'mute', d: 'open', i: 'chevron-down' }) + btn('Plegar todos', 'tipo-all', { v: 'mute', d: 'close', i: 'chevron-up' }) + '</div>' : '') +
       S.inc.map(incPanel).join('') + logCard() +
       alertBox('<b>Habilitación excepcional:</b> no se configura aquí. Con el programa activo, el Gestor de programa puede habilitar a personas concretas (individual o masiva por Excel/CSV) eximiendo fechas, condicionales o ambas, con justificación y auditoría.', 'informative') + '</div>';
   }
@@ -745,10 +754,11 @@
     'rubro-tipos': function (x) { S.rubro.tipos = x; syncInc(); render(true); },
     'inc-modalidad': function (x, i) { var n = incById(i); if (modsOf(n).indexOf(x) < 0) return; n.modalidad = x; n.foto = (x === 'codigo'); if (x === 'fijo') { n.doc.req = true; if (!n.doc.list.length) n.doc.list = [{ name: 'Documento de identidad', oblig: true }]; } render(true); },
     'inc-foto': function (x, i) { var n = incById(i); n.foto = !n.foto; render(true); },
+    'tipo-toggle': function (x, id) { var i = S.inc.findIndex(function (n) { return n.id === id; }); tipoOpen[id] = !isTipoOpen(S.inc[i], i); render(true); },
+    'tipo-all': function (x, mode) { S.inc.forEach(function (n) { tipoOpen[n.id] = (mode === 'open'); }); render(true); },
     'grp-op': function (x, id) { var p = x.split(':'); incById(id).grupos[+p[0]].op = p[1]; render(true); },
-    'grp-toggle': function (x, id) { grpOpen[id + ':' + x] = !isGrpOpen(id, +x); render(true); },
-    'grp-add': function (x, id) { var n = incById(id).grupos.push({ op: 'AND', rows: [{ f: '', op: '=', v: '' }] }); grpOpen[id + ':' + (n - 1)] = true; render(true); }, // el grupo nuevo se abre
-    'grp-del': function (x, id) { var n = incById(id).grupos.length; incById(id).grupos.splice(+x, 1); grpShift(id, +x, n - 1); render(true); },
+    'grp-add': function (x, id) { incById(id).grupos.push({ op: 'AND', rows: [{ f: '', op: '=', v: '' }] }); render(true); },
+    'grp-del': function (x, id) { incById(id).grupos.splice(+x, 1); render(true); },
     'rule-add': function (x, id) { incById(id).grupos[+x].rows.push({ f: '', op: '=', v: '' }); render(true); },
     'rule-del': function (x, id) { var p = x.split('.'); incById(id).grupos[+p[0]].rows.splice(+p[1], 1); render(true); },
     'rule-multi': function (x, key) { var p = key.split('.'), r = incById(p[0]).grupos[+p[1]].rows[+p[2]]; if (!Array.isArray(r.v)) r.v = []; var i = r.v.indexOf(x); if (i > -1) r.v.splice(i, 1); else r.v.push(x); render(true); },
@@ -789,12 +799,13 @@
   function go(n) { S.step = n; if (n > S.max) S.max = n; render(); }
   function next() {
     if (S.done) return;
-    var errs = validate(S.step), general = showErrors(errs, S.step);
-    if (S.step === 4 && errs.some(function (x) { return x[2] === 4; })) { // abre los grupos que tengan una condición incompleta
-      var reveal = false;
-      S.inc.forEach(function (inc) { inc.grupos.forEach(function (g, gi) { if (g.rows.some(function (r) { return r.f && !ruleNat(r); }) && !isGrpOpen(inc.id, gi)) { grpOpen[inc.id + ':' + gi] = true; reveal = true; } }); });
-      if (reveal) render(true);
+    var errs = validate(S.step);
+    if (S.step === 4 && errs.some(function (x) { return x[2] === 4; })) { // abre los tipos plegados que tengan algo pendiente
+      var opened = false;
+      S.inc.forEach(function (inc, i) { if (incIssues(inc).length && !isTipoOpen(inc, i)) { tipoOpen[inc.id] = true; opened = true; } });
+      if (opened) render(true);
     }
+    var general = showErrors(errs, S.step);
     if (errs.some(function (x) { return x[2] === S.step; })) {
       toast(general.length ? general[0] : 'Revisa los campos marcados para continuar.', 'negative');
       var b = $('#pfNext'); b.classList.remove('pf-shake'); void b.offsetWidth; return;
