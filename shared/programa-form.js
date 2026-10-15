@@ -374,9 +374,6 @@
   }
 
   /* ── Paso 4 · Condiciones, documentación y etapas — POR TIPO DE INCENTIVO ───────── */
-  function famInUse(inc) {
-    var u = {}; inc.grupos.forEach(function (g) { g.rows.forEach(function (r) { if (FIELDS[r.f]) u[FIELDS[r.f].fam] = 1; }); }); return u;
-  }
   function fieldGroups(cur) {
     return Object.keys(FAMILIAS).map(function (fam) {
       return '<optgroup label="' + FAMILIAS[fam] + '">' + Object.keys(FIELDS).filter(function (k) { return FIELDS[k].fam === fam; }).map(function (k) { return '<option value="' + k + '"' + (cur === k ? ' selected' : '') + '>' + FIELDS[k].label + '</option>'; }).join('') + '</optgroup>';
@@ -431,11 +428,9 @@
     return t ? 'Podrá recibirlo quien cumpla: ' + t + '.' : '<em>Sin condiciones: cualquier persona podrá acceder a este incentivo.</em>';
   }
   function groupsHTML(inc) {
-    var used = famInUse(inc), id = inc.id;
-    return '<div class="pf-families">' + Object.keys(FAMILIAS).map(function (f) { return '<span class="nwt-tag' + (used[f] ? ' nwt-tag--active' : '') + '" nwt-size="small">' + FAMILIAS[f] + '</span>'; }).join('') + '</div>' +
-      inc.grupos.map(function (g, gi) {
+    var id = inc.id;
+    return inc.grupos.map(function (g, gi) {
         return (gi > 0 ? '<div class="pf-or">— O —</div>' : '') + '<div class="pf-group"><div class="pf-group__head"><span class="pf-group__label">Grupo ' + (gi + 1) + '</span>' +
-          tag('Todas deben cumplirse (Y)', g.op === 'AND', 'grp-op', id, gi + ':AND') + tag('Basta una (O)', g.op === 'OR', 'grp-op', id, gi + ':OR') +
           '<span style="flex:1"></span>' + (inc.grupos.length > 1 ? btn('Quitar grupo', 'grp-del', { v: 'mute', d: id, x: gi, i: 'delete' }) : '') + '</div>' +
           g.rows.map(function (r, ri) { return ruleRow(inc, gi, ri, r); }).join('') +
           btn('Añadir condición', 'rule-add', { d: id, x: gi, i: 'add' }) + '</div>';
@@ -531,15 +526,14 @@
       '<div class="nwt-card__header"><div class="pf-card-head-row">' +
         '<button type="button" class="pf-type-toggle" data-act="tipo-toggle" data-i="' + inc.id + '" aria-expanded="' + open + '">' +
           '<span class="pf-type__chev' + (open ? ' is-open' : '') + '">' + icon('chevron-down') + '</span><span class="pf-num">' + (idx + 1) + '</span><span class="pf-type__name">' + title + '</span></button>' + badges +
-      '</div>' + (open ? '<p class="pf-card-sub">' + (S.inc.length > 1 ? 'Tipo ' + (idx + 1) + ' de ' + S.inc.length + ' · ' : '') + 'Sus propias condiciones, documentos y etapas.</p>' : '<p class="pf-card-sub pf-type__sum">' + esc(incSummary(inc)) + '</p>') + '</div>' +
+      '</div>' + (open ? '' : '<p class="pf-card-sub pf-type__sum">' + esc(incSummary(inc)) + '</p>') + '</div>' +
       (open ? '<div class="nwt-card__content">' + body + '</div>' : '') + '<div class="nwt-card__footer"></div></div></div>';
   }
   function step4() {
     var lockMsg = CONDITIONS_LOCKED ? alertBox('Tu rol <b>solo visualiza</b> las condiciones y los documentos. Puedes ajustar las <b>etapas</b>; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
     return '<div class="pf-sec">' + head('Condiciones de elegibilidad', 'Para <b>cada tipo de incentivo</b> define quién puede recibirlo, si pide documentos y, si es recurrente, las etapas de cada ciclo. <b>Bloqueo estricto:</b> sin cumplir el 100% el sistema impide la operación e indica qué condición falla.') + lockMsg +
       (S.inc.length >= 3 ? '<div class="pf-row" style="justify-content:flex-end">' + btn('Abrir todos', 'tipo-all', { v: 'mute', d: 'open', i: 'chevron-down' }) + btn('Plegar todos', 'tipo-all', { v: 'mute', d: 'close', i: 'chevron-up' }) + '</div>' : '') +
-      S.inc.map(incPanel).join('') + logCard() +
-      alertBox('<b>Habilitación excepcional:</b> no se configura aquí. Con el programa activo, el Gestor de programa puede habilitar a personas concretas (individual o masiva por Excel/CSV) eximiendo fechas, condicionales o ambas, con justificación y auditoría.', 'informative') + '</div>';
+      S.inc.map(incPanel).join('') + logCard() + '</div>';
   }
 
   /* ── Paso 5 · Códigos y revisión ────────────────────────────── */
@@ -706,8 +700,6 @@
   function updateRules(incId) {
     var inc = incById(incId); if (!inc) return;
     var p = $('#pfPreview-' + incId); if (p) p.innerHTML = previewHTML(inc);
-    var pn = p && p.closest('.pf-subsec'), fam = pn && pn.querySelector('.pf-families');
-    if (fam) { var u = famInUse(inc); fam.querySelectorAll('.nwt-tag').forEach(function (t) { var k = Object.keys(FAMILIAS).filter(function (f) { return FAMILIAS[f] === t.textContent; })[0]; t.classList.toggle('nwt-tag--active', !!u[k]); }); }
     banner();
   }
 
