@@ -29,12 +29,12 @@
   ];
   function catOf(i) { return CATEGORIAS.filter(function (c) { return c.k === i.categoria; })[0] || null; }
   function conValor(i) { var c = catOf(i); return !c || !!c.valor; }
-  function modsOf(i) { var c = catOf(i); return c && c.cert ? ['certificado'] : ['codigo', 'fijo']; }
+  /* La categoría decide si se pide valor; las 3 modalidades del Excel están siempre disponibles. Solo se sugiere una por defecto. */
   function applyCategoria(inc) {
     var c = catOf(inc); if (!c) return;
     if (!c.valor) inc.valor = '';
-    var ok = modsOf(inc);
-    if (ok.indexOf(inc.modalidad) < 0) { inc.modalidad = ok[0]; inc.foto = (inc.modalidad === 'codigo'); }
+    if (c.cert && inc.modalidad === 'codigo') { inc.modalidad = 'certificado'; inc.foto = false; }       // sugerencia para diplomas
+    else if (!c.cert && inc.modalidad === 'certificado') { inc.modalidad = 'codigo'; inc.foto = true; }  // al salir de diploma
   }
   var FRECUENCIAS = [['mensual', 'Mensual'], ['bimestral', 'Bimestral'], ['trimestral', 'Trimestral'], ['semestral', 'Semestral'], ['otra', 'Otra (definir meses)']];
   var DOC_SUGERIDOS = ['Documento de identidad', 'Certificado de resultado', 'Certificación bancaria', 'Certificado de estudio', 'Autorización del acudiente', 'Certificado médico'];
@@ -327,8 +327,8 @@
       { v: 'certificado', l: 'Certificado digital / reconocimiento', s: 'Entrega única sin código: PDF con firma digital y QR de verificación.' },
       { v: 'fijo', l: 'Incentivo fijo recurrente', s: 'Apoyo periódico de sostenimiento. Sin código; exige documentación previa.' }
     ];
-    var allowed = modsOf(inc), cv = conValor(inc);
-    var mod = radios({ label: 'Modalidad', act: 'inc-modalidad', d: inc.id, value: m, dir: 'horizontal', options: ALL_MODS.filter(function (o) { return allowed.indexOf(o.v) > -1; }) });
+    var cv = conValor(inc);
+    var mod = radios({ label: 'Modalidad', act: 'inc-modalidad', d: inc.id, value: m, dir: 'horizontal', options: ALL_MODS });
     var extra = '';
     if (m === 'codigo') {
       extra = alertBox('Los códigos se cargan en el paso 5 o después, y no se pueden eliminar si ya registran entregas.', 'informative');
