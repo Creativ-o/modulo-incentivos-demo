@@ -21,7 +21,6 @@
   var AREAS = ['Dirección de Fomento y Desarrollo', 'Alto rendimiento', 'Viceministerio del Deporte'];
   var GESTORES = ['Isa Pabon', 'Laura Meza', 'Carla Suárez', 'Andrés Polo'];
   var REGIONES = ['Nacional', 'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bogotá D.C.', 'Bolívar', 'Boyacá', 'Caldas', 'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda', 'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada']; // Nacional + 32 departamentos + Bogotá D.C.
-  var CATEGORIAS = ['Beca', 'Kit', 'Bono', 'Dinero', 'Pase o entrada', 'Certificado', 'Otro'];
   var FRECUENCIAS = [['mensual', 'Mensual'], ['bimestral', 'Bimestral'], ['trimestral', 'Trimestral'], ['semestral', 'Semestral'], ['otra', 'Otra (definir meses)']];
   var DOC_SUGERIDOS = ['Documento de identidad', 'Certificado de resultado', 'Certificación bancaria', 'Certificado de estudio', 'Autorización del acudiente', 'Certificado médico'];
   var BENEFICIARIOS = [['deportista', 'Deportista'], ['paradeportista', 'Paradeportista'], ['apoyo', 'Personal de apoyo'], ['institucion', 'Institución educativa']];
@@ -47,7 +46,7 @@
   /* ── Estado ─────────────────────────────────────────────────── */
   var uid = 0;
   function nextId() { uid += 1; return 'i' + uid; }
-  function newInc() { return { id: nextId(), nombre: '', categoria: 'Beca', modalidad: 'codigo', valor: '', cantidad: '', foto: true, frecuencia: 'mensual', frecuenciaN: '', plantilla: 'Diploma institucional' }; }
+  function newInc() { return { id: nextId(), nombre: '', modalidad: 'codigo', valor: '', cantidad: '', foto: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', plantilla: 'Diploma institucional' }; }
 
   var S = {
     step: 1, max: 1, done: false,
@@ -66,8 +65,8 @@
   var SNAP = null; // foto del programa publicado (modo edición) para detectar versionamiento
 
   function seedEdit() {
-    var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'Beca'; i1.modalidad = 'fijo'; i1.valor = '1000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
-    var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.categoria = 'Kit'; i2.modalidad = 'codigo'; i2.valor = '350000'; i2.cantidad = '150'; i2.foto = true;
+    var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.modalidad = 'fijo'; i1.valor = '1000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
+    var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.modalidad = 'codigo'; i2.valor = '350000'; i2.cantidad = '150'; i2.foto = true;
     S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], area: AREAS[0], gestor: 'Isa Pabon', desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', cobertura: ['Nacional'], justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 }, responsable: 'Danna Arrieta · Gestor de incentivos' };
     S.rubro = { valor: '252500000', tipos: 'varios', n: 2 };
     S.inc = [i1, i2];
@@ -291,43 +290,48 @@
   }
 
   /* ── Paso 3 · Tipos ─────────────────────────────────────────── */
+  /* Resumen (solo lectura) de lo que un incentivo recurrente exige y se configura en el paso 4 */
+  function recSummary() {
+    var d = S.cond.doc.list, ob = d.filter(function (x) { return x.oblig; }).length, c = S.crono;
+    var cr = FASES.every(function (f) { return c[f[0]].ini && c[f[0]].fin; });
+    var txt = '<b>Documentos:</b> ' + (d.length ? d.length + ' (' + ob + ' obligatorios)' : 'sin definir') + ' · <b>Cronograma por ciclo:</b> ' + (cr ? FASES.map(function (f) { return f[1].split(' ')[0].toLowerCase() + ' día ' + c[f[0]].ini + '–' + c[f[0]].fin; }).join(', ') : 'sin definir');
+    return '<div class="pf-types-bar">' + alertBox('Documentación y ciclos de este incentivo se configuran en el <b>paso 4</b>. ' + txt, 'informative', 'calendar') + (S.max >= 4 ? btn('Ir al paso 4', 'goto', { v: 'quiet', s: 'medium', x: '4', i: 'arrow-right' }) : '') + '</div>';
+  }
   function incCard(inc, idx) {
-    var m = inc.modalidad;
-    var mod = radios({ label: 'Modalidad del incentivo', act: 'inc-modalidad', d: inc.id, value: m, dir: 'horizontal', options: [
-      { v: 'codigo', l: 'Entrega única con código', s: 'Bono, kit, beca… Cada código es una unidad.' },
-      { v: 'certificado', l: 'Certificado digital', s: 'PDF con firma digital y QR. Sin código.' },
-      { v: 'fijo', l: 'Fijo recurrente', s: 'Apoyo periódico por ciclos. Sin código.' }
+    var m = inc.modalidad, k = 'inc.' + inc.id + '.';
+    var mod = radios({ label: 'Modalidad', act: 'inc-modalidad', d: inc.id, value: m, dir: 'horizontal', options: [
+      { v: 'codigo', l: 'Entrega única con código', s: 'Bono, kit, beca… Cada código es único y equivale a una unidad entregable.' },
+      { v: 'certificado', l: 'Certificado digital / reconocimiento', s: 'Entrega única sin código: PDF con firma digital y QR de verificación.' },
+      { v: 'fijo', l: 'Incentivo fijo recurrente', s: 'Apoyo periódico de sostenimiento. Sin código; exige documentación previa.' }
     ] });
     var extra = '';
     if (m === 'codigo') {
-      extra = alertBox('Cada código equivale a <b>una unidad entregable</b>, es único e irrepetible. Los códigos se cargan en el paso 5 o después.', 'informative');
+      extra = alertBox('Los códigos se cargan en el paso 5 o después, y no se pueden eliminar si ya registran entregas.', 'informative');
     } else if (m === 'certificado') {
-      extra = '<div class="pf-grid">' + sel({ label: 'Plantilla del certificado', k: 'inc.' + inc.id + '.plantilla', val: inc.plantilla, opts: ['Diploma institucional', 'Reconocimiento al mérito deportivo'] }) +
-        '<div>' + alertBox('Incluye firma digital y <b>QR de verificación</b>. La firma digital la define el Ministerio (pendiente).', 'caution', 'attention') + '</div></div>';
+      extra = '<div class="pf-grid">' + sel({ label: 'Plantilla institucional del certificado', k: k + 'plantilla', val: inc.plantilla, opts: ['Diploma institucional', 'Reconocimiento al mérito deportivo'] }) +
+        '<div>' + alertBox('Incluye firma digital y <b>código QR</b> de verificación. La firma digital la define el Ministerio (pendiente).', 'caution', 'attention') + '</div></div>';
     } else {
-      extra = '<div class="pf-grid">' + sel({ label: 'Frecuencia de entrega', req: 1, k: 'inc.' + inc.id + '.frecuencia', val: inc.frecuencia, opts: FRECUENCIAS, attrs: ' data-struct="1"' }) +
-        (inc.frecuencia === 'otra' ? tf({ label: 'Cada cuántos meses', req: 1, type: 'number', k: 'inc.' + inc.id + '.frecuenciaN', val: inc.frecuenciaN, ph: '2' }) : '<div></div>') + '</div>' +
-        alertBox('No usa códigos y <b>exige etapa documental</b> (paso 4). Cada ciclo lo confirma el Gestor de programa; cambiar la frecuencia crea una nueva versión del programa.', 'informative');
+      extra = '<div class="pf-grid">' + sel({ label: 'Frecuencia de recurrencia', req: 1, k: k + 'frecuencia', val: inc.frecuencia, opts: FRECUENCIAS, attrs: ' data-struct="1"' }) +
+        (inc.frecuencia === 'otra' ? '<div class="pf-grid" style="grid-template-columns:1fr 1fr">' + tf({ label: 'Cada', req: 1, type: 'number', k: k + 'frecuenciaN', val: inc.frecuenciaN, ph: '2' }) + sel({ label: 'Unidad', k: k + 'frecuenciaU', val: inc.frecuenciaU, opts: ['días', 'semanas', 'meses'] }) + '</div>' : '<div></div>') + '</div>' +
+        alertBox('No requiere código y <b>exige registro y aprobación documental previa</b>. Cada ciclo lo confirma el Gestor de programa; cambiar la frecuencia crea una nueva versión del programa.', 'informative') + recSummary();
     }
-    var foto = m === 'codigo' ? '<div class="pf-switch-row">' + toggle(inc.foto, 'inc-foto', inc.id) + '<span>Exige fotografía de evidencia en la entrega</span></div>' : '';
-    var showCant = true;
-    var cantLabel = m === 'codigo' ? 'Stock / cantidad de códigos' : (m === 'fijo' ? 'Beneficiarios estimados' : 'Cantidad estimada');
-    var valorLabel = m === 'fijo' ? 'Valor por ciclo' : 'Valor unitario';
+    var foto = '<div class="pf-switch-row">' + toggle(inc.foto, 'inc-foto', inc.id) + '<span>Exige fotografía de evidencia en la entrega</span></div>';
+    var cantLabel = m === 'codigo' ? 'Cantidad / stock de códigos' : (m === 'fijo' ? 'Cantidad de beneficiarios' : 'Cantidad');
+    var valorLabel = m === 'fijo' ? 'Valor por ciclo' : 'Valor';
+    var n = S.inc.length;
     return '<div class="nwt-card" nwt-variant="quiet" nwt-size="medium"><div class="nwt-card__body">' +
-      '<div class="nwt-card__header"><div class="pf-card-head-row"><h3 class="pf-card-title"><span class="pf-num">' + (idx + 1) + '</span>Incentivo #' + (idx + 1) + (S.inc.length > 1 ? ' de ' + S.inc.length : '') + '</h3></div></div>' +
-      '<div class="nwt-card__content"><div class="pf-inc"><div class="pf-grid">' +
-        tf({ label: 'Nombre del incentivo', req: 1, k: 'inc.' + inc.id + '.nombre', val: inc.nombre, ph: 'Ej. Beca educativa · Medallistas de oro' }) +
-        sel({ label: 'Categoría', k: 'inc.' + inc.id + '.categoria', val: inc.categoria, opts: CATEGORIAS }) +
-      '</div>' +
-      '<div class="pf-modal-box pf-new">' + mod + extra + '</div>' +
+      '<div class="nwt-card__header"><div class="pf-card-head-row"><h3 class="pf-card-title"><span class="pf-num">' + (idx + 1) + '</span>Tipo de incentivo #' + (idx + 1) + (n > 1 ? ' de ' + n : '') + '</h3></div></div>' +
+      '<div class="nwt-card__content"><div class="pf-inc">' +
+        tf({ label: 'Nombre', req: 1, k: k + 'nombre', val: inc.nombre, ph: 'Ej. Bono, Beca educativa, Kit deportivo', hint: 'El nombre del tipo de incentivo (ej. Bono, Beca, Kit).' }) +
+      '<div class="pf-modal-box">' + mod + extra + '</div>' +
       '<div class="pf-grid">' +
-        tf({ label: valorLabel, req: m !== 'certificado', k: 'inc.' + inc.id + '.valor', val: inc.valor ? Number(inc.valor).toLocaleString('es-CO') : '', ph: m === 'certificado' ? 'Sin valor monetario' : '0', mode: 'numeric', hint: m === 'fijo' ? 'Pesos por cada ciclo entregado.' : 'Pesos por incentivo entregado.' }) +
-        (showCant ? tf({ label: cantLabel, k: 'inc.' + inc.id + '.cantidad', val: inc.cantidad, ph: '0', mode: 'numeric' }) : '') +
+        tf({ label: valorLabel, req: m !== 'certificado', k: k + 'valor', val: inc.valor ? Number(inc.valor).toLocaleString('es-CO') : '', ph: m === 'certificado' ? 'Sin valor monetario' : '0', mode: 'numeric', pre: '$', hint: m === 'fijo' ? 'Pesos por cada ciclo entregado.' : 'Pesos por incentivo entregado.' }) +
+        tf({ label: cantLabel, k: k + 'cantidad', val: inc.cantidad, ph: '0', mode: 'numeric' }) +
       '</div>' + foto + '</div></div><div class="nwt-card__footer"></div></div></div>';
   }
   function step3() {
     var n = S.inc.length;
-    return '<div class="pf-sec">' + head('Tipos de incentivo', 'Define qué entrega este programa. Cada tipo tiene su <b>modalidad</b>. «Montos distintos» = incentivos distintos.') +
+    return '<div class="pf-sec">' + head('Tipos de incentivo', 'Para cada tipo define su <b>nombre, modalidad, valor y cantidad</b>, y si exige foto de evidencia. «Montos distintos» = tipos distintos.') +
       '<div class="pf-types-bar">' + alertBox(n === 1 ? 'Este programa tiene <b>un solo tipo</b> de incentivo, definido en el paso 2.' : 'Este programa tiene <b>' + n + ' tipos</b> de incentivo, definidos en el paso 2.', 'informative', 'categories') + btn('Cambiar en el paso 2', 'goto', { v: 'quiet', s: 'medium', x: '2', i: 'edit' }) + '</div>' +
       '<div id="pfIncs" class="pf-sec">' + S.inc.map(incCard).join('') + '</div>' +
       '<div id="pfDist"></div></div>';
@@ -440,7 +444,7 @@
       : alertBox('Fuera de la ventana de cargue el sistema bloquea la postulación, salvo <b>habilitación excepcional</b>.', 'informative', 'calendar');
     return card('Cronograma', 'Cuándo se carga, se revisa y se asigna. Lo defines al crear el programa y el <b>Gestor de programa puede ajustarlo</b>; cada cambio queda auditado.', '<div class="pf-inc">' + note + top + rows + '<div id="pfCronoChg">' + cronoChgHTML() + '</div></div>', { n: 5, cls: 'pf-new' });
   }
-  function frecuenciaTxt() { var i = S.inc.filter(function (x) { return x.modalidad === 'fijo'; })[0]; if (!i) return ''; return i.frecuencia === 'otra' ? 'cada ' + (i.frecuenciaN || '?') + ' meses' : i.frecuencia; }
+  function frecuenciaTxt() { var i = S.inc.filter(function (x) { return x.modalidad === 'fijo'; })[0]; if (!i) return ''; return i.frecuencia === 'otra' ? 'cada ' + (i.frecuenciaN || '?') + ' ' + (i.frecuenciaU || 'meses') : i.frecuencia; }
   function cronoChanges() {
     if (!SNAP) return [];
     var out = [], a = SNAP.crono, b = S.crono;
@@ -539,7 +543,7 @@
     if (step >= 3) S.inc.forEach(function (i) {
       if (!i.nombre.trim()) e.push(['inc.' + i.id + '.nombre', 'Nombra el incentivo.', 3]);
       if (i.modalidad !== 'certificado' && !Number(i.valor)) e.push(['inc.' + i.id + '.valor', 'Indica el valor.', 3]);
-      if (i.modalidad === 'fijo' && i.frecuencia === 'otra' && !Number(i.frecuenciaN)) e.push(['inc.' + i.id + '.frecuenciaN', 'Indica cada cuántos meses.', 3]);
+      if (i.modalidad === 'fijo' && i.frecuencia === 'otra' && !Number(i.frecuenciaN)) e.push(['inc.' + i.id + '.frecuenciaN', 'Indica cada cuánto se repite.', 3]);
     });
     if (step >= 4) {
       if (!S.cond.benef.length) e.push(['', 'Elige al menos un tipo de beneficiario.', 4]);
@@ -597,7 +601,7 @@
     if (!SNAP) return [];
     var ch = [];
     if (JSON.stringify([S.cond.benef, S.cond.modo, S.cond.grupos]) !== JSON.stringify([SNAP.cond.benef, SNAP.cond.modo, SNAP.cond.grupos])) ch.push('Condicionales de elegibilidad');
-    var f1 = S.inc.map(function (i) { return [i.id, i.modalidad, i.frecuencia, i.frecuenciaN]; }), f0 = SNAP.inc.map(function (i) { return [i.id, i.modalidad, i.frecuencia, i.frecuenciaN]; });
+    var f1 = S.inc.map(function (i) { return [i.id, i.modalidad, i.frecuencia, i.frecuenciaN, i.frecuenciaU]; }), f0 = SNAP.inc.map(function (i) { return [i.id, i.modalidad, i.frecuencia, i.frecuenciaN, i.frecuenciaU]; });
     if (JSON.stringify(f1) !== JSON.stringify(f0)) ch.push('Frecuencia / modalidad del incentivo');
     if (JSON.stringify([docRequired(), S.cond.doc.list]) !== JSON.stringify([SNAP.docReq, SNAP.cond.doc.list])) ch.push('Documentos requeridos');
     return ch;
@@ -687,7 +691,7 @@
     'cob-del': function (x) { cobSet(x); },
     'anexo-del': function () { S.datos.anexo = null; saveDraft(true); anexoRedraw(); },
     'rubro-tipos': function (x) { S.rubro.tipos = x; syncInc(); render(true); },
-    'inc-modalidad': function (x, i) { var n = incById(i); n.modalidad = x; if (x !== 'codigo') n.foto = false; else n.foto = true; render(true); },
+    'inc-modalidad': function (x, i) { var n = incById(i); n.modalidad = x; n.foto = (x === 'codigo'); render(true); },
     'inc-foto': function (x, i) { var n = incById(i); n.foto = !n.foto; render(true); },
     benef: function (x) { var b = S.cond.benef, i = b.indexOf(x); if (i > -1) b.splice(i, 1); else b.push(x); render(true); },
     'cond-modo': function (x) { S.cond.modo = x; render(true); },
