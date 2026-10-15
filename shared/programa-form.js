@@ -205,22 +205,22 @@
   var cobOpen = false, cobQuery = '';
   function norm(s) { return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
   function cobOptsHTML() {
-    var sel = S.datos.cobertura, q = norm(cobQuery.trim());
+    var sel = S.datos.cobertura, q = norm(cobQuery.trim()), nac = sel.indexOf('Nacional') > -1;
     var list = REGIONES.filter(function (r) { return !q || norm(r).indexOf(q) > -1; });
     if (!list.length) return '<li class="nwt-dropdown__option nwt-dropdown__option--empty"><span>Sin resultados</span></li>';
     return list.map(function (r) {
-      var on = sel.indexOf(r) > -1;
-      return '<li class="nwt-dropdown__option" role="option" aria-selected="' + on + '" data-act="cob-opt" data-x="' + esc(r) + '"><span class="nwt-dropdown__option-checkbox' + (on ? ' nwt-dropdown__option-checkbox--selected' : '') + '">' + (on ? icon('positive') : '') + '</span><span>' + esc(r) + '</span></li>';
+      var on = sel.indexOf(r) > -1, off = nac && r !== 'Nacional'; // «Nacional» ya los incluye a todos
+      return '<li class="nwt-dropdown__option' + (off ? ' nwt-dropdown__option--disabled' : '') + '" role="option" aria-selected="' + on + '"' + (off ? ' aria-disabled="true" title="Incluido en «Nacional»"' : ' data-act="cob-opt" data-x="' + esc(r) + '"') + '><span class="nwt-dropdown__option-checkbox' + (on ? ' nwt-dropdown__option-checkbox--selected' : '') + '">' + (on ? icon('positive') : '') + '</span><span>' + esc(r) + '</span></li>';
     }).join('');
   }
   function cobInner() {
     var sel = S.datos.cobertura;
     var chips = sel.map(function (r) {
-      return '<span class="nwt-tag nwt-tag--active" nwt-size="small">' + esc(r) + (r === 'Nacional' ? '' : '<span class="pf-ms__x" role="button" aria-label="Quitar ' + esc(r) + '" data-act="cob-del" data-x="' + esc(r) + '">' + icon('close') + '</span>') + '</span>';
-    }).join('');
+      return '<span class="nwt-tag nwt-tag--active" nwt-size="small">' + esc(r) + '<span class="pf-ms__x" role="button" aria-label="Quitar ' + esc(r) + '" data-act="cob-del" data-x="' + esc(r) + '">' + icon('close') + '</span></span>';
+    }).join('') || '<span class="pf-ms__ph">Selecciona Nacional o uno o varios departamentos</span>';
     var control = '<div class="nwt-dropdown__content pf-ms__content" role="combobox" tabindex="0" aria-expanded="' + cobOpen + '" data-act="cob-toggle"><div class="pf-ms__chips">' + chips + '</div><div class="nwt-dropdown__chevron pf-ms__chev' + (cobOpen ? ' nwt-dropdown__chevron--open' : '') + '">' + icon('chevron-down') + '</div></div>';
     var list = cobOpen ? '<div class="nwt-dropdown__list pf-ms__list"><div class="pf-ms__search">' + icon('search') + '<input class="pf-ms__q" type="text" autocomplete="off" placeholder="Buscar departamento" value="' + esc(cobQuery) + '" aria-label="Buscar departamento"/></div><ul class="nwt-dropdown__options" id="pfCobOpts">' + cobOptsHTML() + '</ul></div>' : '';
-    return inputBox('Cobertura territorial', false, control, '«Nacional» incluye todas las regiones. Puedes elegir varias.', 'datos.cobertura') + list;
+    return inputBox('Cobertura territorial', false, control, '«Nacional» incluye todos los departamentos. Quítalo para elegir departamentos específicos.', 'datos.cobertura') + list;
   }
   function cobRedraw() {
     var el = $('#pfCob'); if (!el) return;
@@ -251,10 +251,11 @@
     else { list.style.bottom = 'auto'; list.style.top = (c.bottom - e.top + GAP) + 'px'; }
   }
   function cobSet(r) {
-    var c = S.datos.cobertura;
-    if (r === 'Nacional') c = ['Nacional'];
-    else { c = c.filter(function (x) { return x !== 'Nacional'; }); var i = c.indexOf(r); if (i > -1) c.splice(i, 1); else c.push(r); if (!c.length) c = ['Nacional']; }
+    var c = S.datos.cobertura.slice();
+    if (r === 'Nacional') c = c.indexOf('Nacional') > -1 ? [] : ['Nacional']; // marcar Nacional reemplaza todo; desmarcarla libera los departamentos
+    else { if (c.indexOf('Nacional') > -1) return; var i = c.indexOf(r); if (i > -1) c.splice(i, 1); else c.push(r); }
     S.datos.cobertura = c; cobRedraw(); saveDraft(true);
+    var box = document.querySelector('[data-box="datos.cobertura"]'); if (box && c.length) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
   }
 
   /* ── Paso 2 · Rubro ─────────────────────────────────────────── */
@@ -511,6 +512,7 @@
     var e = [], d = S.datos;
     if (step >= 1) {
       if (!d.nombre.trim()) e.push(['datos.nombre', 'Escribe el nombre del programa.', 1]);
+      if (!d.cobertura.length) e.push(['datos.cobertura', 'Selecciona «Nacional» o al menos un departamento.', 1]);
       if (!d.area) e.push(['datos.area', 'Selecciona el área responsable.', 1]);
       if (!d.gestor) e.push(['datos.gestor', 'Asigna un gestor de programa.', 1]);
       if (!d.desde) e.push(['datos.desde', 'Indica la fecha de inicio.', 1]);

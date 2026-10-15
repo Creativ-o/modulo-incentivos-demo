@@ -230,3 +230,8 @@ a.nwt-button{text-decoration:none}
 .nwt-dropdown__option-checkbox{position:relative;box-sizing:border-box}
 .nwt-dropdown__option-checkbox .nwt-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;padding:0}
 .nwt-dropdown__option-checkbox .nwt-icon i{display:block;line-height:1;margin:0;transform:translate(1.5px,1.5px)} /* el glifo del check viene dibujado 1.5px arriba-izquierda en la fuente de íconos (medido por píxeles) */
+
+/* Cobertura: opciones deshabilitadas cuando «Nacional» está marcada, y placeholder sin selección */
+.pf-ms__list .nwt-dropdown__option--disabled{cursor:not-allowed}
+.pf-ms__list .nwt-dropdown__option--disabled .nwt-dropdown__option-checkbox{background:var(--naotech-app-color-100);border-color:var(--naotech-app-color-300);opacity:.6}
+.pf-ms__ph{color:var(--naotech-app-color-700);font-size:var(--naotech-sizing-14)}
