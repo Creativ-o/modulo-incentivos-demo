@@ -21,6 +21,21 @@
   var AREAS = ['Dirección de Fomento y Desarrollo', 'Alto rendimiento', 'Viceministerio del Deporte'];
   var GESTORES = ['Isa Pabon', 'Laura Meza', 'Carla Suárez', 'Andrés Polo'];
   var REGIONES = ['Nacional', 'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bogotá D.C.', 'Bolívar', 'Boyacá', 'Caldas', 'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda', 'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada']; // Nacional + 32 departamentos + Bogotá D.C.
+  /* valor: 1 = tiene valor numérico (se pide valor total); 0 = no se pide valor. cert: 1 = se entrega como certificado digital. */
+  var CATEGORIAS = [
+    { k: 'bono', l: 'Bono', valor: 1 }, { k: 'beca', l: 'Beca', valor: 1 }, { k: 'kit', l: 'Kit', valor: 1 }, { k: 'transporte', l: 'Transporte', valor: 1 },
+    { k: 'inscripcion', l: 'Inscripción', valor: 1 }, { k: 'descuento', l: 'Descuento', valor: 1 }, { k: 'dinero', l: 'Dinero', valor: 1 },
+    { k: 'pase', l: 'Pase / acceso', valor: 0 }, { k: 'diploma', l: 'Diploma / reconocimiento', valor: 0, cert: 1 }
+  ];
+  function catOf(i) { return CATEGORIAS.filter(function (c) { return c.k === i.categoria; })[0] || null; }
+  function conValor(i) { var c = catOf(i); return !c || !!c.valor; }
+  function modsOf(i) { var c = catOf(i); return c && c.cert ? ['certificado'] : ['codigo', 'fijo']; }
+  function applyCategoria(inc) {
+    var c = catOf(inc); if (!c) return;
+    if (!c.valor) inc.valor = '';
+    var ok = modsOf(inc);
+    if (ok.indexOf(inc.modalidad) < 0) { inc.modalidad = ok[0]; inc.foto = (inc.modalidad === 'codigo'); }
+  }
   var FRECUENCIAS = [['mensual', 'Mensual'], ['bimestral', 'Bimestral'], ['trimestral', 'Trimestral'], ['semestral', 'Semestral'], ['otra', 'Otra (definir meses)']];
   var DOC_SUGERIDOS = ['Documento de identidad', 'Certificado de resultado', 'Certificación bancaria', 'Certificado de estudio', 'Autorización del acudiente', 'Certificado médico'];
   var BENEFICIARIOS = [['deportista', 'Deportista'], ['paradeportista', 'Paradeportista'], ['apoyo', 'Personal de apoyo'], ['institucion', 'Institución educativa']];
@@ -46,7 +61,7 @@
   /* ── Estado ─────────────────────────────────────────────────── */
   var uid = 0;
   function nextId() { uid += 1; return 'i' + uid; }
-  function newInc() { return { id: nextId(), nombre: '', modalidad: 'codigo', valor: '', cantidad: '', foto: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', plantilla: 'Diploma institucional' }; }
+  function newInc() { return { id: nextId(), nombre: '', categoria: '', modalidad: 'codigo', valor: '', cantidad: '', foto: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', plantilla: 'Diploma institucional' }; }
 
   var S = {
     step: 1, max: 1, done: false,
@@ -65,8 +80,8 @@
   var SNAP = null; // foto del programa publicado (modo edición) para detectar versionamiento
 
   function seedEdit() {
-    var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.modalidad = 'fijo'; i1.valor = '200000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
-    var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.modalidad = 'codigo'; i2.valor = '52500000'; i2.cantidad = '150'; i2.foto = true;
+    var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'beca'; i1.modalidad = 'fijo'; i1.valor = '200000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
+    var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.categoria = 'kit'; i2.modalidad = 'codigo'; i2.valor = '52500000'; i2.cantidad = '150'; i2.foto = true;
     S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], area: AREAS[0], gestor: 'Isa Pabon', desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', cobertura: ['Nacional'], justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 }, responsable: 'Danna Arrieta · Gestor de incentivos' };
     S.rubro = { valor: '252500000', tipos: 'varios', n: 2 };
     S.inc = [i1, i2];
@@ -89,6 +104,7 @@
   /* Debajo de la cantidad: valor de cada cupo = valor total ÷ cantidad */
   function cupoText(inc) {
     var v = Number(inc.valor) || 0, c = Number(inc.cantidad) || 0, fijo = inc.modalidad === 'fijo', who = fijo ? 'beneficiario' : 'cupo';
+    if (!conValor(inc)) return 'Número de cupos de este tipo. No tiene valor monetario.';
     if (v && c) return 'Cada ' + who + (fijo ? ' recibe ' : ' es de ') + money2(v / c) + (fijo ? ' por ciclo' : '') + ' (' + money2(v) + ' ÷ ' + c.toLocaleString('es-CO') + ').';
     return 'Con el valor total y la cantidad se calcula el valor de cada ' + who + '.';
   }
@@ -306,11 +322,13 @@
   }
   function incCard(inc, idx) {
     var m = inc.modalidad, k = 'inc.' + inc.id + '.';
-    var mod = radios({ label: 'Modalidad', act: 'inc-modalidad', d: inc.id, value: m, dir: 'horizontal', options: [
+    var ALL_MODS = [
       { v: 'codigo', l: 'Entrega única con código', s: 'Bono, kit, beca… Cada código es único y equivale a una unidad entregable.' },
       { v: 'certificado', l: 'Certificado digital / reconocimiento', s: 'Entrega única sin código: PDF con firma digital y QR de verificación.' },
       { v: 'fijo', l: 'Incentivo fijo recurrente', s: 'Apoyo periódico de sostenimiento. Sin código; exige documentación previa.' }
-    ] });
+    ];
+    var allowed = modsOf(inc), cv = conValor(inc);
+    var mod = radios({ label: 'Modalidad', act: 'inc-modalidad', d: inc.id, value: m, dir: 'horizontal', options: ALL_MODS.filter(function (o) { return allowed.indexOf(o.v) > -1; }) });
     var extra = '';
     if (m === 'codigo') {
       extra = alertBox('Los códigos se cargan en el paso 5 o después, y no se pueden eliminar si ya registran entregas.', 'informative');
@@ -329,16 +347,19 @@
     return '<div class="nwt-card" nwt-variant="quiet" nwt-size="medium"><div class="nwt-card__body">' +
       '<div class="nwt-card__header"><div class="pf-card-head-row"><h3 class="pf-card-title"><span class="pf-num">' + (idx + 1) + '</span>Tipo de incentivo #' + (idx + 1) + (n > 1 ? ' de ' + n : '') + '</h3></div></div>' +
       '<div class="nwt-card__content"><div class="pf-inc">' +
-        tf({ label: 'Nombre', req: 1, k: k + 'nombre', val: inc.nombre, ph: 'Ej. Bono, Beca educativa, Kit deportivo', hint: 'El nombre del tipo de incentivo (ej. Bono, Beca, Kit).' }) +
+        '<div class="pf-grid">' +
+          tf({ label: 'Nombre', req: 1, k: k + 'nombre', val: inc.nombre, ph: 'Ej. Beca educativa · Medallistas de oro' }) +
+          sel({ label: 'Categoría', req: 1, k: k + 'categoria', val: inc.categoria, ph: 'Selecciona categoría', opts: CATEGORIAS.map(function (c) { return [c.k, c.l]; }), attrs: ' data-struct="1"', hint: inc.categoria ? (cv ? 'Con valor numérico: se pide el valor total.' : 'Sin valor monetario: no se pide valor.') : '' }) +
+        '</div>' +
       '<div class="pf-modal-box">' + mod + extra + '</div>' +
       '<div class="pf-grid">' +
-        tf({ label: valorLabel, req: m !== 'certificado', k: k + 'valor', val: inc.valor ? Number(inc.valor).toLocaleString('es-CO') : '', ph: m === 'certificado' ? 'Sin valor monetario' : '0', mode: 'numeric', pre: '$', hint: m === 'fijo' ? 'Monto total que se paga en cada ciclo a todos los beneficiarios.' : 'Monto total destinado a este tipo de incentivo.' }) +
+        (cv ? tf({ label: valorLabel, req: 1, k: k + 'valor', val: inc.valor ? Number(inc.valor).toLocaleString('es-CO') : '', ph: '0', mode: 'numeric', pre: '$', hint: m === 'fijo' ? 'Monto total que se paga en cada ciclo a todos los beneficiarios.' : 'Monto total destinado a este tipo de incentivo.' }) : '') +
         tf({ label: cantLabel, k: k + 'cantidad', val: inc.cantidad, ph: '0', mode: 'numeric', hint: cupoText(inc) }) +
-      '</div>' + foto + '</div></div><div class="nwt-card__footer"></div></div></div>';
+            '</div>' + foto + '</div></div><div class="nwt-card__footer"></div></div></div>';
   }
   function step3() {
     var n = S.inc.length;
-    return '<div class="pf-sec">' + head('Tipos de incentivo', 'Para cada tipo define su <b>nombre, modalidad, valor y cantidad</b>, y si exige foto de evidencia. «Montos distintos» = tipos distintos.') +
+    return '<div class="pf-sec">' + head('Tipos de incentivo', 'Para cada tipo define su <b>nombre y categoría</b> (la categoría decide si lleva valor numérico), la <b>modalidad</b>, la cantidad y si exige foto de evidencia.') +
       '<div class="pf-types-bar">' + alertBox(n === 1 ? 'Este programa tiene <b>un solo tipo</b> de incentivo, definido en el paso 2.' : 'Este programa tiene <b>' + n + ' tipos</b> de incentivo, definidos en el paso 2.', 'informative', 'categories') + btn('Cambiar en el paso 2', 'goto', { v: 'quiet', s: 'medium', x: '2', i: 'edit' }) + '</div>' +
       '<div id="pfIncs" class="pf-sec">' + S.inc.map(incCard).join('') + '</div>' +
       '<div id="pfDist"></div></div>';
@@ -514,7 +535,7 @@
 
     var d = S.datos, rub = S.rubro;
     var rubTxt = (rub.valor ? money(rub.valor) : 'Sin presupuesto (opcional)') + (totalCupo() ? ' · cupo ' + totalCupo().toLocaleString('es-CO') + ' entregas' : '');
-    var incTxt = S.inc.map(function (i) { var v = Number(i.valor) || 0, c = Number(i.cantidad) || 0; return '<div>' + esc(i.nombre || 'Sin nombre') + ' · ' + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + (i.frecuencia === 'otra' ? 'cada ' + (i.frecuenciaN || '?') + ' ' + (i.frecuenciaU || 'meses') : i.frecuencia) }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + ' ' + (v ? money(v) + (i.modalidad === 'fijo' ? ' por ciclo' : ' total') : '') + (c ? ' · ' + c.toLocaleString('es-CO') + (i.modalidad === 'fijo' ? ' beneficiarios' : ' cupos') + (v ? ' de ' + money2(v / c) : '') : '') + '</div>'; }).join('');
+    var incTxt = S.inc.map(function (i) { var v = Number(i.valor) || 0, c = Number(i.cantidad) || 0; return '<div>' + esc(i.nombre || 'Sin nombre') + (catOf(i) ? ' (' + esc(catOf(i).l) + ')' : '') + ' · ' + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + (i.frecuencia === 'otra' ? 'cada ' + (i.frecuenciaN || '?') + ' ' + (i.frecuenciaU || 'meses') : i.frecuencia) }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + ' ' + (v ? money(v) + (i.modalidad === 'fijo' ? ' por ciclo' : ' total') : '') + (c ? ' · ' + c.toLocaleString('es-CO') + (i.modalidad === 'fijo' ? ' beneficiarios' : ' cupos') + (v ? ' de ' + money2(v / c) : '') : '') + '</div>'; }).join('');
     var benTxt = S.cond.benef.map(function (b) { return BENEFICIARIOS.filter(function (x) { return x[0] === b; })[0][1]; }).join(', ') || '—';
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
       kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Evento', esc(d.evento || '—')) + kv('Responsable', esc(d.responsable || '—')) + kv('Área · Gestor asignado', esc(d.area) + ' · ' + esc(d.gestor)) +
@@ -550,7 +571,8 @@
     }
     if (step >= 3) S.inc.forEach(function (i) {
       if (!i.nombre.trim()) e.push(['inc.' + i.id + '.nombre', 'Nombra el incentivo.', 3]);
-      if (i.modalidad !== 'certificado' && !Number(i.valor)) e.push(['inc.' + i.id + '.valor', 'Indica el valor.', 3]);
+      if (!i.categoria) e.push(['inc.' + i.id + '.categoria', 'Selecciona la categoría.', 3]);
+      if (conValor(i) && !Number(i.valor)) e.push(['inc.' + i.id + '.valor', 'Indica el valor total.', 3]);
       if (i.modalidad === 'fijo' && i.frecuencia === 'otra' && !Number(i.frecuenciaN)) e.push(['inc.' + i.id + '.frecuenciaN', 'Indica cada cuánto se repite.', 3]);
     });
     if (step >= 4) {
@@ -683,6 +705,7 @@
     if (isMoney) { var d = digits(t.value); if (e.type === 'change' && k.indexOf('cantidad') < 0) t.value = d ? Number(d).toLocaleString('es-CO') : ''; else if (e.type === 'input') t.value = d && (k.indexOf('cantidad') < 0) ? Number(d).toLocaleString('es-CO') : d; }
     setByKey(k, t.value);
     if (k === 'rubro.n') syncInc();
+    var mc = /^inc\.([^.]+)\.categoria$/.exec(k); if (mc && incById(mc[1])) applyCategoria(incById(mc[1]));
     var mv = /^inc\.([^.]+)\.(valor|cantidad)$/.exec(k);
     if (mv) { var msg = document.querySelector('[data-box="inc.' + mv[1] + '.cantidad"] .nwt-input-box__message span'), inc0 = incById(mv[1]); if (msg && inc0) msg.textContent = cupoText(inc0); }
     if (t.dataset.struct && e.type === 'change') { render(true); return; }
