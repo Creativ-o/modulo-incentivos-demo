@@ -683,6 +683,40 @@
     } catch (_) { return false; }
   }
 
+
+  /* ── Barra lateral (SDK nwt-sidebar) + encabezado fijo ───────── */
+  function initChrome() {
+    var pf = $('.pf'), side = $('#pfSide'), tgl = $('#pfSideToggle'), scrim = $('#pfScrim');
+    var SIDE_KEY = 'inc-sidebar-open', mq = window.matchMedia('(max-width: 760px)');
+    var burger = document.createElement('button'); burger.type = 'button'; burger.className = 'pf-burger'; burger.setAttribute('aria-label', 'Abrir menú'); burger.innerHTML = icon('drawer'); pf.appendChild(burger);
+    function setExpanded(open) {
+      side.classList.toggle('nwt-sidebar--collapsed', !open);
+      tgl.setAttribute('aria-pressed', String(!open)); tgl.setAttribute('aria-label', open ? 'Colapsar menú' : 'Expandir menú');
+      tgl.querySelector('.nwt-icon').classList.toggle('nwt-sidebar__toolbar__toggle--back', open);
+      tgl.querySelector('i').className = 'naotech-icon-' + (open ? 'chevron-right' : 'drawer');
+    }
+    function setDrawer(open) { side.classList.toggle('is-open', open); scrim.hidden = !open; }
+    var saved = false; try { saved = localStorage.getItem(SIDE_KEY) === '1'; } catch (_) {}
+    function apply() { if (mq.matches) { setExpanded(true); setDrawer(false); } else { setExpanded(saved); setDrawer(false); } }
+    tgl.addEventListener('click', function () {
+      if (mq.matches) { setDrawer(false); return; }
+      saved = side.classList.contains('nwt-sidebar--collapsed'); try { localStorage.setItem(SIDE_KEY, saved ? '1' : '0'); } catch (_) {}
+      setExpanded(saved);
+    });
+    burger.addEventListener('click', function () { setDrawer(true); });
+    scrim.addEventListener('click', function () { setDrawer(false); });
+    $('#pfLogout').addEventListener('click', function () { location.href = 'index.html'; });
+    if (mq.addEventListener) mq.addEventListener('change', apply); apply();
+    /* Encabezado: sombra + compactación al hacer scroll (histéresis para evitar parpadeo) */
+    var on = false;
+    function onScroll() {
+      var y = window.scrollY;
+      if (!on && y > 24) { on = true; pf.classList.add('is-scrolled'); }
+      else if (on && y < 4) { on = false; pf.classList.remove('is-scrolled'); }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  }
+
   /* ── Arranque ───────────────────────────────────────────────── */
   function init() {
     var restored = loadDraft();
@@ -703,6 +737,7 @@
     $('#pfPrev').addEventListener('click', function () { if (S.step > 1) go(S.step - 1); });
     $('#pfNext').addEventListener('click', next);
     $('[data-act="save-draft"]').style.display = EDIT ? 'none' : '';
+    initChrome();
     render(true);
     if (restored) toast('Recuperamos tu borrador sin terminar.', 'informative');
   }
