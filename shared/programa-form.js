@@ -273,11 +273,11 @@
     var r = S.rubro, varios = r.tipos !== 'uno', n = tiposObjetivo();
     var nOpts = []; for (var i = 2; i <= 10; i++) nOpts.push(String(i));
     var hint = varios
-      ? alertBox('El rubro se reparte entre <b>' + n + ' tipos</b> de incentivo. Los defines en el paso 3, uno por tarjeta.', 'informative')
+      ? alertBox('El rubro se repartirá en <b>' + n + ' tipos</b> de incentivos.', 'informative')
       : alertBox('Todo el rubro se destinará a este <b>único tipo</b> de incentivo. Si necesitas más de uno, cambia a <b>Varios tipos</b>.', 'informative');
     return '<div class="pf-sec">' + head('Rubro', 'Monto que el Ministerio destina al programa y en cuántos tipos de incentivo se reparte. Se descuenta con cada entrega. <b>La fuente presupuestal no se solicita</b>.') +
       card('Presupuesto total', '', '<div class="pf-inc">' +
-        '<div class="pf-grid">' + tf({ label: 'Presupuesto total del programa (COP)', k: 'rubro.valor', val: r.valor ? Number(r.valor).toLocaleString('es-CO') : '', ph: '0', mode: 'numeric', pre: '$', hint: 'Opcional por ahora. Monto asignado por el Ministerio; se descuenta por cada asignación.' }) + '</div>' +
+        '<div class="pf-grid">' + tf({ label: 'Presupuesto total del programa (COP)', k: 'rubro.valor', val: r.valor ? Number(r.valor).toLocaleString('es-CO') : '', ph: '0', mode: 'numeric', pre: '$', hint: 'Monto asignado por el Ministerio; se descuenta por cada asignación.' }) + '</div>' +
         alertBox('Con presupuesto, el sistema calcula <b>inicial, ejecutado y disponible</b> en tiempo real, bloquea asignaciones cuando llega a cero y reintegra el saldo al revertir una entrega.', 'informative') +
       '</div>', { n: 1 }) +
       card('Tipos de incentivo', 'Define cuántos tipos de incentivo tendrá el programa. Cada uno se parametriza en el paso 3.', '<div class="pf-inc">' +
@@ -287,7 +287,6 @@
         ] }) +
         (varios ? '<div class="pf-grid">' + sel({ label: '¿Cuántos tipos de incentivo?', k: 'rubro.n', val: String(n), opts: nOpts, attrs: ' data-struct="1"', hint: 'Entre 2 y 10. Es la cantidad de tarjetas que verás en el paso 3.' }) + '</div>' : '') +
         hint +
-        alertBox('El <b>cupo de entregas</b> no se define aquí: sale de la cantidad de cada incentivo (paso 3). Sin presupuesto el programa no controla saldo en pesos; podrás definirlo después sin crear una versión.', 'informative') +
       '</div>', { n: 2 }) + '</div>';
   }
 
