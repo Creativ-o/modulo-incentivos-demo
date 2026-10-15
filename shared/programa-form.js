@@ -430,7 +430,7 @@
   function groupsHTML(inc) {
     var id = inc.id;
     return inc.grupos.map(function (g, gi) {
-        return (gi > 0 ? '<div class="pf-or">— O —</div>' : '') + '<div class="pf-group"><div class="pf-group__head"><span class="pf-group__label">Grupo ' + (gi + 1) + '</span>' +
+        return (gi > 0 ? '<div class="pf-or"><span>O</span></div>' : '') + '<div class="pf-group"><div class="pf-group__head"><span class="pf-group__label">Grupo ' + (gi + 1) + '</span>' +
           '<span style="flex:1"></span>' + (inc.grupos.length > 1 ? btn('Quitar grupo', 'grp-del', { v: 'mute', d: id, x: gi, i: 'delete' }) : '') + '</div>' +
           g.rows.map(function (r, ri) { return ruleRow(inc, gi, ri, r); }).join('') +
           btn('Añadir condición', 'rule-add', { d: id, x: gi, i: 'add' }) + '</div>';
