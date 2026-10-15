@@ -547,12 +547,38 @@
     }).join('') + '</div>';
   }
   function kv(k, v) { return '<div class="pf-kv"><dt>' + esc(k) + '</dt><dd>' + v + '</dd></div>'; }
+  function codState(id) {
+    var c = S.codigos[id] || (S.codigos[id] = { modo: 'despues', n: 0 });
+    if (c.modo === 'ahora') c.modo = 'masivo';
+    if (!Array.isArray(c.lista) || !c.lista.length) c.lista = [''];
+    return c;
+  }
+  function codManual(c) {
+    var seen = {}, ok = 0, dup = 0;
+    c.lista.forEach(function (v) { v = v.trim().toLowerCase(); if (!v) return; if (seen[v]) dup++; else { seen[v] = 1; ok++; } });
+    return { ok: ok, dup: dup };
+  }
+  function codCountText(inc) {
+    var c = codState(inc.id), st = c.modo === 'manual' ? codManual(c) : { ok: c.n, dup: 0 }, q = Number(inc.cantidad) || 0;
+    var t = st.ok + ' código' + (st.ok === 1 ? '' : 's') + ' válido' + (st.ok === 1 ? '' : 's') + (q ? ' de ' + q.toLocaleString('es-CO') + ' cupos' : '');
+    if (st.dup) t += ' · ' + st.dup + ' repetido' + (st.dup === 1 ? '' : 's') + ' (cada código debe ser único)';
+    else if (q && st.ok > q) t += ' · sobran ' + (st.ok - q);
+    else if (q && st.ok && st.ok < q) t += ' · faltan ' + (q - st.ok) + ' para completar el inventario';
+    else if (q && st.ok === q) t += ' · inventario completo';
+    return t;
+  }
   function step5() {
     var cod = S.inc.filter(function (i) { return i.modalidad === 'codigo'; });
     var codHTML = cod.length ? cod.map(function (i) {
-      var c = S.codigos[i.id] || (S.codigos[i.id] = { modo: 'despues', n: 0 });
-      return '<div class="pf-modal-box"><b>' + esc(i.nombre || 'Incentivo sin nombre') + '</b>' + radios({ act: 'cod-modo', d: i.id, value: c.modo, dir: 'horizontal', compact: 1, options: [{ v: 'ahora', l: 'Cargar ahora' }, { v: 'despues', l: 'Cargar después' }] }) +
-        (c.modo === 'ahora' ? '<div class="pf-drop">' + icon('upload') + (c.n ? '<b>' + c.n + ' códigos válidos cargados</b><span>1 duplicado omitido</span>' : '<span>Arrastra una plantilla Excel/CSV o selecciónala</span>') + '<div class="pf-row">' + btn('Descargar plantilla', 'cod-tpl', { i: 'download' }) + btn(c.n ? 'Reemplazar carga' : 'Simular carga', 'cod-sim', { v: 'loud', d: i.id, i: 'upload' }) + '</div></div>' : '<p class="pf-hint">El Gestor de programa o el de incentivos podrán cargar los códigos cuando quieran, sin versionar el programa.</p>') + '</div>';
+      var c = codState(i.id);
+      var body = '';
+      if (c.modo === 'masivo') body = '<div class="pf-drop">' + icon('upload') + (c.n ? '<b>' + c.n + ' códigos válidos cargados</b><span>1 duplicado omitido</span>' : '<span>Arrastra una plantilla Excel/CSV o selecciónala</span>') + '<div class="pf-row">' + btn('Descargar plantilla', 'cod-tpl', { i: 'download' }) + btn(c.n ? 'Reemplazar carga' : 'Simular carga', 'cod-sim', { v: 'loud', d: i.id, i: 'upload' }) + '</div></div>';
+      else if (c.modo === 'manual') body = '<div class="pf-cod-rows">' + c.lista.map(function (v, ix) {
+        return '<div class="pf-cod-row">' + tf({ label: ix === 0 ? 'Código' : '', k: 'cod.' + i.id + '.' + ix, val: v, ph: 'Ej. BONO-0001' }) + '<div>' + (c.lista.length > 1 ? iconBtn('close', 'cod-del', 'Quitar código', i.id, ix) : '') + '</div></div>';
+      }).join('') + '</div>' + btn('Agregar código', 'cod-add', { d: i.id, i: 'add' });
+      else body = '<p class="pf-hint">El Gestor de programa o el de incentivos podrán cargar los códigos cuando quieran, sin versionar el programa.</p>';
+      return '<div class="pf-modal-box"><b>' + esc(i.nombre || 'Incentivo sin nombre') + '</b>' + radios({ act: 'cod-modo', d: i.id, value: c.modo, dir: 'horizontal', compact: 1, options: [{ v: 'masivo', l: 'Carga masiva (archivo)' }, { v: 'manual', l: 'Carga manual' }, { v: 'despues', l: 'Cargar después' }] }) + body +
+        (c.modo === 'despues' ? '' : '<p class="pf-hint" id="pfCodCount-' + i.id + '">' + codCountText(i) + '</p>') + '</div>';
     }).join('') : alertBox('Ningún incentivo de este programa usa códigos: no hay inventario que cargar.', 'informative');
 
     var d = S.datos, rub = S.rubro;
@@ -709,6 +735,7 @@
     if (p[0] === 'datos') S.datos[p[1]] = raw;
     else if (p[0] === 'rubro') S.rubro[p[1]] = digits(raw);
     else if (p[0] === 'inc') { var i = incById(p[1]); i[p[2]] = (p[2] === 'valor' || p[2] === 'cantidad' || p[2] === 'frecuenciaN') ? digits(raw) : raw; }
+    else if (p[0] === 'cod') { codState(p[1]).lista[+p[2]] = raw; }
     else if (p[0] === 'crono') { var ic = incById(p[1]); if (p.length === 4) ic.crono[p[2]][p[3]] = raw; else ic.crono[p[2]] = raw; }
     else if (p[0] === 'rule') {
       var inc = incById(p[1]), r = inc.grupos[+p[2]].rows[+p[3]], f = p[4];
@@ -725,6 +752,7 @@
     if (isMoney) { var d = digits(t.value); if (e.type === 'change' && k.indexOf('cantidad') < 0) t.value = d ? Number(d).toLocaleString('es-CO') : ''; else if (e.type === 'input') t.value = d && (k.indexOf('cantidad') < 0) ? Number(d).toLocaleString('es-CO') : d; }
     setByKey(k, t.value);
     if (k === 'rubro.n') syncInc();
+    if (k.indexOf('cod.') === 0) { var ci0 = incById(k.split('.')[1]), ce = $('#pfCodCount-' + k.split('.')[1]); if (ci0 && ce) ce.textContent = codCountText(ci0); }
     var mc = /^inc\.([^.]+)\.categoria$/.exec(k); if (mc && incById(mc[1])) applyCategoria(incById(mc[1]));
     var mv = /^inc\.([^.]+)\.(valor|cantidad)$/.exec(k);
     if (mv) { var msg = document.querySelector('[data-box="inc.' + mv[1] + '.cantidad"] .nwt-input-box__message span'), inc0 = incById(mv[1]); if (msg && inc0) msg.textContent = cupoText(inc0); }
@@ -760,7 +788,9 @@
     'doc-add-s': function (x, id) { incById(id).doc.list.push({ name: x, oblig: true }); render(true); },
     'doc-add': function (x, id) { var inp = $('[data-k="ui.docNuevo.' + id + '"]'), v = inp && inp.value.trim(); if (!v) return toast('Escribe el nombre del documento.', 'caution'); incById(id).doc.list.push({ name: v, oblig: true }); render(true); },
     'cod-modo': function (x, i) { (S.codigos[i] || (S.codigos[i] = { n: 0 })).modo = x; render(true); },
-    'cod-sim': function (x, i) { S.codigos[i].n = 50; render(true); },
+    'cod-sim': function (x, i) { var inc = incById(i); S.codigos[i].n = (inc && Number(inc.cantidad)) || 50; render(true); },
+    'cod-add': function (x, i) { codState(i).lista.push(''); render(true); },
+    'cod-del': function (x, i) { var l = codState(i).lista; if (l.length > 1) l.splice(+x, 1); render(true); },
     'cod-tpl': function () { toast('Plantilla de ejemplo (demo): codigo, observación.', 'informative'); },
     activar: function (x) { S.activar = x; render(true); },
     'save-draft': function () { savedSnap = snapState(); saveDraft(); toast('Borrador guardado. Podrás retomarlo cuando quieras.', 'positive'); },
