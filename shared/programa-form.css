@@ -257,7 +257,7 @@ a.nwt-button{text-decoration:none}
 .pf-subsec{display:flex;flex-direction:column;gap:var(--naotech-sizing-12)}
 .pf-subsec + .pf-subsec,.pf-sec > .pf-subsec + .pf-subsec,.pf-inc > .pf-subsec{padding-top:var(--naotech-sizing-16);border-top:1px solid var(--naotech-app-color-200)}
 .pf-inc > .pf-sec > .pf-subsec:first-child{padding-top:0;border-top:0}
-.pf-sub{margin:0;font-size:var(--naotech-sizing-16);font-weight:var(--naotech-font-weight-bold);color:var(--naotech-app-color-900);min-height:0}
+.pf-sub{margin:0;font-size:var(--naotech-sizing-16);font-weight:var(--naotech-font-weight-bold);color:var(--naotech-app-color-900);min-height:0;gap:var(--naotech-sizing-32);height:var(--naotech-heading6-line-height)}
 .pf-card-head-row > .pf-row{flex-shrink:0}
 
 /* «Así se leerá la regla»: lenguaje natural (no fórmula) */
