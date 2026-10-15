@@ -210,3 +210,14 @@ a.nwt-button{text-decoration:none}
 .pf-tf-ico .nwt-input-box__control{display:flex;align-items:center;gap:var(--naotech-sizing-8)}
 .pf-tf-ico .nwt-icon{--naotech-icon-color:var(--naotech-app-color-700);flex:0 0 auto}
 .pf-tf-ico .nwt-text-field__input{flex:1;min-width:0}
+
+/* DC-020 · Selector de cobertura: íconos centrados (× de chips y chevron) y buscador de la lista */
+.pf-ms__chips .nwt-tag{display:inline-flex;align-items:center}
+.pf-ms__x{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:var(--naotech-sizing-6);cursor:pointer;line-height:1;--naotech-icon-dimension:12px;--naotech-icon-color:currentColor}
+.pf-ms__x .nwt-icon{display:flex;align-items:center;justify-content:center}
+.pf-ms__content .pf-ms__chev{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex:0 0 auto;align-self:center}
+.pf-ms__search{display:flex;align-items:center;gap:var(--naotech-sizing-8);padding:0 var(--naotech-sizing-8) var(--naotech-sizing-8);margin:0 0 var(--naotech-sizing-4);border-bottom:1px solid var(--naotech-app-color-200);--naotech-icon-dimension:18px;--naotech-icon-color:var(--naotech-app-color-600)}
+.pf-ms__q{flex:1;min-width:0;height:var(--naotech-sizing-32);border:0;outline:0;background:transparent;font:inherit;font-size:var(--naotech-sizing-14);color:var(--naotech-app-color-900)}
+.pf-ms__q::placeholder{color:var(--naotech-app-color-600)}
+/* DC-018 · estado deshabilitado del botón (SDK: .nwt-button:disabled) */
+.pf-hdr-actions .nwt-button:disabled{cursor:not-allowed}

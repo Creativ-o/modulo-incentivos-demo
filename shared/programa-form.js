@@ -20,13 +20,13 @@
   var EVENTOS = ['Juegos Intercolegiados Nacionales 2026', 'Juegos Deportivos Nacionales 2026', 'Juegos Paranacionales 2026', 'Campeonato nacional de atletismo 2026', 'Sin evento asociado (programa permanente)'];
   var AREAS = ['Dirección de Fomento y Desarrollo', 'Alto rendimiento', 'Viceministerio del Deporte'];
   var GESTORES = ['Isa Pabon', 'Laura Meza', 'Carla Suárez', 'Andrés Polo'];
-  var REGIONES = ['Nacional', 'Antioquia', 'Atlántico', 'Bogotá D.C.', 'Cundinamarca', 'Santander', 'Valle del Cauca'];
+  var REGIONES = ['Nacional', 'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bogotá D.C.', 'Bolívar', 'Boyacá', 'Caldas', 'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda', 'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada']; // Nacional + 32 departamentos + Bogotá D.C.
   var CATEGORIAS = ['Beca', 'Kit', 'Bono', 'Dinero', 'Pase o entrada', 'Certificado', 'Otro'];
   var FRECUENCIAS = [['mensual', 'Mensual'], ['bimestral', 'Bimestral'], ['trimestral', 'Trimestral'], ['semestral', 'Semestral'], ['otra', 'Otra (definir meses)']];
   var DOC_SUGERIDOS = ['Documento de identidad', 'Certificado de resultado', 'Certificación bancaria', 'Certificado de estudio', 'Autorización del acudiente', 'Certificado médico'];
   var BENEFICIARIOS = [['deportista', 'Deportista'], ['paradeportista', 'Paradeportista'], ['apoyo', 'Personal de apoyo'], ['institucion', 'Institución educativa']];
   var FAMILIAS = { dem: 'Demográficos', geo: 'Geográficos', dep: 'Deportivos', plat: 'Plataforma', aca: 'Académicos' };
-  var DEPTOS = ['Antioquia', 'Atlántico', 'Bogotá D.C.', 'Bolívar', 'Cundinamarca', 'Nariño', 'Santander', 'Valle del Cauca'];
+  var DEPTOS = REGIONES.slice(1); // mismos departamentos en el constructor de reglas
   var FIELDS = {
     edad:        { fam: 'dem',  label: 'Edad',                 type: 'num' },
     genero:      { fam: 'dem',  label: 'Género',               type: 'sel', opts: ['Femenino', 'Masculino'] },
@@ -159,7 +159,7 @@
       '</div>', { n: 1 }) +
       card('Gestor de programa', 'Quien revisa documentación y entrega beneficios. Solo verá y gestionará los programas que tiene a cargo.', '<div class="pf-grid">' +
         sel({ label: 'Gestor de programa asignado', req: 1, k: 'datos.gestor', val: d.gestor, ph: 'Asigna un gestor', opts: GESTORES }) +
-        '<div>' + alertBox('El Gestor de programa <b>solo lee</b> las condiciones; editarlas es de Superadmin, Administrador y Gestor de incentivos.', 'informative') + '</div>' +
+        '<div>' + alertBox('El Gestor de programa <b>solo lee</b> las condiciones.', 'informative') + '</div>' +
       '</div>', { n: 2 }) +
       card('Vigencia y activación', 'Al cumplirse la fecha de fin el programa se inactiva solo.', '<div class="pf-grid">' +
         tf({ label: 'Vigencia desde', req: 1, type: 'date', k: 'datos.desde', val: d.desde }) +
@@ -202,17 +202,24 @@
   }
 
   /* ── Cobertura territorial: dropdown con multiselección (composición SDK: nwt-dropdown + opciones con checkbox) ── */
-  var cobOpen = false;
+  var cobOpen = false, cobQuery = '';
+  function norm(s) { return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function cobOptsHTML() {
+    var sel = S.datos.cobertura, q = norm(cobQuery.trim());
+    var list = REGIONES.filter(function (r) { return !q || norm(r).indexOf(q) > -1; });
+    if (!list.length) return '<li class="nwt-dropdown__option nwt-dropdown__option--empty"><span>Sin resultados</span></li>';
+    return list.map(function (r) {
+      var on = sel.indexOf(r) > -1;
+      return '<li class="nwt-dropdown__option" role="option" aria-selected="' + on + '" data-act="cob-opt" data-x="' + esc(r) + '"><span class="nwt-dropdown__option-checkbox' + (on ? ' nwt-dropdown__option-checkbox--selected' : '') + '">' + (on ? icon('positive') : '') + '</span><span>' + esc(r) + '</span></li>';
+    }).join('');
+  }
   function cobInner() {
     var sel = S.datos.cobertura;
     var chips = sel.map(function (r) {
-      return '<span class="nwt-tag nwt-tag--active" nwt-size="small">' + esc(r) + (r === 'Nacional' ? '' : '<span class="pf-ms__x" role="button" aria-label="Quitar ' + esc(r) + '" data-act="cob-del" data-x="' + esc(r) + '">×</span>') + '</span>';
+      return '<span class="nwt-tag nwt-tag--active" nwt-size="small">' + esc(r) + (r === 'Nacional' ? '' : '<span class="pf-ms__x" role="button" aria-label="Quitar ' + esc(r) + '" data-act="cob-del" data-x="' + esc(r) + '">' + icon('close') + '</span>') + '</span>';
     }).join('');
-    var control = '<div class="nwt-dropdown__content pf-ms__content" role="combobox" tabindex="0" aria-expanded="' + cobOpen + '" data-act="cob-toggle"><div class="pf-ms__chips">' + chips + '</div><div class="nwt-dropdown__chevron' + (cobOpen ? ' nwt-dropdown__chevron--open' : '') + '">' + icon('chevron-down') + '</div></div>';
-    var list = cobOpen ? '<div class="nwt-dropdown__list pf-ms__list"><ul class="nwt-dropdown__options">' + REGIONES.map(function (r) {
-      var on = sel.indexOf(r) > -1;
-      return '<li class="nwt-dropdown__option" role="option" aria-selected="' + on + '" data-act="cob-opt" data-x="' + esc(r) + '"><span class="nwt-dropdown__option-checkbox' + (on ? ' nwt-dropdown__option-checkbox--selected' : '') + '">' + (on ? icon('positive') : '') + '</span><span>' + esc(r) + '</span></li>';
-    }).join('') + '</ul></div>' : '';
+    var control = '<div class="nwt-dropdown__content pf-ms__content" role="combobox" tabindex="0" aria-expanded="' + cobOpen + '" data-act="cob-toggle"><div class="pf-ms__chips">' + chips + '</div><div class="nwt-dropdown__chevron pf-ms__chev' + (cobOpen ? ' nwt-dropdown__chevron--open' : '') + '">' + icon('chevron-down') + '</div></div>';
+    var list = cobOpen ? '<div class="nwt-dropdown__list pf-ms__list"><div class="pf-ms__search">' + icon('search') + '<input class="pf-ms__q" type="text" autocomplete="off" placeholder="Buscar departamento" value="' + esc(cobQuery) + '" aria-label="Buscar departamento"/></div><ul class="nwt-dropdown__options" id="pfCobOpts">' + cobOptsHTML() + '</ul></div>' : '';
     return inputBox('Cobertura territorial', false, control, '«Nacional» incluye todas las regiones. Puedes elegir varias.', 'datos.cobertura') + list;
   }
   function cobRedraw() {
@@ -237,7 +244,7 @@
       ctl.scrollIntoView({ block: 'center' }); r = room();
     }
     var up = r.below < NEED && r.above > r.below, avail = Math.max(120, Math.min(300, (up ? r.above : r.below) - 16));
-    opts.style.maxHeight = avail + 'px';
+    opts.style.maxHeight = Math.max(100, avail - 52) + 'px';
     var e = el.getBoundingClientRect(), c = ctl.getBoundingClientRect();
     list.classList.toggle('pf-ms__list--up', up);
     if (up) { list.style.top = 'auto'; list.style.bottom = (e.bottom - c.top + GAP) + 'px'; }
@@ -664,11 +671,12 @@
     if (S.step === 2) updateKpi();
     if (S.step === 3) updateDist();
     if (EDIT) banner();
+    refreshDraftBtn();
   }
 
   /* ── Acciones ───────────────────────────────────────────────── */
   var ACT = {
-    'cob-toggle': function () { cobOpen = !cobOpen; cobRedraw(); },
+    'cob-toggle': function () { cobOpen = !cobOpen; cobQuery = ''; cobRedraw(); if (cobOpen) { var q = $('#pfCob .pf-ms__q'); if (q) q.focus({ preventScroll: true }); } },
     'cob-opt': function (x) { cobSet(x); },
     'cob-del': function (x) { cobSet(x); },
     'anexo-del': function () { S.datos.anexo = null; saveDraft(true); anexoRedraw(); },
@@ -695,7 +703,7 @@
     'cod-sim': function (x, i) { S.codigos[i].n = 50; render(true); },
     'cod-tpl': function () { toast('Plantilla de ejemplo (demo): codigo, observación.', 'informative'); },
     activar: function (x) { S.activar = x; render(true); },
-    'save-draft': function () { saveDraft(); toast('Borrador guardado. Podrás retomarlo cuando quieras.', 'positive'); },
+    'save-draft': function () { savedSnap = snapState(); saveDraft(); toast('Borrador guardado. Podrás retomarlo cuando quieras.', 'positive'); },
     goto: function (x) { var n = +x; if (n <= S.max && n !== S.step) go(n); },
     edit: function (x) { go(+x); },
     noop: function () {}
@@ -707,6 +715,7 @@
     var fn = ACT[t.dataset.act]; if (!fn) return;
     if (t.tagName === 'LABEL') e.preventDefault();
     fn(t.dataset.x, t.dataset.i);
+    refreshDraftBtn();
   }
   function onAnexoClick(e) {
     var c = e.target.closest && e.target.closest('#pfAnexo .nwt-file-field__content');
@@ -758,6 +767,16 @@
   }
   function routeLabel() { return (hasModalidad('fijo') ? 'Recurrente' : 'Pago único') + ' · ' + (docRequired() ? 'Con documentos' : 'Flujo directo'); }
 
+  /* ── Guardar borrador: solo se habilita si hay cambios respecto al último guardado ── */
+  var savedSnap = '', pristineSnap = '';
+  function snapState() { return JSON.stringify([S.datos, S.rubro, S.inc, S.cond, S.codigos, S.crono, S.activar]); }
+  function refreshDraftBtn() {
+    var b = $('.top-header [data-act="save-draft"]'); if (!b) return;
+    var off = snapState() === savedSnap;
+    b.disabled = off; b.setAttribute('aria-disabled', String(off));
+    b.title = off ? 'Aún no hay cambios por guardar' : '';
+  }
+
   /* ── Toast y borrador ───────────────────────────────────────── */
   var toastT;
   function toast(msg, theme) {
@@ -765,7 +784,9 @@
     clearTimeout(toastT); toastT = setTimeout(function () { $('#pfToast').innerHTML = ''; }, 3600);
   }
   function saveDraft(silent) {
+    refreshDraftBtn();
     if (EDIT) return;
+    if (snapState() === pristineSnap) { try { localStorage.removeItem(DRAFT_KEY); } catch (_) {} return; } // sin cambios: no hay borrador
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ S: S, uid: uid })); } catch (_) {}
   }
   function loadDraft() {
@@ -791,6 +812,8 @@
 
   /* ── Arranque ───────────────────────────────────────────────── */
   function init() {
+    if (!EDIT) { var _p = PERSONAS[role] || PERSONAS.admin; S.datos.responsable = _p[0] + ' · ' + _p[1]; }
+    pristineSnap = snapState();
     var restored = loadDraft();
     if (!EDIT) { var _w = PERSONAS[role] || PERSONAS.admin; S.datos.responsable = _w[0] + ' · ' + _w[1]; } // responsable = usuario logueado
     if (EDIT) {
@@ -805,12 +828,14 @@
     var root = $('#pfStep');
     root.addEventListener('input', onInput); root.addEventListener('change', onInput);
     root.addEventListener('click', onAnexoClick); root.addEventListener('change', onAnexoChange);
+    root.addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('pf-ms__q')) { cobQuery = e.target.value; var ul = $('#pfCobOpts'); if (ul) ul.innerHTML = cobOptsHTML(); } });
     document.addEventListener('click', onClick); document.addEventListener('keydown', onKey);
     root.addEventListener('focusin', function (e) { var b = e.target.closest('.nwt-input-box'); if (b) { b.classList.add('nwt-input-box--focused'); var f = e.target.closest('.nwt-text-field,.nwt-select,.nwt-text-area'); if (f) f.classList.add(f.className.split(' ')[0] + '--focused'); } });
     root.addEventListener('focusout', function (e) { var b = e.target.closest('.nwt-input-box'); if (b) { b.classList.remove('nwt-input-box--focused'); var f = e.target.closest('.nwt-text-field,.nwt-select,.nwt-text-area'); if (f) f.classList.remove(f.className.split(' ')[0] + '--focused'); } });
     $('#pfPrev').addEventListener('click', function () { if (S.step > 1) go(S.step - 1); });
     $('#pfNext').addEventListener('click', next);
     $('[data-act="save-draft"]').style.display = EDIT ? 'none' : '';
+    savedSnap = snapState();
     initChrome();
     render(true);
     if (restored) toast('Recuperamos tu borrador sin terminar.', 'informative');
