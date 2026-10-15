@@ -52,7 +52,7 @@
   var S = {
     step: 1, max: 1, done: false,
     datos: { nombre: '', desc: '', evento: '', area: '', gestor: '', desde: '', hasta: '', activacion: '', cobertura: ['Nacional'], justificacion: '', anexo: null, responsable: '' },
-    rubro: { valor: '' },
+    rubro: { valor: '', tipos: 'uno', n: 2 },
     inc: [newInc()],
     cond: { benef: ['deportista'], modo: 'motor', grupos: [{ op: 'AND', rows: [] }], doc: { req: false, list: [] } },
     codigos: {},
@@ -69,7 +69,7 @@
     var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'Beca'; i1.modalidad = 'fijo'; i1.valor = '1000000'; i1.cantidad = '200'; i1.frecuencia = 'mensual';
     var i2 = newInc(); i2.nombre = 'Kit deportivo'; i2.categoria = 'Kit'; i2.modalidad = 'codigo'; i2.valor = '350000'; i2.cantidad = '150'; i2.foto = true;
     S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], area: AREAS[0], gestor: 'Isa Pabon', desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', cobertura: ['Nacional'], justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 }, responsable: 'Danna Arrieta · Gestor de incentivos' };
-    S.rubro = { valor: '252500000' };
+    S.rubro = { valor: '252500000', tipos: 'varios', n: 2 };
     S.inc = [i1, i2];
     S.cond = {
       benef: ['deportista'], modo: 'motor',
@@ -258,15 +258,37 @@
     var box = document.querySelector('[data-box="datos.cobertura"]'); if (box && c.length) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
   }
 
+  /* Cantidad de tipos definida en el paso 2 → tarjetas del paso 3 */
+  function tiposObjetivo() { return S.rubro.tipos === 'uno' ? 1 : Math.max(2, Math.min(10, parseInt(S.rubro.n, 10) || 2)); }
+  function syncInc() {
+    var t = tiposObjetivo(), removed = 0;
+    if (S.rubro.tipos !== 'uno') S.rubro.n = t;
+    while (S.inc.length < t) S.inc.push(newInc());
+    while (S.inc.length > t) { var x = S.inc.pop(); if (x.nombre || x.valor || x.cantidad) removed++; }
+    if (removed) toast('Se quitaron ' + removed + (removed > 1 ? ' tipos que ya tenían datos.' : ' tipo que ya tenía datos.'), 'caution');
+  }
+
   /* ── Paso 2 · Rubro ─────────────────────────────────────────── */
   function step2() {
-    var r = S.rubro;
-    return '<div class="pf-sec">' + head('Rubro', 'Monto que el Ministerio destina al programa. Se descuenta con cada entrega y luego lo repartes entre los incentivos en el paso 3. <b>La fuente presupuestal no se solicita</b>.') +
+    var r = S.rubro, varios = r.tipos !== 'uno', n = tiposObjetivo();
+    var nOpts = []; for (var i = 2; i <= 10; i++) nOpts.push(String(i));
+    var hint = varios
+      ? alertBox('El rubro se reparte entre <b>' + n + ' tipos</b> de incentivo. Los defines en el paso 3, uno por tarjeta.', 'informative')
+      : alertBox('Todo el rubro se destinará a este <b>único tipo</b> de incentivo. Si necesitas más de uno, cambia a <b>Varios tipos</b>.', 'informative');
+    return '<div class="pf-sec">' + head('Rubro', 'Monto que el Ministerio destina al programa y en cuántos tipos de incentivo se reparte. Se descuenta con cada entrega. <b>La fuente presupuestal no se solicita</b>.') +
       card('Presupuesto total', '', '<div class="pf-inc">' +
         '<div class="pf-grid">' + tf({ label: 'Presupuesto total del programa (COP)', k: 'rubro.valor', val: r.valor ? Number(r.valor).toLocaleString('es-CO') : '', ph: '0', mode: 'numeric', pre: '$', hint: 'Opcional por ahora. Monto asignado por el Ministerio; se descuenta por cada asignación.' }) + '</div>' +
         alertBox('Con presupuesto, el sistema calcula <b>inicial, ejecutado y disponible</b> en tiempo real, bloquea asignaciones cuando llega a cero y reintegra el saldo al revertir una entrega.', 'informative') +
+      '</div>', { n: 1 }) +
+      card('Tipos de incentivo', 'Define cuántos tipos de incentivo tendrá el programa. Cada uno se parametriza en el paso 3.', '<div class="pf-inc">' +
+        radios({ act: 'rubro-tipos', value: r.tipos, dir: 'horizontal', options: [
+          { v: 'uno', l: 'Un solo tipo de incentivo', s: 'Todo el rubro va a la misma categoría (ej. solo becas educativas).' },
+          { v: 'varios', l: 'Varios tipos', s: 'Divide el rubro entre varias categorías (becas + kits + bonos).' }
+        ] }) +
+        (varios ? '<div class="pf-grid">' + sel({ label: '¿Cuántos tipos de incentivo?', k: 'rubro.n', val: String(n), opts: nOpts, attrs: ' data-struct="1"', hint: 'Entre 2 y 10. Es la cantidad de tarjetas que verás en el paso 3.' }) + '</div>' : '') +
+        hint +
         alertBox('El <b>cupo de entregas</b> no se define aquí: sale de la cantidad de cada incentivo (paso 3). Sin presupuesto el programa no controla saldo en pesos; podrás definirlo después sin crear una versión.', 'informative') +
-      '</div>', { n: 1 }) + '</div>';
+      '</div>', { n: 2 }) + '</div>';
   }
 
   /* ── Paso 3 · Tipos ─────────────────────────────────────────── */
@@ -293,7 +315,7 @@
     var cantLabel = m === 'codigo' ? 'Stock / cantidad de códigos' : (m === 'fijo' ? 'Beneficiarios estimados' : 'Cantidad estimada');
     var valorLabel = m === 'fijo' ? 'Valor por ciclo' : 'Valor unitario';
     return '<div class="nwt-card" nwt-variant="quiet" nwt-size="medium"><div class="nwt-card__body">' +
-      '<div class="nwt-card__header"><div class="pf-card-head-row"><h3 class="pf-card-title"><span class="pf-num">' + (idx + 1) + '</span>Incentivo #' + (idx + 1) + '</h3>' + (S.inc.length > 1 ? btn('Quitar', 'inc-del', { v: 'mute', d: inc.id, i: 'delete' }) : '') + '</div></div>' +
+      '<div class="nwt-card__header"><div class="pf-card-head-row"><h3 class="pf-card-title"><span class="pf-num">' + (idx + 1) + '</span>Incentivo #' + (idx + 1) + (S.inc.length > 1 ? ' de ' + S.inc.length : '') + '</h3></div></div>' +
       '<div class="nwt-card__content"><div class="pf-inc"><div class="pf-grid">' +
         tf({ label: 'Nombre del incentivo', req: 1, k: 'inc.' + inc.id + '.nombre', val: inc.nombre, ph: 'Ej. Beca educativa · Medallistas de oro' }) +
         sel({ label: 'Categoría', k: 'inc.' + inc.id + '.categoria', val: inc.categoria, opts: CATEGORIAS }) +
@@ -305,9 +327,10 @@
       '</div>' + foto + '</div></div><div class="nwt-card__footer"></div></div></div>';
   }
   function step3() {
-    return '<div class="pf-sec">' + head('Tipos de incentivo', 'Define qué entrega este programa. Puede haber uno o varios tipos, cada uno con su <b>modalidad</b>. «Montos distintos» = incentivos distintos.') +
+    var n = S.inc.length;
+    return '<div class="pf-sec">' + head('Tipos de incentivo', 'Define qué entrega este programa. Cada tipo tiene su <b>modalidad</b>. «Montos distintos» = incentivos distintos.') +
+      '<div class="pf-types-bar">' + alertBox(n === 1 ? 'Este programa tiene <b>un solo tipo</b> de incentivo, definido en el paso 2.' : 'Este programa tiene <b>' + n + ' tipos</b> de incentivo, definidos en el paso 2.', 'informative', 'categories') + btn('Cambiar en el paso 2', 'goto', { v: 'quiet', s: 'medium', x: '2', i: 'edit' }) + '</div>' +
       '<div id="pfIncs" class="pf-sec">' + S.inc.map(incCard).join('') + '</div>' +
-      '<div><button type="button" class="nwt-button" nwt-variant="quiet" nwt-size="medium" data-act="inc-add"><span class="nwt-button__content">' + icon('add') + 'Agregar otro incentivo</span></button></div>' +
       '<div id="pfDist"></div></div>';
   }
   function totalCupo() { return S.inc.reduce(function (a, i) { return a + (Number(i.cantidad) || 0); }, 0); }
@@ -648,6 +671,7 @@
     var isMoney = /(\.valor|\.cantidad|^rubro\.)/.test(k);
     if (isMoney) { var d = digits(t.value); if (e.type === 'change' && k.indexOf('cantidad') < 0) t.value = d ? Number(d).toLocaleString('es-CO') : ''; else if (e.type === 'input') t.value = d && (k.indexOf('cantidad') < 0) ? Number(d).toLocaleString('es-CO') : d; }
     setByKey(k, t.value);
+    if (k === 'rubro.n') syncInc();
     if (t.dataset.struct && e.type === 'change') { render(true); return; }
     var box = t.closest('.nwt-input-box'); if (box && box.classList.contains('nwt-input-box--error')) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
     if (k.indexOf('rule.') === 0) updateRules();
@@ -663,8 +687,7 @@
     'cob-opt': function (x) { cobSet(x); },
     'cob-del': function (x) { cobSet(x); },
     'anexo-del': function () { S.datos.anexo = null; saveDraft(true); anexoRedraw(); },
-    'inc-add': function () { S.inc.push(newInc()); render(true); var c = document.querySelectorAll('#pfIncs > .nwt-card'); if (c.length) c[c.length - 1].scrollIntoView({ block: 'center', behavior: 'smooth' }); },
-    'inc-del': function (x, i) { S.inc = S.inc.filter(function (n) { return n.id !== i; }); render(true); },
+    'rubro-tipos': function (x) { S.rubro.tipos = x; syncInc(); render(true); },
     'inc-modalidad': function (x, i) { var n = incById(i); n.modalidad = x; if (x !== 'codigo') n.foto = false; else n.foto = true; render(true); },
     'inc-foto': function (x, i) { var n = incById(i); n.foto = !n.foto; render(true); },
     benef: function (x) { var b = S.cond.benef, i = b.indexOf(x); if (i > -1) b.splice(i, 1); else b.push(x); render(true); },
@@ -775,7 +798,7 @@
     try {
       var raw = localStorage.getItem(DRAFT_KEY); if (!raw) return false;
       var o = JSON.parse(raw); if (!o.S || o.S.done) return false;
-      S = o.S; uid = o.uid || uid; S.rubro = { valor: (S.rubro && S.rubro.valor) || '' }; return true;
+      S = o.S; uid = o.uid || uid; S.rubro = { valor: (S.rubro && S.rubro.valor) || '', tipos: S.inc.length > 1 ? 'varios' : 'uno', n: Math.max(2, S.inc.length) }; return true;
     } catch (_) { return false; }
   }
 

@@ -238,3 +238,7 @@ a.nwt-button{text-decoration:none}
 
 /* Prefijo de texto en campos (p. ej. «$» en el presupuesto) */
 .pf-pre{flex:0 0 auto;color:var(--naotech-app-color-700);font-weight:var(--naotech-font-weight-semibold)}
+
+/* Paso 3: aviso de cuántos tipos hay (definido en el paso 2) + acceso para cambiarlo */
+.pf-types-bar{display:flex;align-items:center;gap:var(--naotech-sizing-12);flex-wrap:wrap}
+.pf-types-bar .nwt-alert{flex:1;min-width:260px}
