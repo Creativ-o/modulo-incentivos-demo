@@ -290,3 +290,6 @@ a.nwt-button{text-decoration:none}
 .pf-cod-rows{display:flex;flex-direction:column;gap:var(--naotech-sizing-8)}
 .pf-cod-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--naotech-sizing-8);align-items:start}
 .pf-cod-row:first-child>div:last-child{margin-top:28px}
+
+/* Separador de bloque dentro del paso 1 */
+.pf-block-label{margin-top:var(--naotech-sizing-12);padding-top:var(--naotech-sizing-24);border-top:1px solid var(--naotech-app-color-300);font-size:var(--naotech-sizing-12);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--naotech-app-color-600)}
