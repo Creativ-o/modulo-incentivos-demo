@@ -1298,6 +1298,13 @@ function renderCiclo(p){
   const freq = window.progRecTxt(c);
   const docsOn = window.progDocsOn(c);
 
+  // Tipos recurrentes por sí mismos (el programa no lo es): exentos de documentación
+  const ownRec = (p.incentives || []).map((inc, i) => ({ inc, r: (c.inc[i] || {}).rec })).filter(x => !c.rec.on && x.r && x.r.on);
+  const recTxt = r => r.frecuencia === 'otra' ? `cada ${r.frecuenciaN || '?'} ${r.frecuenciaU || 'meses'}` : r.frecuencia;
+  const ownRecHTML = ownRec.length ? ownRec.map(x => `<div class="cyc-card" style="margin-top:10px">
+      <div class="cyc-card__top"><span class="cyc-card__t">${x.inc.name}</span>${badge('Recurrente · ' + recTxt(x.r), 'caution')}${badge('Exento de documentación','neutral')}</div>
+      <div class="cyc-card__s">Se entrega ${recTxt(x.r)} ${x.r.desde || x.r.hasta ? `del <strong>${x.r.desde ? fmt(x.r.desde) : 'inicio'}</strong> al <strong>${x.r.hasta ? fmt(x.r.hasta) : 'fin'}</strong>` : 'durante toda la vigencia'} del programa. No se le piden documentos ni aplican las etapas de cargue.</div>
+    </div>`).join('') : '';
   // Recurrencia
   document.getElementById('cycRec').innerHTML = `<div class="cyc-card">
       <div class="cyc-card__top"><span class="cyc-card__t">${freq}</span>${c.rec.on ? badge('Se entrega en ciclos','caution') : badge('Se entrega una sola vez')}${docsOn ? badge('Con documentos','informative') : badge('Flujo directo')}</div>
@@ -1305,12 +1312,12 @@ function renderCiclo(p){
         ? `Periodicidad <strong>${freq.replace('Recurrente · ','')}</strong>. El primer ciclo empieza el <strong>día en que se activa</strong> el programa${act ? ` (${fmt(act)})` : ''} y nunca antes; luego se repite en cada período.`
         : 'El beneficiario recibe el incentivo una vez, cuando cumple las condiciones' + (docsOn ? ' y su documentación es aprobada.' : '.')}</div>
       <div class="cyc-card__s">Vigencia: <strong>${p.from}</strong> → <strong>${p.to}</strong>${c.hasta ? '' : ' · sin fecha de fin, se cierra manualmente'}</div>
-    </div>`;
+    </div>${ownRecHTML}`;
 
   // Documentos
-  const hasOff = (p.incentives || []).some((x,i) => ((c.inc[i]||{}).docOff||[]).length);
+  const hasOff = ownRec.length > 0 || (p.incentives || []).some((x,i) => ((c.inc[i]||{}).docOff||[]).length);
   document.getElementById('cycDocs').innerHTML = docsOn ? `<div class="cyc-docs">${c.doc.list.map(d => {
-      const noApply = (p.incentives || []).map((x,i) => ({n:x.name, off:((c.inc[i]||{}).docOff||[]).indexOf(d.name) > -1})).filter(x => x.off).map(x => x.n);
+      const noApply = (p.incentives || []).map((x,i) => ({n:x.name, off:((c.inc[i]||{}).docOff||[]).indexOf(d.name) > -1 || ownRec.some(o => o.inc === x)})).filter(x => x.off).map(x => x.n);
       const who = !hasOff || !noApply.length ? 'Aplica a todos los tipos' : (noApply.length === p.incentives.length ? 'No aplica a ningún tipo' : 'No aplica a: ' + noApply.join(', '));
       return `<div class="cyc-doc"><span class="cyc-doc__n">${d.name}</span><span class="cyc-doc__w">${who}</span>${badge(d.oblig ? 'Obligatorio' : 'Opcional', d.oblig ? 'positive' : 'neutral')}</div>`;
     }).join('') || '<div class="cyc-card__s">No hay documentos definidos.</div>'}</div>`

@@ -712,6 +712,7 @@ function renderRows(){
                 <div class="prg-cell__chips">
                   <span class="naowee-badge naowee-badge--${p.cfg.rec.on ? 'caution' : 'neutral'} naowee-badge--quiet naowee-badge--small">${window.progRecTxt(p.cfg)}</span>
                   ${window.progDocsOn(p.cfg) ? '<span class="naowee-badge naowee-badge--informative naowee-badge--quiet naowee-badge--small">Con documentos</span>' : ''}
+                  ${(!p.cfg.rec.on && p.cfg.inc.some(x => x.rec && x.rec.on)) ? '<span class="naowee-badge naowee-badge--caution naowee-badge--quiet naowee-badge--small">Con incentivo recurrente</span>' : ''}
                 </div>
                 <div class="prg-cell__id">${p.id}</div>
               </div>
