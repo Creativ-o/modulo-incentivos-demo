@@ -181,6 +181,7 @@
   .prg-cell__body{min-width:0}
   .prg-cell__name{font-weight:700;color:var(--naowee-color-text-primary,#282834);font-size:13.5px}
   .prg-cell__desc{font-size:11.5px;color:var(--naowee-color-text-secondary,#646587);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .prg-cell__chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
   .prg-cell__id{font-family:'SF Mono',monospace;font-size:10.5px;color:#9c9ebf;font-weight:500;margin-top:2px}
 
   /* Rubro cell */
@@ -547,12 +548,14 @@
 })();
 
 /* ═══ PROGRAMS DATA (consumed from shared/programs-data.js) ═══ */
-const PROGRAMS = window.PROGRAMS_DATA.map(p => ({
+const toRow = p => ({
   id: p.id, name: p.name, desc: p.shortDesc,
   iconBg: p.iconBg, iconColor: p.iconColor,
   status: p.status, rubro: p.rubro, exec: p.exec,
-  codes: p.codes, from: p.from, to: p.to
-}));
+  codes: p.codes, from: p.from, to: p.to,
+  cfg: window.getProgramConfig(p)
+});
+const PROGRAMS = window.PROGRAMS_DATA.map(toRow);
 
 const STATUS_META = {
   active: { label:'Activo', variant:'positive' },
@@ -706,6 +709,10 @@ function renderRows(){
               <div class="prg-cell__body">
                 <div class="prg-cell__name">${p.name}</div>
                 <div class="prg-cell__desc">${p.desc}</div>
+                <div class="prg-cell__chips">
+                  <span class="naowee-badge naowee-badge--${p.cfg.rec.on ? 'caution' : 'neutral'} naowee-badge--quiet naowee-badge--small">${window.progRecTxt(p.cfg)}</span>
+                  ${window.progDocsOn(p.cfg) ? '<span class="naowee-badge naowee-badge--informative naowee-badge--quiet naowee-badge--small">Con documentos</span>' : ''}
+                </div>
                 <div class="prg-cell__id">${p.id}</div>
               </div>
             </div>
@@ -738,7 +745,7 @@ function renderRows(){
           <td>
             <div class="acciones-cell">
               <span class="naowee-tooltip">
-                <button class="acciones-cell__btn" onclick="event.stopPropagation();fadeAndGo('incentivo-04-programa-crear.html?edit=1')" aria-label="Editar">
+                <button class="acciones-cell__btn" onclick="event.stopPropagation();fadeAndGo('incentivo-04-programa-crear.html?edit=1&id=${p.id}')" aria-label="Editar">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>
                 </button>
                 <span class="naowee-tooltip__content">Editar</span>
@@ -795,12 +802,7 @@ window.onRoleApplied = function(role){
 // PROGRAMS_DATA (que ya fue mutado con unshift) y va a la primera página.
 window.onDraftSaved = function(){
   PROGRAMS.length = 0;
-  window.PROGRAMS_DATA.forEach(p => PROGRAMS.push({
-    id: p.id, name: p.name, desc: p.shortDesc,
-    iconBg: p.iconBg, iconColor: p.iconColor,
-    status: p.status, rubro: p.rubro, exec: p.exec,
-    codes: p.codes, from: p.from, to: p.to
-  }));
+  window.PROGRAMS_DATA.forEach(p => PROGRAMS.push(toRow(p)));
   state.page = 1;
   renderRows();
 };
@@ -810,7 +812,7 @@ setTimeout(() => { applyRoleHeader(); renderRows(); }, 0);
 function fadeAndGo(url){window.location.href=url}
 </script>
 <script src="shared/programa-wizard.js" defer></script>
-<script src="shared/profile-switcher.js?v=role-9" defer></script>
+<script src="shared/profile-switcher.js?v=role-10" defer></script>
 
 <script src="shared/footer-scroll.js" defer></script>
 

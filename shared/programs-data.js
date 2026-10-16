@@ -320,3 +320,115 @@ window.CAT_ICONS = {
 window.getProgramCategory = function(p){
   return (p && p.incentives && p.incentives[0] && p.incentives[0].category) || 'Beca';
 };
+
+/* ══ Configuración de parametrización por programa ═══════════════════════
+   Lo que define el formulario de 4 pasos y que el perfil del programa debe mostrar:
+   población (roles, cobertura, municipios, selección), recurrencia, documentos,
+   etapas y, por tipo de incentivo, cómo se valora y si lleva códigos.
+   Los programas creados desde el formulario la guardan en p.config; los de demo la traen de aquí. */
+(function(){
+  var FREQ = { mensual: 'mensual', bimestral: 'bimestral', trimestral: 'trimestral', semestral: 'semestral' };
+  var G_ORO = { op: 'AND', rows: [{ f: 'logro', op: '∈', v: ['Medalla de oro'] }] };
+  var DOC_ID = { name: 'Documento de identidad', oblig: true };
+  var CFG = {
+    'PRG-2026-001': {
+      gestores: ['Laura Meza'], eventos: ['Juegos Nacionales 2025'], desde: '2026-01-01', hasta: '2026-12-31',
+      roles: ['Deportista'], cobertura: ['Nacional'], municipios: [], seleccion: ['plataforma'],
+      rec: { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
+      doc: { req: true, list: [DOC_ID, { name: 'Certificado de resultado', oblig: true }, { name: 'Certificación bancaria', oblig: true }] },
+      crono: { gracia: '3', carga: { ini: '15', fin: '18' }, revision: { ini: '20', fin: '25' }, asignacion: { ini: '25', fin: '30' } },
+      inc: [{ categoria: 'beca', tope: 'top', unit: 1000000, valor: 200000000, cantidad: 200, codigos: true,
+        grupos: [{ op: 'AND', rows: [{ f: 'edad', op: '≥', v: '18' }, { f: 'categoria', op: '=', v: 'Prejuvenil' }] }, { op: 'AND', rows: [{ f: 'logro', op: '∈', v: ['Medalla de oro', 'Medalla de plata'] }] }] }]
+    },
+    'PRG-2026-002': {
+      gestores: ['Laura Meza'], eventos: ['Liga Departamental Atlántico 2026'], desde: '2026-03-01', hasta: '2026-04-30',
+      roles: ['Deportista'], cobertura: ['Atlántico'], municipios: ['Barranquilla · Atlántico', 'Soledad · Atlántico'], seleccion: ['plataforma'],
+      rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
+      doc: { req: false, list: [] }, crono: {},
+      inc: [{ categoria: 'kit', tope: 'bottom', unit: 350000, valor: 87500000, cantidad: 250, codigos: true,
+        grupos: [{ op: 'AND', rows: [{ f: 'categoria', op: '=', v: 'Juvenil' }, { f: 'edad', op: '≤', v: '21' }] }] }]
+    },
+    'PRG-2026-003': {
+      gestores: ['Isa Pabon'], eventos: ['Juegos Intercolegiados 2026'], desde: '2026-02-15', hasta: '2026-06-30',
+      roles: ['Deportista'], cobertura: ['Cundinamarca'], municipios: ['Soacha · Cundinamarca', 'Chía · Cundinamarca'], seleccion: ['plataforma', 'manual'],
+      rec: { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
+      doc: { req: true, list: [DOC_ID, { name: 'Autorización del acudiente', oblig: true }] },
+      crono: { gracia: '', carga: { ini: '1', fin: '5' }, revision: { ini: '1', fin: '10' }, asignacion: { ini: '1', fin: '20' } },
+      inc: [{ categoria: 'bono', tope: 'bottom', unit: 120000, valor: 60000000, cantidad: 500, codigos: true,
+        grupos: [{ op: 'AND', rows: [{ f: 'categoria', op: '=', v: 'Prejuvenil' }, { f: 'edad', op: '≥', v: '13' }, { f: 'edad', op: '≤', v: '17' }] }] }]
+    },
+    'PRG-2026-004': {
+      gestores: ['Andrés Polo'], eventos: ['Juegos Universitarios 2026'], desde: '2026-03-01', hasta: '2026-05-31',
+      roles: ['Deportista'], cobertura: ['Nacional'], municipios: [], seleccion: ['plataforma'],
+      rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
+      doc: { req: true, list: [DOC_ID, { name: 'Certificado de estudio', oblig: true }] },
+      crono: { gracia: '3', carga: { ini: '2026-03-01T08:00', fin: '2026-03-20T18:00' }, revision: { ini: '2026-03-21T08:00', fin: '2026-03-28T18:00' }, asignacion: { ini: '2026-03-29T08:00', fin: '2026-04-15T18:00' } },
+      inc: [{ categoria: 'inscripcion', tope: 'bottom', codigos: true, grupos: [{ op: 'AND', rows: [{ f: 'escolaridad', op: '=', v: 'Escolarizado' }] }] }]
+    },
+    'PRG-2026-005': {
+      gestores: ['Andrés Polo'], eventos: ['Proyección Panamericanos 2027'], desde: '', hasta: '',
+      roles: ['Deportista', 'Entrenador'], cobertura: ['Nacional'], municipios: [], seleccion: ['plataforma'],
+      rec: { on: true, frecuencia: 'trimestral', frecuenciaN: '', frecuenciaU: 'meses' },
+      doc: { req: true, list: [DOC_ID, { name: 'Certificación bancaria', oblig: true }, { name: 'Certificado médico', oblig: true }] },
+      crono: { gracia: '', carga: { ini: '1', fin: '' }, revision: { ini: '', fin: '' }, asignacion: { ini: '', fin: '' } },
+      inc: [{ categoria: 'beca', tope: 'sin', unit: 5000000, codigos: false, grupos: [G_ORO] }]
+    }
+  };
+  var CAT_KEY = { 'Beca': 'beca', 'Kit': 'kit', 'Bono': 'bono', 'Transporte': 'transporte', 'Inscripción': 'inscripcion', 'Descuento': 'descuento', 'Pase': 'pase', 'Dinero': 'dinero' };
+  function defaults(p) {
+    return {
+      gestores: [p.responsible].filter(Boolean), eventos: p.event && p.event !== '—' ? [p.event] : [], desde: '', hasta: '',
+      roles: ['Deportista'], cobertura: [p.coverage && p.coverage !== '—' ? p.coverage : 'Nacional'], municipios: [], seleccion: ['plataforma'],
+      rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' }, doc: { req: false, list: [] }, crono: {},
+      inc: (p.incentives || []).map(function (i) { return { categoria: CAT_KEY[i.category] || '', tope: 'bottom', unit: i.value || 0, valor: 0, cantidad: 0, codigos: (p.codes && p.codes.total > 0), grupos: [] }; })
+    };
+  }
+  function emptyFase() { return { ini: '', fin: '' }; }
+  /* Configuración completa (con todos los campos) de un programa */
+  window.getProgramConfig = function (p) {
+    var base = p.config || CFG[p.id] || defaults(p), d = defaults(p);
+    var c = {
+      gestores: base.gestores || d.gestores, eventos: base.eventos || d.eventos, desde: base.desde || '', hasta: base.hasta || '',
+      roles: base.roles || d.roles, cobertura: base.cobertura || d.cobertura, municipios: base.municipios || [], seleccion: base.seleccion || ['plataforma'],
+      rec: Object.assign({ on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' }, base.rec || {}),
+      doc: { req: !!(base.doc && base.doc.req), list: (base.doc && base.doc.list) || [] },
+      inc: base.inc || d.inc
+    };
+    var cr = base.crono || {};
+    c.crono = { gracia: cr.gracia == null ? '' : cr.gracia, carga: cr.carga || emptyFase(), revision: cr.revision || emptyFase(), asignacion: cr.asignacion || emptyFase() };
+    return c;
+  };
+  window.progRecTxt = function (c) {
+    if (!c.rec.on) return 'Entrega única';
+    return 'Recurrente · ' + (c.rec.frecuencia === 'otra' ? 'cada ' + (c.rec.frecuenciaN || '?') + ' ' + (c.rec.frecuenciaU || 'meses') : (FREQ[c.rec.frecuencia] || c.rec.frecuencia));
+  };
+  window.progDocsOn = function (c) { return !!(c.rec.on || c.doc.req); };
+
+  /* ── Persistencia de los programas creados / editados desde el formulario ── */
+  var K_CREATED = 'naowee:programs-created', K_EDITS = 'naowee:programs-edits';
+  function read(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (_) { return d; } }
+  function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} }
+  window.persistCreatedProgram = function (prog) {
+    var list = read(K_CREATED, []).filter(function (x) { return x.id !== prog.id; }); list.unshift(prog); write(K_CREATED, list);
+    var i = window.PROGRAMS_DATA.findIndex(function (x) { return x.id === prog.id; });
+    if (i > -1) window.PROGRAMS_DATA[i] = prog; else window.PROGRAMS_DATA.unshift(prog);
+  };
+  window.persistProgramEdit = function (id, prog) {
+    var created = read(K_CREATED, []);
+    if (created.some(function (x) { return x.id === id; })) { window.persistCreatedProgram(prog); return; }
+    var ed = read(K_EDITS, {}); ed[id] = prog; write(K_EDITS, ed);
+    var i = window.PROGRAMS_DATA.findIndex(function (x) { return x.id === id; });
+    if (i > -1) window.PROGRAMS_DATA[i] = prog;
+  };
+  window.nextProgramId = function () {
+    var taken = {}; window.PROGRAMS_DATA.forEach(function (p) { taken[p.id] = 1; });
+    var n = window.PROGRAMS_DATA.length + 1, id = 'PRG-2026-' + String(n).padStart(3, '0');
+    while (taken[id]) { n++; id = 'PRG-2026-' + String(n).padStart(3, '0'); }
+    return id;
+  };
+  (function load() {
+    var ed = read(K_EDITS, {});
+    window.PROGRAMS_DATA.forEach(function (p, i) { if (ed[p.id]) window.PROGRAMS_DATA[i] = ed[p.id]; });
+    read(K_CREATED, []).slice().reverse().forEach(function (p) { if (!window.PROGRAMS_DATA.some(function (x) { return x.id === p.id; })) window.PROGRAMS_DATA.unshift(p); });
+  })();
+})();

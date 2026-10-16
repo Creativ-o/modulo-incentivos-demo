@@ -12,6 +12,8 @@
   var DRAFT_KEY = 'inc-programa-draft-v3';
   var params = new URLSearchParams(location.search);
   var EDIT = params.get('edit') === '1';
+  var CUR_VER = 'V1.0', NEXT_VER = 'V2.0'; // versión vigente del programa que se edita y la que se publicaría
+  var EDIT_ID = params.get('id') || ''; // programa que se edita (si falta, se usa el ejemplo)
   var role = (function () { try { return localStorage.getItem('naowee-incentivos-role') || 'admin'; } catch (_) { return 'admin'; } })();
   var CAN_EDIT_PROGRAM = role === 'admin' || role === 'gestor';
   var CONDITIONS_LOCKED = EDIT && role === 'programa'; // el Gestor de programa solo lee condicionales (HU-03)
@@ -684,7 +686,7 @@
     var total = S.inc.reduce(function (a, i) { return a + (Number(i.valor) || 0); }, 0);
     var incTxt = S.inc.map(function (i) { return '<div>' + esc(i.nombre || 'Sin nombre') + (catOf(i) ? ' (' + esc(catOf(i).l) + ')' : '') + ' · ' + badge({ codigo: 'Con código', sincodigo: 'Sin código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + (i.modalidad === 'fijo' && hasCodes(i) ? ' ' + badge('Con código', 'neutral') : '') + esc(incValTxt(i)) + '</div>'; }).join('');
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
-      kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Eventos', esc(d.eventos.join(', ') || '—')) + kv('Gestores', esc(d.gestores.join(', ') || '—')) +
+      kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · ' + CUR_VER, 'positive') : badge('Configuración', 'caution'))) + kv('Eventos', esc(d.eventos.join(', ') || '—')) + kv('Gestores', esc(d.gestores.join(', ') || '—')) +
       kv('Vigencia', (d.desde ? fmtDate(d.desde) : 'Desde la activación') + ' → ' + (d.hasta ? fmtDate(d.hasta) : 'Sin fecha de fin')) + kv('Roles', p.roles.length ? esc(rolesTxt()) : nada + 'Sin roles definidos</span>') + kv('Cobertura', esc(p.cobertura.join(', ')) + (p.municipios.length ? '<br><span style="font-weight:400">Municipios: ' + esc(p.municipios.map(function (m) { return m.split(' · ')[0]; }).join(', ')) + '</span>' : '')) +
       kv('Selección de beneficiarios', esc(p.seleccion.map(function (s) { return s === 'manual' ? 'Registro manual' : 'Cargue por plataforma'; }).join(' + '))) +
       kv('Recurrencia', recOn() ? 'Recurrente · ' + esc(frecuenciaTxt()) : 'Entrega única') +
@@ -696,8 +698,8 @@
     '</dl></div>', { n: 2 });
     var ch = EDIT ? versionChanges() : [];
     var act = EDIT ? card('Versión resultante', 'Las reglas de versionamiento del programa Activo.', ch.length
-      ? alertBox('Se publicará la <b>versión V2.0</b>. Cambios que la generan: <b>' + ch.join(' · ') + '</b>. La V1.0 y todo lo entregado bajo ella quedan congelados e inmutables; si cambian los documentos, las aprobaciones previas pasan a «Expirada / Histórica por nueva versión» al iniciar el siguiente ciclo.', 'caution', 'attention')
-      : alertBox('Sin cambios de fondo: se conserva la <b>versión V1.0</b>. Solo se registra la edición en la bitácora de auditoría.', 'positive', 'positive'), { n: 3 })
+      ? alertBox('Se publicará la <b>versión ' + NEXT_VER + '</b>. Cambios que la generan: <b>' + ch.join(' · ') + '</b>. La ' + CUR_VER + ' y todo lo entregado bajo ella quedan congelados e inmutables; si cambian los documentos, las aprobaciones previas pasan a «Expirada / Histórica por nueva versión» al iniciar el siguiente ciclo.', 'caution', 'attention')
+      : alertBox('Sin cambios de fondo: se conserva la <b>versión ' + CUR_VER + '</b>. Solo se registra la edición en la bitácora de auditoría.', 'positive', 'positive'), { n: 3 })
     : card('Activación', 'El programa solo opera cuando está <b>Activo</b>. Al activarlo queda en <b>versión V1.0</b>.', radios({ act: 'activar', value: S.activar, options: [
       { v: 'config', l: 'Guardar en Configuración', s: 'Queda como borrador operativo. Puedes terminar de parametrizar y activar después.' },
       { v: 'activo', l: 'Activar ahora', s: 'Habilita postulaciones y asignaciones. Se registra auditoría con usuario, fecha, hora e IP.' }
@@ -793,13 +795,13 @@
     if (!EDIT && !CAN_EDIT_PROGRAM) h = alertBox('Tu rol no crea programas: lo hace el Gestor de incentivos, Administrador o Superadmin. Puedes explorar el formulario, pero no guardar.', 'caution', 'padlock-close');
     if (EDIT) {
       var ch = versionChanges(), cc = cronoChanges();
-      h = ch.length ? alertBox('Editas <b>V1.0 (Activo)</b>. Estos cambios generarán la <b>nueva versión V2.0</b>: ' + ch.join(' · ') + '. Lo ya entregado en V1.0 queda congelado e inmutable.', 'caution', 'attention')
-        : alertBox('Editas <b>V1.0 (Activo)</b>. Cambiar <b>condicionales, frecuencia o documentos</b> crea una nueva versión (V2.0). Cambiar estado, extender vigencia, <b>ajustar las etapas</b> o cargar códigos <b>no versiona</b>.', 'informative');
-      if (cc.length && !ch.length) h += alertBox('Ajustas las <b>etapas</b> (' + cc.length + ' cambio' + (cc.length > 1 ? 's' : '') + '): se conserva V1.0 y queda registrado en la bitácora con tu motivo.', 'caution', 'calendar');
+      h = ch.length ? alertBox('Editas <b>' + CUR_VER + ' (Activo)</b>. Estos cambios generarán la <b>nueva versión ' + NEXT_VER + '</b>: ' + ch.join(' · ') + '. Lo ya entregado en ' + CUR_VER + ' queda congelado e inmutable.', 'caution', 'attention')
+        : alertBox('Editas <b>' + CUR_VER + ' (Activo)</b>. Cambiar <b>condicionales, frecuencia o documentos</b> crea una nueva versión (' + NEXT_VER + '). Cambiar estado, extender vigencia, <b>ajustar las etapas</b> o cargar códigos <b>no versiona</b>.', 'informative');
+      if (cc.length && !ch.length) h += alertBox('Ajustas las <b>etapas</b> (' + cc.length + ' cambio' + (cc.length > 1 ? 's' : '') + '): se conserva ' + CUR_VER + ' y queda registrado en la bitácora con tu motivo.', 'caution', 'calendar');
     }
     host.innerHTML = h;
     var fin = $('#pfNext .nwt-button__content');
-    if (S.step === LAST && fin) fin.innerHTML = (EDIT ? (versionChanges().length ? 'Publicar V2.0' : 'Guardar cambios') : (S.activar === 'activo' ? 'Crear y activar' : 'Crear programa')) + icon('positive');
+    if (S.step === LAST && fin) fin.innerHTML = (EDIT ? (versionChanges().length ? 'Publicar ' + NEXT_VER : 'Guardar cambios') : (S.activar === 'activo' ? 'Crear y activar' : 'Crear programa')) + icon('positive');
   }
 
   /* ── Render ─────────────────────────────────────────────────── */
@@ -908,7 +910,7 @@
     'cod-del': function (x, i) { var l = codState(i).lista; if (l.length > 1) l.splice(+x, 1); render(true); },
     'cod-tpl': function () { toast('Plantilla de ejemplo (demo): codigo, observación.', 'informative'); },
     activar: function (x) { S.activar = x; render(true); },
-    'save-draft': function () { savedSnap = snapState(); saveDraft(); toast('Borrador guardado. Podrás retomarlo cuando quieras.', 'positive'); },
+    'save-draft': function () { savedSnap = snapState(); saveDraftProgram(); toast('Borrador guardado. Podrás retomarlo cuando quieras.', 'positive'); },
     goto: function (x) { var n = +x; if (n <= S.max && n !== S.step) go(n); },
     edit: function (x) { go(+x); },
     noop: function () {}
@@ -953,9 +955,60 @@
     if (!EDIT && !CAN_EDIT_PROGRAM) { toast('Tu rol no puede crear programas.', 'caution'); return; }
     finish();
   }
+  /* ── Puente con los datos de los programas (shared/programs-data.js) ── */
+  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function fmtLong(iso) { if (!iso) return ''; var p = iso.slice(0, 10).split('-'); return p[2] + ' ' + MESES[+p[1] - 1] + ' ' + p[0]; }
+  var ICON_BY_CAT = { bono: ['#e6f4e7', '#1f8923'], beca: ['#fff3e6', '#d74009'], kit: ['#eef5ff', '#1f78d1'], transporte: ['#f3e8ff', '#7c3aed'], inscripcion: ['#fff3e6', '#d74009'], descuento: ['#fff0ee', '#b42318'], pase: ['#f5f6fa', '#646587'], dinero: ['#e6f4e7', '#1f8923'], diploma: ['#f5f6fa', '#646587'] };
+  var VARIANT_BY_CAT = { bono: 'positive', beca: 'informative', kit: 'caution', transporte: 'neutral', inscripcion: 'informative', descuento: 'caution', pase: 'neutral', dinero: 'positive', diploma: 'neutral' };
+  function findProgram(id) { return (window.PROGRAMS_DATA || []).filter(function (x) { return x.id === id; })[0] || null; }
+  function codeLoaded(i) { var c = S.codigos[i.id]; if (!c || !hasCodes(i)) return 0; return c.modo === 'manual' ? codManual(c).ok : (c.modo === 'masivo' ? c.n : 0); }
+  function seedGroups(inc) {
+    return inc.grupos.map(function (g) {
+      return { logic: 'AND', rules: g.rows.filter(ruleNat).map(function (r) { var f = FIELDS[r.f]; return { field: f.label, op: r.op, value: Array.isArray(r.v) ? '{' + r.v.join(', ') + '}' : String(r.v) }; }) };
+    }).filter(function (g) { return g.rules.length; });
+  }
+  function buildProgram(existing, status) {
+    var d = S.datos, p = S.pob, cat0 = catOf(S.inc[0]), ico = ICON_BY_CAT[cat0 ? cat0.k : ''] || ['#f5f6fa', '#646587'];
+    var total = S.inc.reduce(function (a, i) { return a + (Number(i.valor) || 0); }, 0), codes = S.inc.reduce(function (a, i) { return a + codeLoaded(i); }, 0);
+    var cov = p.cobertura.join(', ') || '—'; if (p.cobertura.length > 3) cov = p.cobertura.length + ' departamentos'; if (p.municipios.length) cov += ' · ' + p.municipios.length + (p.municipios.length === 1 ? ' municipio' : ' municipios');
+    var incentives = S.inc.map(function (i) {
+      var c = catOf(i), lab = c ? c.l : 'Incentivo', u = Number(i.unit) || 0, q = Number(i.cantidad) || 0, fijo = i.modalidad === 'fijo';
+      var badges = [{ text: lab, variant: VARIANT_BY_CAT[c ? c.k : ''] || 'neutral' }];
+      if (fijo) badges.push({ text: 'Fijo ' + frecuenciaTxt(), variant: 'caution' });
+      if (hasCodes(i)) badges.push({ text: 'Con código', variant: 'neutral' }); else if (i.modalidad === 'certificado') badges.push({ text: 'Certificado', variant: 'neutral' });
+      return { name: i.nombre || 'Incentivo sin nombre', category: lab, detail: (MOD_TXT[i.modalidad] || '') + (q ? ' · ' + q.toLocaleString('es-CO') + (fijo ? ' beneficiarios' : ' cupos') : '') + (i.tope === 'sin' && conValor(i) ? ' · sin tope' : ''),
+        value: u, valueLabel: u ? money(u) : '—', valueFoot: u ? (fijo ? 'por ciclo' : 'por beneficiario') : '', badges: badges,
+        conditions: { groups: seedGroups(i), summary: previewHTML(i) } };
+    });
+    var cfg = { gestores: d.gestores.slice(), eventos: d.eventos.slice(), desde: d.desde, hasta: d.hasta, roles: p.roles.slice(), cobertura: p.cobertura.slice(), municipios: p.municipios.slice(), seleccion: p.seleccion.slice(),
+      rec: clone(S.rec), doc: clone(S.doc), crono: clone(S.crono), activacion: status === 'active' ? ((existing && existing.config && existing.config.activacion) || new Date().toISOString().slice(0, 10)) : '',
+      inc: S.inc.map(function (i) { return { categoria: i.categoria, tope: i.tope, unit: Number(i.unit) || 0, valor: Number(i.valor) || 0, cantidad: Number(i.cantidad) || 0, codigos: hasCodes(i), grupos: clone(i.grupos), docOff: clone(i.docOff) }; }) };
+    var ver = existing ? (EDIT && versionChanges().length ? NEXT_VER : CUR_VER) : 'V1.0';
+    return { id: existing ? existing.id : window.nextProgramId(), name: d.nombre.trim() || 'Programa sin nombre', shortDesc: (d.desc || '').slice(0, 80) || cov, longDesc: d.desc || '', iconBg: ico[0], iconColor: ico[1], status: status,
+      event: d.eventos.join(', ') || '—', coverage: cov, responsible: d.gestores.join(', ') || '—', rubro: total, exec: existing ? existing.exec || 0 : 0, unit: (Number(S.inc[0].unit) || 0),
+      codes: existing && existing.codes && !codes ? existing.codes : { total: codes, avail: codes, asig: 0, rev: 0 },
+      from: d.desde ? fmtLong(d.desde) : 'Desde la activación', to: d.hasta ? fmtLong(d.hasta) : 'Sin fecha de fin', actoAdmin: d.anexo ? d.anexo.name : (d.justificacion ? d.justificacion.slice(0, 60) : '—'), fuente: 'Ministerio del Deporte · 2026',
+      incentives: incentives, conditions: { groups: [], summary: '' }, config: cfg, version: ver, _userCreated: !existing || !!existing._userCreated, createdAt: existing && existing.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+  }
+  function loadFromProgram(pr) {
+    var c = window.getProgramConfig(pr), n = 0;
+    S.datos = { nombre: pr.name, desc: pr.longDesc || '', eventos: c.eventos.slice(), gestores: c.gestores.slice(), extra: c.gestores.filter(function (g) { return GESTORES.indexOf(g) < 0; }), desde: c.desde, hasta: c.hasta, justificacion: pr.actoAdmin && pr.actoAdmin !== '—' ? pr.actoAdmin : '', anexo: null };
+    S.pob = { roles: c.roles.slice(), rolesExtra: c.roles.filter(function (r) { return ROLES.indexOf(r) < 0; }), cobertura: c.cobertura.slice(), municipios: c.municipios.slice(), seleccion: c.seleccion.slice() };
+    S.rec = clone(c.rec); S.doc = clone(c.doc);
+    S.crono = Object.assign(newCrono(), clone(c.crono));
+    S.inc = (pr.incentives || []).map(function (inc, i) {
+      var x = c.inc[i] || {}, m = newInc(); n += 1;
+      m.nombre = inc.name; m.categoria = x.categoria || ''; m.tope = x.tope || 'bottom'; m.unit = x.unit ? String(x.unit) : ''; m.valor = x.valor ? String(x.valor) : ''; m.cantidad = x.cantidad ? String(x.cantidad) : '';
+      m.codigos = x.codigos !== false; m.grupos = x.grupos && x.grupos.length ? clone(x.grupos) : [{ op: 'AND', rows: [] }]; m.docOff = x.docOff ? x.docOff.slice() : [];
+      m.modalidad = modalidadOf(m); return m;
+    });
+    if (!S.inc.length) S.inc = [newInc()];
+    S.rubro = { tipos: S.inc.length > 1 ? 'varios' : 'uno', n: Math.max(2, S.inc.length) };
+    S.codigos = {}; S.activar = 'config'; S.step = 1; S.max = LAST;
+  }
   function finish() {
     S.done = true; try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
-    var ver = EDIT && versionChanges().length ? 'V2.0' : 'V1.0';
+    var ver = EDIT ? (versionChanges().length ? NEXT_VER : CUR_VER) : 'V1.0';
     var nlog = 0;
     if (EDIT) {
       var who = PERSONAS[role] || PERSONAS.admin, now = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
@@ -968,11 +1021,13 @@
       }
     }
     var activo = EDIT || S.activar === 'activo';
+    var existing = EDIT_ID ? findProgram(EDIT_ID) : null, prog = buildProgram(existing, activo ? 'active' : 'draft');
+    if (existing) window.persistProgramEdit(existing.id, prog); else window.persistCreatedProgram(prog);
     $('#pfBanner').innerHTML = '';
     $('.pf-footer').hidden = true;
     var msg = '<b>' + esc(S.datos.nombre) + '</b> ' + (activo ? 'está <b>Activo · ' + ver + '</b>.' : 'quedó en <b>Configuración</b>. Actívalo cuando esté listo.') + ' Se registró auditoría con usuario, fecha, hora e IP.' + (nlog ? ' <b>' + nlog + ' cambio' + (nlog > 1 ? 's' : '') + ' de etapas</b> ' + (nlog > 1 ? 'quedaron' : 'quedó') + ' en la bitácora con su motivo.' : '');
     pfModal({ icon: 'positive', theme: 'positive', title: EDIT ? 'Cambios guardados' : 'Programa creado', message: msg, extra: badge(activo ? 'Activo · ' + ver : 'Configuración', activo ? 'positive' : 'caution') + ' ' + badge(routeLabel(), 'neutral'),
-      buttons: (EDIT ? [] : [{ label: 'Crear otro', variant: 'quiet', fn: function () { location.href = 'incentivo-04-programa-crear.html'; } }]).concat([{ label: 'Ver programas', variant: 'loud', fn: function () { leave(); } }]) });
+      buttons: (EDIT ? [] : [{ label: 'Crear otro', variant: 'mute', fn: function () { location.href = 'incentivo-04-programa-crear.html'; } }]).concat([{ label: 'Ver lista', variant: 'quiet', fn: function () { leave(); } }, { label: 'Ver programa', variant: 'loud', fn: function () { location.href = 'incentivo-05-programa-detalle.html?id=' + encodeURIComponent(prog.id); } }]) });
   }
   function routeLabel() { return (recOn() ? 'Recurrente' : 'Pago único') + ' · ' + (anyDoc() ? 'Con documentos' : 'Flujo directo'); }
 
@@ -1016,10 +1071,17 @@
     pfModal({ icon: 'attention', theme: 'caution', title: '¿Guardar como borrador?', message: 'Tienes cambios sin terminar. Guárdalos como borrador para retomarlos después o sal sin guardar.', dismissible: true,
       buttons: [
         { label: 'No guardar', variant: 'quiet', fn: function () { try { localStorage.removeItem(DRAFT_KEY); } catch (_) {} leave(); } },
-        { label: 'Guardar borrador', variant: 'loud', fn: function () { savedSnap = snapState(); saveDraft(); leave(); } }
+        { label: 'Guardar borrador', variant: 'loud', fn: function () { savedSnap = snapState(); saveDraftProgram(); leave(); } }
       ] });
   }
 
+  /* Un borrador de un programa que ya existe se guarda sobre ese programa; uno nuevo, en el borrador local del formulario */
+  function saveDraftProgram() {
+    if (EDIT) { saveDraft(); return; }
+    var ex = EDIT_ID ? findProgram(EDIT_ID) : null, prog = buildProgram(ex, 'draft');
+    if (ex) window.persistProgramEdit(ex.id, prog); else { window.persistCreatedProgram(prog); EDIT_ID = prog.id; }
+    try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
+  }
   /* ── Toast y borrador ───────────────────────────────────────── */
   var toastT;
   function toast(msg, theme) {
@@ -1028,12 +1090,12 @@
   }
   function saveDraft(silent) {
     refreshDraftBtn();
-    if (EDIT) return;
+    if (EDIT || EDIT_ID) return;
     if (snapState() === pristineSnap) { try { localStorage.removeItem(DRAFT_KEY); } catch (_) {} return; } // sin cambios: no hay borrador
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ S: S, uid: uid })); } catch (_) {}
   }
   function loadDraft() {
-    if (EDIT) return false;
+    if (EDIT || EDIT_ID) return false;
     try {
       var raw = localStorage.getItem(DRAFT_KEY); if (!raw) return false;
       var o = JSON.parse(raw); if (!o.S || o.S.done || !o.S.pob || !o.S.rec || !o.S.doc || !o.S.crono) return false;
@@ -1058,9 +1120,19 @@
     pristineSnap = snapState();
     var restored = loadDraft();
     if (EDIT) {
-      seedEdit(); SNAP = clone({ inc: S.inc, doc: S.doc, rec: S.rec, crono: S.crono });
-      $('#pfCrumb').textContent = S.datos.nombre; $('#pfTitle').textContent = 'Editar programa';
-      $('#pfStateBadge').innerHTML = badge('Activo · V1.0', 'positive');
+      var prog = EDIT_ID ? findProgram(EDIT_ID) : null;
+      if (prog) loadFromProgram(prog); else seedEdit();
+      if (!prog || prog.status !== 'draft') { // programa activo (o cerrado): se versiona
+        if (prog) { CUR_VER = prog.version || 'V1.0'; NEXT_VER = 'V' + ((parseInt(CUR_VER.slice(1), 10) || 1) + 1) + '.0'; }
+        SNAP = clone({ inc: S.inc, doc: S.doc, rec: S.rec, crono: S.crono });
+        $('#pfCrumb').textContent = S.datos.nombre; $('#pfTitle').textContent = 'Editar programa';
+        $('#pfStateBadge').innerHTML = badge('Activo · ' + CUR_VER, 'positive');
+      } else { // borrador: se edita como un programa nuevo con los datos ya cargados
+        EDIT = false; CONDITIONS_LOCKED = false;
+        $('#pfCrumb').textContent = S.datos.nombre; $('#pfTitle').textContent = 'Editar borrador';
+        $('#pfStateBadge').innerHTML = badge('Configuración', 'caution');
+        $('[data-act="save-draft"]').style.display = '';
+      }
     } else {
       $('#pfStateBadge').innerHTML = badge('Configuración', 'caution');
     }

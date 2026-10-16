@@ -110,7 +110,15 @@
      que renderizan listas pueden filtrar contra este array. */
   function getRoleAssignments(){
     const r = ROLES[currentRole()];
-    return (r && Array.isArray(r.assignedPrograms)) ? r.assignedPrograms.slice() : null;
+    if(!(r && Array.isArray(r.assignedPrograms))) return null;
+    const ids = r.assignedPrograms.slice();
+    /* Además de los asignados de demo, el gestor ve los programas donde fue elegido en el formulario (Gestores del programa). */
+    if(window.PROGRAMS_DATA && window.getProgramConfig){
+      window.PROGRAMS_DATA.forEach(p => {
+        try { if(window.getProgramConfig(p).gestores.indexOf(r.name) > -1 && ids.indexOf(p.id) < 0) ids.push(p.id); } catch(_){}
+      });
+    }
+    return ids;
   }
 
   function toggleProfileDD(ev){
