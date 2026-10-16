@@ -747,6 +747,14 @@
         if (b && S.datos.hasta && b.slice(0, 10) > S.datos.hasta) e.push([kk + k + '.fin', 'Queda fuera de la vigencia del programa.', 2]);
       }
     });
+    /* Los cierres que se definan no pueden ir al revés: asignación no cierra antes que revisión, ni revisión antes que cargue */
+    var prev = null, prevName = '';
+    FASES.forEach(function (f) {
+      var b = c[f[0]].fin; if (!b) return;
+      var v = rec ? +b : b;
+      if (prev !== null && v < prev) e.push([kk + f[0] + '.fin', 'El cierre de ' + f[1].toLowerCase() + ' no puede ser antes del cierre de ' + prevName.toLowerCase() + '.', 2]);
+      else { prev = v; prevName = f[1]; }
+    });
   }
   function showErrors(errs, step) {
     document.querySelectorAll('.nwt-input-box--error').forEach(function (b) { b.classList.remove('nwt-input-box--error'); var m = b.querySelector('.pf-err'); if (m) m.remove(); });
