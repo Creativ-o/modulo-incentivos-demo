@@ -1192,19 +1192,12 @@ window.addEventListener('load', () => {
   showActivatedToastIfNeeded();
 });
 
-/* Abre el wizard de edición con los datos del programa actualmente visible.
-   Si se pasa un step, intenta saltar a ese paso después de abrir. */
+/* Editar un programa abre el formulario de parametrización (modo edición). Si se pasa un paso, aterriza en él
+   (1 Datos generales · 2 Información específica · 3 Condiciones · 4 Códigos y activación). */
 function editCurrentProgram(step){
-  if(!CURRENT_PROGRAM){ if(typeof openWizard === 'function') openWizard(); return; }
-  if(typeof window.openWizardForEdit === 'function'){
-    window.openWizardForEdit(CURRENT_PROGRAM.id);
-    if(step && typeof window.tryGoStep === 'function'){
-      // Esperamos al próximo tick para que el wizard ya esté abierto y el form populado.
-      setTimeout(() => window.tryGoStep(step), 100);
-    }
-  } else if(typeof openWizard === 'function'){
-    openWizard();
-  }
+  var url = 'incentivo-04-programa-crear.html' + (CURRENT_PROGRAM ? '?edit=1' : '');
+  if(step) url += '#step=' + step;
+  if(typeof fadeAndGo === 'function') fadeAndGo(url); else location.href = url;
 }
 window.editCurrentProgram = editCurrentProgram;
 
