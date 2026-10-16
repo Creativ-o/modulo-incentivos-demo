@@ -967,12 +967,10 @@
     }
     var activo = EDIT || S.activar === 'activo';
     $('#pfBanner').innerHTML = '';
-    $('#pfStep').innerHTML = '<div class="pf-ok"><div class="nwt-avatar-icon" nwt-theme="positive">' + icon('positive') + '</div>' +
-      '<h2 class="pf-h2">' + (EDIT ? 'Cambios guardados' : 'Programa creado') + '</h2>' +
-      '<p class="pf-lead"><b>' + esc(S.datos.nombre) + '</b> ' + (activo ? 'está <b>Activo · ' + ver + '</b>.' : 'quedó en <b>Configuración</b>. Actívalo cuando esté listo.') + ' Se registró auditoría con usuario, fecha, hora e IP.' + (nlog ? ' <b>' + nlog + ' cambio' + (nlog > 1 ? 's' : '') + ' de etapas</b> ' + (nlog > 1 ? 'quedaron' : 'quedó') + ' en la bitácora con su motivo.' : '') + '</p>' +
-      '<div class="pf-row">' + badge(activo ? 'Activo · ' + ver : 'Configuración', activo ? 'positive' : 'caution') + badge(routeLabel(), 'neutral') + '</div>' +
-      '<div class="pf-row"><a class="nwt-button" nwt-variant="loud" nwt-size="medium" href="incentivo-03-programas.html"><span class="nwt-button__content">Ver programas</span></a><a class="nwt-button" nwt-variant="quiet" nwt-size="medium" href="incentivo-04-programa-crear.html"><span class="nwt-button__content">Crear otro</span></a></div></div>';
-    $('.pf-footer').hidden = true; $('#pfStepper').innerHTML = ''; $('#pfScroll').scrollTo({ top: 0, behavior: 'smooth' });
+    $('.pf-footer').hidden = true;
+    var msg = '<b>' + esc(S.datos.nombre) + '</b> ' + (activo ? 'está <b>Activo · ' + ver + '</b>.' : 'quedó en <b>Configuración</b>. Actívalo cuando esté listo.') + ' Se registró auditoría con usuario, fecha, hora e IP.' + (nlog ? ' <b>' + nlog + ' cambio' + (nlog > 1 ? 's' : '') + ' de etapas</b> ' + (nlog > 1 ? 'quedaron' : 'quedó') + ' en la bitácora con su motivo.' : '');
+    pfModal({ icon: 'positive', theme: 'positive', title: EDIT ? 'Cambios guardados' : 'Programa creado', message: msg, extra: badge(activo ? 'Activo · ' + ver : 'Configuración', activo ? 'positive' : 'caution') + ' ' + badge(routeLabel(), 'neutral'),
+      buttons: (EDIT ? [] : [{ label: 'Crear otro', variant: 'quiet', fn: function () { location.href = 'incentivo-04-programa-crear.html'; } }]).concat([{ label: 'Ver programas', variant: 'loud', fn: function () { leave(); } }]) });
   }
   function routeLabel() { return (recOn() ? 'Recurrente' : 'Pago único') + ' · ' + (anyDoc() ? 'Con documentos' : 'Flujo directo'); }
 
@@ -984,6 +982,41 @@
     var off = snapState() === savedSnap;
     b.disabled = off; b.setAttribute('aria-disabled', String(off));
     b.title = off ? 'Aún no hay cambios por guardar' : '';
+  }
+
+  /* ── Ventana emergente (composición SDK: nwt-modal + nwt-confirmation-modal) ── */
+  function pfModal(o) {
+    pfModalClose();
+    var el = document.createElement('div');
+    el.id = 'pfModal'; el.className = 'nwt-modal nwt-confirmation-modal nwt-modal--visible'; el.setAttribute('nwt-theme', o.theme || 'neutral'); el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+    el.innerHTML = '<div class="nwt-modal__content"><div class="nwt-modal__component">' +
+      '<div class="nwt-confirmation-modal__content"><div class="nwt-confirmation-modal__icon">' + icon(o.icon || 'attention') + '</div>' +
+      '<div class="nwt-confirmation-modal__text"><h2 class="nwt-confirmation-modal__title">' + esc(o.title) + '</h2><p class="nwt-confirmation-modal__message">' + o.message + '</p>' + (o.extra ? '<div class="pf-modal-extra">' + o.extra + '</div>' : '') + '</div></div>' +
+      '<div class="nwt-confirmation-modal__footer"><div class="nwt-divider nwt-divider--horizontal nwt-confirmation-modal__divider"></div><div class="nwt-confirmation-modal__buttons">' +
+      o.buttons.map(function (b, i) { return '<button type="button" class="nwt-button" nwt-variant="' + (b.variant || 'quiet') + '" nwt-size="large" data-modal="' + i + '"><span class="nwt-button__content">' + esc(b.label) + '</span></button>'; }).join('') +
+      '</div></div></div></div><div class="nwt-modal__backdrop"></div>';
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-modal]'); if (b) { var f = o.buttons[+b.dataset.modal].fn; pfModalClose(); if (f) f(); return; }
+      if (o.dismissible && e.target.classList.contains('nwt-modal__backdrop')) pfModalClose();
+    });
+    document.body.appendChild(el);
+    var first = el.querySelector('[data-modal]:last-child'); if (first) first.focus();
+  }
+  function pfModalClose() { var m = $('#pfModal'); if (m) m.remove(); }
+  function leave() { if (typeof fadeAndGo === 'function') fadeAndGo('incentivo-03-programas.html'); else location.href = 'incentivo-03-programas.html'; }
+  function cancelar() {
+    if (S.done || snapState() === savedSnap) { leave(); return; } // sin cambios por guardar
+    if (EDIT) {
+      pfModal({ icon: 'attention', theme: 'caution', title: '¿Descartar los cambios?', message: 'Hiciste cambios en este programa que no se han guardado. Si sales ahora, se pierden.', dismissible: true,
+        buttons: [{ label: 'Seguir editando', variant: 'mute' }, { label: 'Descartar y salir', variant: 'loud', fn: leave }] });
+      return;
+    }
+    pfModal({ icon: 'attention', theme: 'caution', title: '¿Guardar como borrador?', message: 'Tienes cambios sin terminar. Guárdalos como borrador para retomarlos después o sal sin guardar.', dismissible: true,
+      buttons: [
+        { label: 'Seguir editando', variant: 'mute' },
+        { label: 'No guardar', variant: 'quiet', fn: function () { try { localStorage.removeItem(DRAFT_KEY); } catch (_) {} leave(); } },
+        { label: 'Guardar borrador', variant: 'loud', fn: function () { savedSnap = snapState(); saveDraft(); leave(); } }
+      ] });
   }
 
   /* ── Toast y borrador ───────────────────────────────────────── */
@@ -1042,6 +1075,7 @@
     $('#pfPrev').addEventListener('click', function () { if (S.step > 1) go(S.step - 1); });
     $('#pfNext').addEventListener('click', next);
     $('[data-act="save-draft"]').style.display = EDIT ? 'none' : '';
+    var cx = $('.pf-hdr-actions a.nwt-button'); if (cx) cx.addEventListener('click', function (e) { e.preventDefault(); cancelar(); });
     savedSnap = snapState();
     initChrome();
     render(true);

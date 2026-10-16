@@ -317,3 +317,10 @@ a.nwt-button{text-decoration:none}
 .pf-codes--off{background:var(--naotech-app-color-100)}
 .pf-codes--off .nwt-switch{opacity:.5;cursor:not-allowed}
 .pf-codes .pf-hint{margin:0}
+
+/* Ventana emergente de confirmación */
+#pfModal{z-index:2000}
+.pf-modal-extra{display:flex;gap:var(--naotech-sizing-8);justify-content:center;flex-wrap:wrap}
+#pfModal .nwt-modal__content{width:min(30rem,calc(100% - 32px))}
+#pfModal .nwt-confirmation-modal__buttons{flex-wrap:wrap}
+#pfModal .nwt-confirmation-modal__buttons .nwt-button{min-width:140px}
