@@ -653,6 +653,7 @@
   .cyc-stage__t{font-weight:700;font-size:14px;color:#282834}
   .cyc-stage__w{font-size:13px;color:#282834}
   .cyc-stage__d{font-size:12px;color:#646587}
+  .cond-pob-note{margin:0 0 6px;font-size:13px;color:#646587}
   .cond-inherit{margin-bottom:14px;padding:12px 14px;border:1px dashed #b5b9d4;border-radius:12px;background:#f4f5f9;font-size:13.5px;line-height:1.6}
   @media (max-width:900px){.cyc-stages{grid-template-columns:1fr}}
 </style>
@@ -848,14 +849,15 @@
               <div class="section-label">Etapas y fechas de cargue</div>
               <div id="cycStages"></div>
             </div>
-            <div class="section">
-              <div class="section-label">Población a la que apunta</div>
-              <dl id="cycPob"></dl>
-            </div>
           </div>
 
           <!-- Tab: Condiciones -->
           <div class="tab-pane" data-pane="condiciones" hidden>
+            <div class="section">
+              <div class="section-label">Población a la que apunta</div>
+              <p class="cond-pob-note">Condiciones del programa: aplican a <strong>todos</strong> los incentivos y se suman con <em>y</em> a las reglas de cada uno.</p>
+              <dl id="cycPob"></dl>
+            </div>
             <div class="section">
               <div class="section-label section-label--row">
                 <span>Reglas de elegibilidad</span>
@@ -1136,18 +1138,19 @@ function renderCiclo(p){
   const mun = c.municipios.length ? c.municipios.map(m => m.split(' · ')[0]).join(', ') : 'Todos';
   document.getElementById('cycPob').innerHTML = `
     <div class="info-row-plain"><dt>Roles</dt><dd>${c.roles.join(', ') || '—'}</dd></div>
-    <div class="info-row-plain"><dt>Cobertura</dt><dd>${c.cobertura.join(', ')}</dd></div>
+    <div class="info-row-plain"><dt>Departamentos</dt><dd>${c.cobertura.join(', ')}</dd></div>
     <div class="info-row-plain"><dt>Municipios</dt><dd>${c.cobertura.indexOf('Nacional') > -1 ? 'No aplica (cobertura nacional)' : mun}</dd></div>
-    <div class="info-row-plain"><dt>Selección de beneficiarios</dt><dd>${c.seleccion.map(s => s === 'manual' ? 'Registro manual' : 'Cargue por plataforma').join(' + ')}</dd></div>
-    <div class="info-row-plain"><dt>Gestores del programa</dt><dd>${c.gestores.join(', ') || '—'}</dd></div>`;
+    <div class="info-row-plain"><dt>Selección de beneficiarios</dt><dd>${c.seleccion.map(s => s === 'manual' ? 'Registro manual' : 'Cargue por plataforma').join(' + ')}</dd></div>`;
 }
 
+let HAS_CODES = true; // el programa lleva códigos solo si algún tipo de incentivo lo tiene activado
 function hydrateProgram(){
   const params = new URLSearchParams(location.search);
   const id = params.get('id') || (window.PROGRAMS_DATA && window.PROGRAMS_DATA[0]?.id);
   const p = window.getProgramById(id);
   if(!p) return;
   CURRENT_PROGRAM = p;
+  HAS_CODES = window.getProgramConfig(p).inc.some(i => i.codigos);
 
   // Detail head
   const ico = document.getElementById('hdIco');
@@ -1187,7 +1190,10 @@ function hydrateProgram(){
   // Regla de negocio: solo programas tipo Bono manejan inventario de códigos.
   // Para los demás (Beca, Kit, Inscripción, Transporte) ocultamos el tab y
   // el botón "Cargar códigos".
-  const isBonoProgram = mainCat === 'Bono' || window.getProgramConfig(p).inc.some(i => i.codigos);
+  const isBonoProgram = HAS_CODES;
+  const codTab = document.querySelector('#wzTabs [data-tab="codigos"]'); if(codTab) codTab.style.display = HAS_CODES ? '' : 'none';
+  const kpiInvBox = document.getElementById('kpiInv') && document.getElementById('kpiInv').parentElement; if(kpiInvBox) kpiInvBox.style.display = HAS_CODES ? '' : 'none';
+  const thCode = document.querySelector('#asignTable thead th:nth-of-type(2)'); if(thCode) thCode.textContent = HAS_CODES ? 'Código' : 'N.º de entrega';
   const cargarBtn = document.getElementById('btnCargarCodigos');
   if(cargarBtn) cargarBtn.style.display = isBonoProgram ? '' : 'none';
   // Marca el container del tab códigos para estilizar el empty state
@@ -1268,13 +1274,6 @@ function hydrateProgram(){
     condBodyHTML = `<p class="wz-cond-preview__intro">${intro}</p>${renderGroupsHTML(p.conditions.groups).join(orDivider)}`;
   } else {
     condBodyHTML = '<em>Sin condiciones definidas.</em>';
-  }
-  {
-    const cf = window.getProgramConfig(p), inh = [];
-    if(cf.roles.length) inh.push(`<strong>Rol</strong> ${cf.roles.length > 1 ? 'es uno de: ' + cf.roles.join(', ') : 'es ' + cf.roles[0]}`);
-    if(cf.cobertura.indexOf('Nacional') < 0 && cf.cobertura.length) inh.push(`<strong>Departamento</strong> ${cf.cobertura.length > 1 ? 'es uno de: ' + cf.cobertura.join(', ') : 'es ' + cf.cobertura[0]}`);
-    if(cf.municipios.length) inh.push(`<strong>Municipio</strong> ${cf.municipios.length > 1 ? 'es uno de: ' + cf.municipios.map(m => m.split(' · ')[0]).join(', ') : 'es ' + cf.municipios[0].split(' · ')[0]}`);
-    if(inh.length) condBodyHTML = `<div class="cond-inherit"><strong>Condiciones del programa</strong> (de la población que definiste; aplican a todos los incentivos y se suman con <em>y</em>):<br>${inh.join(' <em>y</em> ')}</div>` + condBodyHTML;
   }
   document.getElementById('condPreviewBody').innerHTML = condBodyHTML;
 
@@ -1635,7 +1634,7 @@ function seedAsign(){
   const avColors = ['purple','orange','green','blue','pink','teal'];
   const total = (CURRENT_PROGRAM && CURRENT_PROGRAM.codes && CURRENT_PROGRAM.codes.asig) || 182;
   for(let i = 1; i <= total; i++){
-    const code = `2026BEC-${String(i).padStart(5, '0')}`;
+    const code = (HAS_CODES ? '2026BEC-' : 'ENT-2026-') + String(i).padStart(5, '0');
     const person = PEOPLE[(i * 7) % PEOPLE.length];
     const cc = `CC ${(1000000 + i * 131).toLocaleString('es-CO').replace(/,/g, '.')}`;
     const op = OPERATORS[i % OPERATORS.length];

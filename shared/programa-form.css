@@ -337,4 +337,4 @@ a.nwt-button{text-decoration:none}
 #pfModal .nwt-confirmation-modal__buttons .nwt-button{flex:1 1 0}
 
 /* Opciones de selección de beneficiarios: tarjeta blanca con borde suave */
-.pf-opt-box{background:var(--naotech-app-background);border:1px solid var(--naotech-app-color-200)}
+.pf-opt-box{background:var(--naotech-color-gray-100);border:1px solid var(--naotech-app-color-200)}

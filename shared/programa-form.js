@@ -986,7 +986,7 @@
     var ver = existing ? (EDIT && versionChanges().length ? NEXT_VER : CUR_VER) : 'V1.0';
     return { id: existing ? existing.id : window.nextProgramId(), name: d.nombre.trim() || 'Programa sin nombre', shortDesc: (d.desc || '').slice(0, 80) || cov, longDesc: d.desc || '', iconBg: ico[0], iconColor: ico[1], status: status,
       event: d.eventos.join(', ') || '—', coverage: cov, responsible: d.gestores.join(', ') || '—', rubro: total, exec: existing ? existing.exec || 0 : 0, unit: (Number(S.inc[0].unit) || 0),
-      codes: existing && existing.codes && !codes ? existing.codes : { total: codes, avail: codes, asig: 0, rev: 0 },
+      codes: (function () { var ex = existing && existing.codes || { total: 0, avail: 0, asig: 0, rev: 0 }, any = S.inc.some(hasCodes); if (!any) return { total: 0, avail: 0, asig: ex.asig || 0, rev: ex.rev || 0 }; return codes ? { total: codes, avail: codes, asig: ex.asig || 0, rev: ex.rev || 0 } : ex; })(),
       from: d.desde ? fmtLong(d.desde) : 'Desde la activación', to: d.hasta ? fmtLong(d.hasta) : 'Sin fecha de fin', actoAdmin: d.anexo ? d.anexo.name : (d.justificacion ? d.justificacion.slice(0, 60) : '—'), fuente: 'Ministerio del Deporte · 2026',
       incentives: incentives, conditions: { groups: [], summary: '' }, config: cfg, version: ver, _userCreated: !existing || !!existing._userCreated, createdAt: existing && existing.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
   }
