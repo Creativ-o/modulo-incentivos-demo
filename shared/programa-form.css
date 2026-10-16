@@ -320,7 +320,14 @@ a.nwt-button{text-decoration:none}
 
 /* Ventana emergente de confirmación */
 #pfModal{z-index:2000}
+#pfModal .nwt-modal__backdrop{background:rgba(40,40,52,.6)}
 .pf-modal-extra{display:flex;gap:var(--naotech-sizing-8);justify-content:center;flex-wrap:wrap}
-#pfModal .nwt-modal__content{width:min(30rem,calc(100% - 32px))}
-#pfModal .nwt-confirmation-modal__buttons{flex-wrap:wrap}
-#pfModal .nwt-confirmation-modal__buttons .nwt-button{min-width:140px}
+#pfModal .nwt-modal__content{width:min(36rem,calc(100% - 32px));max-width:none}
+/* Jerarquía: una sola fila; la acción principal (naranja) a la derecha y las secundarias en neutro */
+#pfModal .nwt-confirmation-modal__buttons{flex-wrap:nowrap;gap:var(--naotech-sizing-12)}
+#pfModal .nwt-confirmation-modal__buttons .nwt-button{flex:1 1 0;min-width:0;white-space:nowrap}
+#pfModal .nwt-button[nwt-variant="mute"],#pfModal .nwt-button[nwt-variant="quiet"]{background:transparent;box-shadow:none;color:var(--naotech-app-color-800)}
+#pfModal .nwt-button[nwt-variant="quiet"]{box-shadow:inset 0 0 0 1px var(--naotech-app-color-400)}
+#pfModal .nwt-button[nwt-variant="mute"]:hover,#pfModal .nwt-button[nwt-variant="quiet"]:hover{background:var(--naotech-app-color-100)}
+#pfModal .nwt-button[nwt-variant="loud"],#pfModal .nwt-button[nwt-variant="loud"]:hover,#pfModal .nwt-button[nwt-variant="loud"]:focus,#pfModal .nwt-button[nwt-variant="loud"]:focus-visible,#pfModal .nwt-button[nwt-variant="loud"]:active{background:var(--naotech-primary-color-700,#d74009)}
+@media (max-width:640px){#pfModal .nwt-confirmation-modal__buttons{flex-direction:column-reverse}}

@@ -1000,7 +1000,6 @@
       if (o.dismissible && e.target.classList.contains('nwt-modal__backdrop')) pfModalClose();
     });
     document.body.appendChild(el);
-    var first = el.querySelector('[data-modal]:last-child'); if (first) first.focus();
   }
   function pfModalClose() { var m = $('#pfModal'); if (m) m.remove(); }
   function leave() { if (typeof fadeAndGo === 'function') fadeAndGo('incentivo-03-programas.html'); else location.href = 'incentivo-03-programas.html'; }
