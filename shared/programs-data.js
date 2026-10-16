@@ -345,7 +345,7 @@ window.getProgramCategory = function(p){
       roles: ['Deportista'], cobertura: ['Atlántico'], municipios: ['Barranquilla · Atlántico', 'Soledad · Atlántico'], seleccion: ['plataforma'],
       rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
       doc: { req: false, list: [] }, crono: {},
-      inc: [{ categoria: 'kit', tope: 'bottom', unit: 350000, valor: 87500000, cantidad: 250, codigos: true,
+      inc: [{ categoria: 'kit', tope: 'bottom', unit: 350000, valor: 105000000, cantidad: 300, codigos: true,
         grupos: [{ op: 'AND', rows: [{ f: 'categoria', op: '=', v: 'Juvenil' }, { f: 'edad', op: '≤', v: '21' }] }] }]
     },
     'PRG-2026-003': {
@@ -354,7 +354,7 @@ window.getProgramCategory = function(p){
       rec: { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
       doc: { req: true, list: [DOC_ID, { name: 'Autorización del acudiente', oblig: true }] },
       crono: { gracia: '', carga: { ini: '1', fin: '5' }, revision: { ini: '1', fin: '10' }, asignacion: { ini: '1', fin: '20' } },
-      inc: [{ categoria: 'bono', tope: 'bottom', unit: 120000, valor: 60000000, cantidad: 500, codigos: true,
+      inc: [{ categoria: 'bono', tope: 'bottom', unit: 120000, valor: 72000000, cantidad: 600, codigos: true,
         grupos: [{ op: 'AND', rows: [{ f: 'categoria', op: '=', v: 'Prejuvenil' }, { f: 'edad', op: '≥', v: '13' }, { f: 'edad', op: '≤', v: '17' }] }] }]
     },
     'PRG-2026-004': {
