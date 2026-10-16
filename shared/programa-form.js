@@ -224,7 +224,7 @@
         msHost('rol') + '<div id="pfOtroRol">' + otroRolHTML() + '</div><div class="pf-grid">' + msHost('cob') + msHost('mun') + '</div>' +
         '<div><span class="pf-label">Tipo de selección de beneficiarios</span><div class="pf-grid">' +
           [['plataforma', 'Cargue por plataforma', 'Las personas salen de las condiciones de elegibilidad con los datos de SUID.'], ['manual', 'Registro manual', 'El Gestor de programa busca y habilita personas (una a una o por lista) cuando la plataforma no puede identificarlas.']].map(function (o) {
-            return '<div class="pf-modal-box">' + checkbox(o[1], p.seleccion.indexOf(o[0]) > -1, 'seleccion', null, o[0]) + '<p class="pf-hint">' + o[2] + '</p></div>';
+            return '<div class="pf-modal-box pf-opt-box">' + checkbox(o[1], p.seleccion.indexOf(o[0]) > -1, 'seleccion', null, o[0]) + '<p class="pf-hint">' + o[2] + '</p></div>';
           }).join('') + '</div><p class="pf-hint">Puedes marcar una o ambas.</p></div>' +
       '</div>', N()) +
       card('Recurrencia', 'Define si el programa se entrega una sola vez o en ciclos.', '<div class="pf-inc">' +

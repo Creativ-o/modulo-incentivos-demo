@@ -335,3 +335,6 @@ a.nwt-button{text-decoration:none}
 #pfModal .pf-modal-x{position:absolute;top:var(--naotech-sizing-16);right:var(--naotech-sizing-16);z-index:5;width:32px;height:32px;align-items:center;justify-content:center;border-radius:50%;--naotech-icon-color:var(--naotech-app-color-700)}
 #pfModal .pf-modal-x:hover{background:var(--naotech-app-color-100)}
 #pfModal .nwt-confirmation-modal__buttons .nwt-button{flex:1 1 0}
+
+/* Opciones de selección de beneficiarios: tarjeta blanca con borde suave */
+.pf-opt-box{background:var(--naotech-app-background);border:1px solid var(--naotech-app-color-200)}
