@@ -307,3 +307,13 @@ a.nwt-button{text-decoration:none}
 .pf-rec-row .pf-switch-row{padding-bottom:var(--naotech-sizing-12)}
 .pf-rec-row .nwt-select{width:260px;max-width:100%}
 
+
+/* Condiciones heredadas del programa (cobertura y roles) */
+.pf-inherit{display:flex;flex-direction:column;gap:var(--naotech-sizing-8);padding:var(--naotech-sizing-12) var(--naotech-sizing-16);border:1px dashed var(--naotech-app-color-400);border-radius:var(--naotech-sizing-12);background:var(--naotech-app-color-100)}
+.pf-inherit__head{display:flex;align-items:center;justify-content:space-between;gap:var(--naotech-sizing-8)}
+.pf-inherit__row{display:flex;align-items:center;gap:var(--naotech-sizing-8);font-size:var(--naotech-sizing-14);color:var(--naotech-app-color-900);--naotech-icon-dimension:16px;--naotech-icon-color:var(--naotech-app-color-600)}
+/* Interruptor «lleva códigos»: siempre visible en cada tipo; apagado y explicado cuando no aplica */
+.pf-codes{display:flex;flex-direction:column;gap:var(--naotech-sizing-4);padding:var(--naotech-sizing-12) var(--naotech-sizing-16);border:1px solid var(--naotech-app-color-300);border-radius:var(--naotech-sizing-12);background:var(--naotech-app-background)}
+.pf-codes--off{background:var(--naotech-app-color-100)}
+.pf-codes--off .nwt-switch{opacity:.5;cursor:not-allowed}
+.pf-codes .pf-hint{margin:0}
