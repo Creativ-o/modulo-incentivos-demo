@@ -598,14 +598,14 @@
 
   /* Manual pane — sin columna Categoría (la categoría ya viene del Step 1) */
   .cc-manual__cols{
-    display:grid;grid-template-columns:1.3fr 1fr 30px;gap:8px;
+    display:grid;grid-template-columns:1fr 30px;gap:8px;
     padding:0 10px 8px;font-size:10.5px;font-weight:700;
     color:var(--naowee-color-text-secondary,#646587);
     text-transform:uppercase;letter-spacing:.4px;
   }
   .cc-manual__rows{display:flex;flex-direction:column;gap:6px}
   .cc-manual__row{
-    display:grid;grid-template-columns:1.3fr 1fr 30px;gap:8px;
+    display:grid;grid-template-columns:1fr 30px;gap:8px;
     align-items:center;
   }
   /* El código usa font mono para los identificadores */
@@ -1898,7 +1898,7 @@ document.addEventListener('keydown', e => {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
           </div>
           <div class="cc-dropzone__title">Arrastra tu archivo aquí o haz clic para seleccionarlo</div>
-          <div class="cc-dropzone__sub">Columnas esperadas: <code>codigo</code>, <code>valor</code>, <code>vencimiento</code>.</div>
+          <div class="cc-dropzone__sub">Una sola columna: <code>codigo</code>. El valor de cada código sale de la parametrización.</div>
           <div class="cc-dropzone__fmts"><span class="fmt">CSV</span><span class="fmt">XLSX</span></div>
         </div>
         <div class="cc-file-chip" id="ccFileChip">
@@ -1918,7 +1918,7 @@ document.addEventListener('keydown', e => {
       <!-- Manual mode -->
       <div class="cc-mode" data-mode="manual">
         <div class="cc-manual__cols">
-          <span>Código</span><span>Valor (opcional)</span><span></span>
+          <span>Código</span><span></span>
         </div>
         <div class="cc-manual__rows" id="ccManualRows"></div>
         <button type="button" class="naowee-btn naowee-btn--mute naowee-btn--small cc-manual__add" onclick="addCCRow()">
@@ -2010,9 +2010,10 @@ function selectCCType(idx, btn){
   document.querySelectorAll('#ccTypeGrid .cc-type-card').forEach(c => c.classList.toggle('is-selected', c === btn));
   document.getElementById('ccBonoSection').hidden = false;
   document.getElementById('ccNonBonoSection').hidden = true;
-  const t = ccCodeTypes().find(x => x.i === idx), unit = t && t.x.unit ? ' × $' + Number(t.x.unit).toLocaleString('es-CO') : '';
+  const t = ccCodeTypes().find(x => x.i === idx);
   const msg = document.getElementById('ccSummaryMsg');
-  document.getElementById('ccSummaryText').innerHTML = `Los códigos se agregan al inventario de <strong>${t ? t.inc.name : 'este tipo'}</strong>${unit ? ` (valor unitario ${unit.slice(3)})` : ''}. Quedan <strong>${CURRENT_PROGRAM.codes.avail}</strong> disponibles hoy.`;
+  const unitTxt = t && t.x.unit ? `Cada código vale <strong>$${Number(t.x.unit).toLocaleString('es-CO')}</strong>, el valor unitario que definiste en la parametrización. ` : '';
+  document.getElementById('ccSummaryText').innerHTML = `Los códigos se agregan al inventario de <strong>${t ? t.inc.name : 'este tipo'}</strong>. ${unitTxt}Quedan <strong>${CURRENT_PROGRAM.codes.avail}</strong> disponibles hoy.`;
   msg.style.display = 'flex';
   setTimeout(positionCCPill, 50);
   updateCCConfirmState();
@@ -2085,12 +2086,6 @@ function addCCRow(){
     <div class="naowee-textfield cc-manual__code">
       <div class="naowee-textfield__input-wrap">
         <input class="naowee-textfield__input cc-manual__code-input" type="text" placeholder="2026BEC-${String(idx).padStart(5, '0')}" oninput="updateCCConfirmState()"/>
-      </div>
-    </div>
-    <div class="naowee-textfield cc-manual__value">
-      <div class="naowee-textfield__input-wrap">
-        <span class="naowee-textfield__prefix">$</span>
-        <input class="naowee-textfield__input" type="text" inputmode="numeric" placeholder="1.000.000"/>
       </div>
     </div>
     <button type="button" class="cc-manual__x" onclick="removeCCRow(this)" aria-label="Eliminar">
