@@ -293,3 +293,13 @@ a.nwt-button{text-decoration:none}
 
 /* Separador de bloque dentro del paso 1 */
 .pf-block-label{margin-top:var(--naotech-sizing-12);padding-top:var(--naotech-sizing-24);border-top:1px solid var(--naotech-app-color-300);font-size:var(--naotech-sizing-12);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--naotech-app-color-600)}
+
+/* Dropdowns de multiselección: estado deshabilitado y fila para agregar personas */
+.pf-ms__content--off{cursor:not-allowed}
+.pf-ms__content--off .pf-ms__chev{opacity:.4}
+.pf-ms__add{display:flex;align-items:center;gap:var(--naotech-sizing-8);padding:var(--naotech-sizing-8) var(--naotech-sizing-8) 0;margin-top:var(--naotech-sizing-4);border-top:1px solid var(--naotech-app-color-200)}
+.pf-ms__newq{flex:1;min-width:0;height:var(--naotech-sizing-32);border:1px solid var(--naotech-app-color-300);border-radius:var(--naotech-sizing-8);padding:0 var(--naotech-sizing-8);font:inherit;font-size:var(--naotech-sizing-14);color:var(--naotech-app-color-900);outline:0}
+.pf-ms__newq:focus{border-color:var(--naotech-primary-color-600)}
+/* Recurrencia: el interruptor y la periodicidad van en la misma fila */
+.pf-rec-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:var(--naotech-sizing-16);align-items:center}
+@media (max-width:720px){.pf-rec-row{grid-template-columns:1fr}}

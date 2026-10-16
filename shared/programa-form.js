@@ -71,8 +71,8 @@
 
   var S = {
     step: 1, max: 1, done: false,
-    datos: { nombre: '', desc: '', evento: '', gestores: [], desde: '', hasta: '', justificacion: '', anexo: null },
-    pob: { roles: [], cobertura: ['Nacional'], seleccion: 'plataforma' },
+    datos: { nombre: '', desc: '', evento: '', gestores: [], extra: [], desde: '', hasta: '', justificacion: '', anexo: null },
+    pob: { roles: [], cobertura: ['Nacional'], municipios: [], seleccion: 'plataforma' },
     rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
     doc: { req: false, list: [] },
     crono: newCrono(),
@@ -91,8 +91,8 @@
   function seedEdit() {
     var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'beca'; i1.modalidad = 'fijo'; i1.tope = 'top'; i1.valor = '200000000'; i1.unit = '1000000'; i1.cantidad = '200';
     var i2 = newInc(); i2.nombre = 'Beca educativa · Medallistas de plata'; i2.categoria = 'beca'; i2.modalidad = 'fijo'; i2.tope = 'bottom'; i2.unit = '700000'; i2.cantidad = '150'; i2.valor = '105000000';
-    S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], gestores: ['Isa Pabon'], desde: '2026-04-22', hasta: '2026-12-31', justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 } };
-    S.pob = { roles: ['Deportista'], cobertura: ['Nacional'], seleccion: 'plataforma' };
+    S.datos = { extra: [], nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], gestores: ['Isa Pabon'], desde: '2026-04-22', hasta: '2026-12-31', justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 } };
+    S.pob = { roles: ['Deportista'], cobertura: ['Nacional'], municipios: [], seleccion: 'plataforma' };
     S.rec = { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' };
     S.doc = { req: true, list: [{ name: 'Documento de identidad', oblig: true }, { name: 'Certificado de resultado', oblig: true }, { name: 'Certificación bancaria', oblig: true }] };
     S.crono = { gracia: '3', primer: '2026-05-01', carga: { ini: '15', fin: '18' }, revision: { ini: '20', fin: '25' }, asignacion: { ini: '25', fin: '30' }, motivo: '' };
@@ -199,10 +199,7 @@
         '<div class="pf-span2">' + ta({ label: 'Descripción breve', k: 'datos.desc', val: d.desc, ph: 'A quién va dirigido y para qué.' }) + '</div>' +
         '<div class="pf-span2">' + sel({ label: 'Evento / categoría asociado', k: 'datos.evento', val: d.evento, ph: 'Selecciona un evento', opts: EVENTOS, hint: 'Útil para reportería y para validar las condiciones. Un programa puede existir sin evento.' }) + '</div>' +
       '</div>', N()) +
-      card('Gestores del programa', 'Quienes revisan documentación y entregan beneficios. Cada uno solo verá y gestionará los programas que tiene a cargo.', '<div class="pf-inc" data-box="datos.gestores"><div class="nwt-input-box__content">' +
-        '<span class="pf-label">Gestores asignados<span class="nwt-input-box__required">*</span></span>' +
-        '<div class="pf-row">' + GESTORES.map(function (g) { return tag(g, d.gestores.indexOf(g) > -1, 'gestor-t', null, g); }).join('') + '</div>' +
-        '<div class="nwt-input-box__message"><span>Puedes elegir más de uno.</span></div></div>' +
+      card('Gestores del programa', 'Quienes revisan documentación y entregan beneficios. Cada uno solo verá y gestionará los programas que tiene a cargo.', '<div class="pf-inc">' + msHost('gestor') +
         alertBox('Los gestores <b>solo leen</b> las condiciones; ajustan las fechas y etapas.', 'informative') + '</div>', N()) +
       card('Vigencia', 'Al cumplirse la fecha de fin el programa se inactiva solo.', '<div class="pf-grid">' +
         tf({ label: 'Vigencia desde', req: 1, type: 'date', k: 'datos.desde', val: d.desde }) +
@@ -223,18 +220,17 @@
     var lockMsg = lock ? alertBox('Tu rol <b>solo visualiza</b> esta información. Puedes ajustar las <b>fechas y etapas</b>; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
     var especificas =
       card('Población a la que apunta', 'A quién va dirigido el programa. Las condiciones finas de cada incentivo se definen en el paso 3.', '<div class="pf-inc">' +
-        '<div><span class="pf-label">Roles</span><div class="pf-row">' + ROLES.map(function (r) { return tag(r, p.roles.indexOf(r) > -1, 'rol-t', null, r); }).join('') + '</div><p class="pf-hint">Puedes elegir varios. Es el público al que apunta el programa.</p></div>' +
-        '<div class="nwt-dropdown pf-ms" id="pfCob" nwt-size="medium">' + cobInner() + '</div>' +
+        msHost('rol') + '<div class="pf-grid">' + msHost('cob') + msHost('mun') + '</div>' +
         radios({ label: 'Tipo de selección de beneficiarios', act: 'seleccion', value: p.seleccion, dir: 'horizontal', options: [
           { v: 'plataforma', l: 'Cargue por plataforma', s: 'Las personas salen de las condiciones de elegibilidad con los datos de SUID.' },
           { v: 'manual', l: 'Registro manual', s: 'El Gestor de programa busca y habilita personas (una a una o por lista) cuando la plataforma no puede identificarlas. Queda en auditoría.' }
         ] }) +
       '</div>', N()) +
       card('Recurrencia', 'Define si el programa se entrega una sola vez o en ciclos.', '<div class="pf-inc">' +
-        '<div class="pf-switch-row">' + toggle(S.rec.on, 'rec-on') + '<span>El programa es <b>recurrente</b> (se entrega en ciclos)</span></div>' +
-        (S.rec.on ? '<div class="pf-grid">' + sel({ label: 'Frecuencia de recurrencia', req: 1, k: 'rec.frecuencia', val: S.rec.frecuencia, opts: FRECUENCIAS, attrs: ' data-struct="1"' }) +
-          (S.rec.frecuencia === 'otra' ? '<div class="pf-grid" style="grid-template-columns:1fr 1fr">' + tf({ label: 'Cada', req: 1, type: 'number', k: 'rec.frecuenciaN', val: S.rec.frecuenciaN, ph: '2' }) + sel({ label: 'Unidad', k: 'rec.frecuenciaU', val: S.rec.frecuenciaU, opts: ['días', 'semanas', 'meses'] }) + '</div>' : '<div></div>') + '</div>' +
-          alertBox('Todos los tipos de incentivo serán <b>fijos recurrentes</b>: sin código y con <b>documentación obligatoria</b>.', 'informative')
+        '<div class="pf-rec-row"><div class="pf-switch-row">' + toggle(S.rec.on, 'rec-on') + '<span>El programa es <b>recurrente</b> (se entrega en ciclos)</span></div>' +
+        (S.rec.on ? sel({ label: 'Periodicidad', req: 1, k: 'rec.frecuencia', val: S.rec.frecuencia, opts: FRECUENCIAS, attrs: ' data-struct="1"' }) : '') + '</div>' +
+        (S.rec.on && S.rec.frecuencia === 'otra' ? '<div class="pf-grid">' + tf({ label: 'Cada', req: 1, type: 'number', k: 'rec.frecuenciaN', val: S.rec.frecuenciaN, ph: '2' }) + sel({ label: 'Unidad', k: 'rec.frecuenciaU', val: S.rec.frecuenciaU, opts: ['días', 'semanas', 'meses'] }) + '</div>' : '') +
+        (S.rec.on ? alertBox('Al ser recurrente, el programa <b>siempre pide documentos</b> y todos los tipos de incentivo son <b>fijos recurrentes</b> (sin código).', 'informative')
           : alertBox('Entrega única: el beneficiario recibe el incentivo una vez, con código o como certificado.', 'informative')) +
       '</div>', N()) +
       card('Documentación requerida', 'Documentos que el beneficiario carga. Son los mismos para todo el programa; en el paso 3 eliges a qué tipo aplica cada uno.', '<div class="pf-inc">' + docsHTML() + '</div>', N());
@@ -280,61 +276,85 @@
     }, 120);
   }
 
-  /* ── Cobertura territorial: dropdown con multiselección (composición SDK: nwt-dropdown + opciones con checkbox) ── */
-  var cobOpen = false, cobQuery = '';
-  function norm(s) { return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
-  function cobOptsHTML() {
-    var sel = S.pob.cobertura, q = norm(cobQuery.trim()), nac = sel.indexOf('Nacional') > -1;
-    var list = REGIONES.filter(function (r) { return !q || norm(r).indexOf(q) > -1; });
+  /* ── Dropdowns con multiselección (composición SDK: nwt-dropdown + opciones con checkbox): cobertura, municipios, gestores y roles ── */
+  var MUNI = { 'Amazonas': ['Leticia', 'Puerto Nariño'], 'Antioquia': ['Medellín', 'Bello', 'Envigado', 'Itagüí', 'Rionegro', 'Apartadó'], 'Arauca': ['Arauca', 'Saravena', 'Tame'], 'Atlántico': ['Barranquilla', 'Soledad', 'Malambo', 'Sabanalarga'], 'Bogotá D.C.': ['Bogotá D.C.'], 'Bolívar': ['Cartagena', 'Magangué', 'Turbaco'], 'Boyacá': ['Tunja', 'Duitama', 'Sogamoso', 'Chiquinquirá'], 'Caldas': ['Manizales', 'La Dorada', 'Chinchiná'], 'Caquetá': ['Florencia', 'San Vicente del Caguán'], 'Casanare': ['Yopal', 'Aguazul', 'Villanueva'], 'Cauca': ['Popayán', 'Santander de Quilichao', 'Puerto Tejada'], 'Cesar': ['Valledupar', 'Aguachica', 'Codazzi'], 'Chocó': ['Quibdó', 'Istmina', 'Tadó'], 'Córdoba': ['Montería', 'Cereté', 'Sahagún', 'Lorica'], 'Cundinamarca': ['Soacha', 'Fusagasugá', 'Zipaquirá', 'Girardot', 'Chía'], 'Guainía': ['Inírida'], 'Guaviare': ['San José del Guaviare', 'Calamar'], 'Huila': ['Neiva', 'Pitalito', 'Garzón'], 'La Guajira': ['Riohacha', 'Maicao', 'Uribia'], 'Magdalena': ['Santa Marta', 'Ciénaga', 'Fundación'], 'Meta': ['Villavicencio', 'Acacías', 'Granada'], 'Nariño': ['Pasto', 'Tumaco', 'Ipiales'], 'Norte de Santander': ['Cúcuta', 'Ocaña', 'Pamplona', 'Villa del Rosario'], 'Putumayo': ['Mocoa', 'Puerto Asís', 'Orito'], 'Quindío': ['Armenia', 'Calarcá', 'Montenegro'], 'Risaralda': ['Pereira', 'Dosquebradas', 'Santa Rosa de Cabal'], 'San Andrés y Providencia': ['San Andrés', 'Providencia'], 'Santander': ['Bucaramanga', 'Floridablanca', 'Girón', 'Barrancabermeja', 'San Gil'], 'Sucre': ['Sincelejo', 'Corozal', 'Sampués'], 'Tolima': ['Ibagué', 'Espinal', 'Honda', 'Chaparral'], 'Valle del Cauca': ['Cali', 'Palmira', 'Buenaventura', 'Tuluá', 'Buga', 'Cartago'], 'Vaupés': ['Mitú'], 'Vichada': ['Puerto Carreño', 'La Primavera'] }; // muestra representativa para el prototipo
+  var MSO = {}; // estado de pantalla: { key, q }
+  function norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function muniDepto(m) { return String(m).split(' · ')[1]; }
+  function msCfg(key) {
+    return {
+      cob: { id: 'pfCob', label: 'Cobertura territorial', req: 0, ph: 'Selecciona Nacional o uno o varios departamentos', sp: 'Buscar departamento', box: 'pob.cobertura', get: function () { return S.pob.cobertura; }, options: function () { return REGIONES; }, exclusive: 'Nacional', hint: '' },
+      mun: { id: 'pfMun', label: 'Municipios (opcional)', req: 0, ph: 'Todos los municipios de los departamentos elegidos', sp: 'Buscar municipio', box: 'pob.municipios', get: function () { return S.pob.municipios; }, options: function () { var o = []; S.pob.cobertura.forEach(function (d) { (MUNI[d] || []).forEach(function (m) { o.push(m + ' · ' + d); }); }); return o; },
+        off: function () { return S.pob.cobertura.indexOf('Nacional') > -1 || !S.pob.cobertura.length ? (S.pob.cobertura.indexOf('Nacional') > -1 ? 'Con cobertura nacional no se precisan municipios.' : 'Elige uno o más departamentos para precisar municipios.') : ''; }, hint: '' },
+      gestor: { id: 'pfGest', label: 'Gestores asignados', req: 1, ph: 'Selecciona uno o varios gestores', sp: 'Buscar gestor', box: 'datos.gestores', get: function () { return S.datos.gestores; }, options: function () { return GESTORES.concat(S.datos.extra); }, add: 'Agregar a otra persona', hint: 'Puedes elegir más de uno o agregar a otra persona.' },
+      rol: { id: 'pfRol', label: 'Roles', req: 0, ph: 'Selecciona uno o varios roles', sp: 'Buscar rol', box: 'pob.roles', get: function () { return S.pob.roles; }, options: function () { return ROLES; }, hint: 'Es el público al que apunta el programa. Puedes elegir varios.' }
+    }[key];
+  }
+  function msHost(key) { var c = msCfg(key); return '<div class="nwt-dropdown pf-ms" id="' + c.id + '" data-ms="' + key + '" nwt-size="medium">' + msInner(key) + '</div>'; }
+  function msIsOpen(key) { return MSO.key === key; }
+  function msOptsHTML(key) {
+    var c = msCfg(key), sel = c.get(), q = norm((MSO.q || '').trim()), nac = c.exclusive && sel.indexOf(c.exclusive) > -1;
+    var list = c.options().filter(function (r) { return !q || norm(r).indexOf(q) > -1; });
     if (!list.length) return '<li class="nwt-dropdown__option nwt-dropdown__option--empty"><span>Sin resultados</span></li>';
     return list.map(function (r) {
-      var on = sel.indexOf(r) > -1, off = nac && r !== 'Nacional'; // «Nacional» ya los incluye a todos
-      return '<li class="nwt-dropdown__option' + (off ? ' nwt-dropdown__option--disabled' : '') + '" role="option" aria-selected="' + on + '"' + (off ? ' aria-disabled="true" title="Incluido en «Nacional»"' : ' data-act="cob-opt" data-x="' + esc(r) + '"') + '><span class="nwt-dropdown__option-checkbox' + (on ? ' nwt-dropdown__option-checkbox--selected' : '') + '">' + (on ? icon('positive') : '') + '</span><span>' + esc(r) + '</span></li>';
+      var on = sel.indexOf(r) > -1, off = nac && r !== c.exclusive; // «Nacional» ya los incluye a todos
+      return '<li class="nwt-dropdown__option' + (off ? ' nwt-dropdown__option--disabled' : '') + '" role="option" aria-selected="' + on + '"' + (off ? ' aria-disabled="true" title="Incluido en «Nacional»"' : ' data-act="ms-opt" data-i="' + key + '" data-x="' + esc(r) + '"') + '><span class="nwt-dropdown__option-checkbox' + (on ? ' nwt-dropdown__option-checkbox--selected' : '') + '">' + (on ? icon('positive') : '') + '</span><span>' + esc(r) + '</span></li>';
     }).join('');
   }
-  function cobInner() {
-    var sel = S.pob.cobertura;
+  function msInner(key) {
+    var c = msCfg(key), sel = c.get(), open = msIsOpen(key), off = c.off ? c.off() : '';
     var chips = sel.map(function (r) {
-      return '<span class="nwt-tag nwt-tag--active" nwt-size="small">' + esc(r) + '<span class="pf-ms__x" role="button" aria-label="Quitar ' + esc(r) + '" data-act="cob-del" data-x="' + esc(r) + '">' + icon('close') + '</span></span>';
-    }).join('') || '<span class="pf-ms__ph">Selecciona Nacional o uno o varios departamentos</span>';
-    var control = '<div class="nwt-dropdown__content pf-ms__content" role="combobox" tabindex="0" aria-expanded="' + cobOpen + '" data-act="cob-toggle"><div class="pf-ms__chips">' + chips + '</div><div class="nwt-dropdown__chevron pf-ms__chev' + (cobOpen ? ' nwt-dropdown__chevron--open' : '') + '">' + icon('chevron-down') + '</div></div>';
-    var list = cobOpen ? '<div class="nwt-dropdown__list pf-ms__list"><div class="pf-ms__search">' + icon('search') + '<input class="pf-ms__q" type="text" autocomplete="off" placeholder="Buscar departamento" value="' + esc(cobQuery) + '" aria-label="Buscar departamento"/></div><ul class="nwt-dropdown__options" id="pfCobOpts">' + cobOptsHTML() + '</ul></div>' : '';
-    return inputBox('Cobertura territorial', false, control, '', 'pob.cobertura') + list;
+      return '<span class="nwt-tag nwt-tag--active" nwt-size="small">' + esc(r) + '<span class="pf-ms__x" role="button" aria-label="Quitar ' + esc(r) + '" data-act="ms-del" data-i="' + key + '" data-x="' + esc(r) + '">' + icon('close') + '</span></span>';
+    }).join('') || '<span class="pf-ms__ph">' + esc(off || c.ph) + '</span>';
+    var control = '<div class="nwt-dropdown__content pf-ms__content' + (off ? ' pf-ms__content--off' : '') + '" role="combobox" tabindex="' + (off ? -1 : 0) + '" aria-expanded="' + open + '"' + (off ? ' aria-disabled="true"' : ' data-act="ms-toggle" data-i="' + key + '"') + '><div class="pf-ms__chips">' + chips + '</div><div class="nwt-dropdown__chevron pf-ms__chev' + (open ? ' nwt-dropdown__chevron--open' : '') + '">' + icon('chevron-down') + '</div></div>';
+    var add = c.add ? '<div class="pf-ms__add"><input class="pf-ms__newq" type="text" autocomplete="off" data-ms="' + key + '" placeholder="' + esc(c.add) + ' (nombre)" aria-label="' + esc(c.add) + '"/>' + btn('Agregar', 'ms-add', { d: key, s: 'small', i: 'add' }) + '</div>' : '';
+    var list = open ? '<div class="nwt-dropdown__list pf-ms__list"><div class="pf-ms__search">' + icon('search') + '<input class="pf-ms__q" type="text" autocomplete="off" data-ms="' + key + '" placeholder="' + esc(c.sp) + '" value="' + esc(MSO.q || '') + '" aria-label="' + esc(c.sp) + '"/></div><ul class="nwt-dropdown__options" id="' + c.id + 'Opts">' + msOptsHTML(key) + '</ul>' + add + '</div>' : '';
+    return inputBox(c.label, c.req, control, c.hint, c.box, off ? 'nwt-input-box--disabled' : '') + list;
   }
-  function cobRedraw() {
-    var el = $('#pfCob'); if (!el) return;
-    el.classList.toggle('nwt-dropdown--open', cobOpen);
-    el.innerHTML = cobInner();
-    if (cobOpen) cobPlace(el);
+  function msRedraw(key) {
+    var c = msCfg(key), el = $('#' + c.id); if (!el) return;
+    var open = msIsOpen(key);
+    el.classList.toggle('nwt-dropdown--open', open);
+    el.innerHTML = msInner(key);
+    if (open) msPlace(el);
   }
+  function msClose() { if (!MSO.key) return; var k = MSO.key; MSO = {}; msRedraw(k); }
   /* La lista nunca puede tapar el pie ni salirse del área visible: se abre hacia donde haya espacio y limita su alto. */
-  function cobPlace(el) {
+  function msPlace(el) {
     var list = el.querySelector('.pf-ms__list'), ctl = el.querySelector('.nwt-dropdown__content'), opts = list && list.querySelector('.nwt-dropdown__options');
     if (!list || !ctl) return;
-    var sc = $('#pfScroll'), foot = $('.pf-footer'), head = $('#pfHead');
-    var GAP = 6, NEED = 200;
+    var foot = $('.pf-footer'), head = $('#pfHead');
+    var GAP = 6, NEED = 200, extra = list.querySelector('.pf-ms__add') ? 48 : 0;
     function room() {
       var c = ctl.getBoundingClientRect();
       return { below: foot.getBoundingClientRect().top - c.bottom - GAP * 2, above: c.top - head.getBoundingClientRect().bottom - GAP * 2 };
     }
     var r = room(), cr0 = ctl.getBoundingClientRect();
     var visible = cr0.top >= head.getBoundingClientRect().bottom && cr0.bottom <= foot.getBoundingClientRect().top;
-    if (!visible || Math.max(r.below, r.above) < NEED) { // fuera de vista o con poco espacio: se centra el control en el área visible
-      ctl.scrollIntoView({ block: 'center' }); r = room();
-    }
+    if (!visible || Math.max(r.below, r.above) < NEED) { ctl.scrollIntoView({ block: 'center' }); r = room(); }
     var up = r.below < NEED && r.above > r.below, avail = Math.max(120, Math.min(300, (up ? r.above : r.below) - 16));
-    opts.style.maxHeight = Math.max(100, avail - 52) + 'px';
+    opts.style.maxHeight = Math.max(100, avail - 52 - extra) + 'px';
     var e = el.getBoundingClientRect(), c = ctl.getBoundingClientRect();
     list.classList.toggle('pf-ms__list--up', up);
     if (up) { list.style.top = 'auto'; list.style.bottom = (e.bottom - c.top + GAP) + 'px'; }
     else { list.style.bottom = 'auto'; list.style.top = (c.bottom - e.top + GAP) + 'px'; }
   }
-  function cobSet(r) {
-    var c = S.pob.cobertura.slice();
-    if (r === 'Nacional') c = c.indexOf('Nacional') > -1 ? [] : ['Nacional']; // marcar Nacional reemplaza todo; desmarcarla libera los departamentos
-    else { if (c.indexOf('Nacional') > -1) return; var i = c.indexOf(r); if (i > -1) c.splice(i, 1); else c.push(r); }
-    S.pob.cobertura = c; cobRedraw(); saveDraft(true);
-    var box = document.querySelector('[data-box="pob.cobertura"]'); if (box && c.length) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
+  function msToggleVal(key, r) {
+    var c = msCfg(key), v = c.get().slice(), i = v.indexOf(r);
+    if (c.exclusive && r === c.exclusive) v = i > -1 ? [] : [r]; // marcar «Nacional» reemplaza todo; desmarcarla libera los departamentos
+    else { if (c.exclusive && v.indexOf(c.exclusive) > -1) return; if (i > -1) v.splice(i, 1); else v.push(r); }
+    if (key === 'cob') { S.pob.cobertura = v; S.pob.municipios = S.pob.municipios.filter(function (m) { return v.indexOf(muniDepto(m)) > -1; }); }
+    else if (key === 'mun') S.pob.municipios = v;
+    else if (key === 'gestor') S.datos.gestores = v;
+    else if (key === 'rol') S.pob.roles = v;
+    msRedraw(key); if (key === 'cob') msRedraw('mun'); saveDraft(true); refreshDraftBtn();
+    var box = document.querySelector('[data-box="' + c.box + '"]'); if (box && v.length) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
+  }
+  function msAddPerson() {
+    var inp = $('.pf-ms__newq'), v = inp && inp.value.trim(); if (!v) { toast('Escribe el nombre de la persona.', 'caution'); return; }
+    var all = GESTORES.concat(S.datos.extra); if (all.map(norm).indexOf(norm(v)) > -1) { toast('Esa persona ya está en la lista.', 'caution'); return; }
+    S.datos.extra.push(v); S.datos.gestores.push(v); msRedraw('gestor'); saveDraft(true); refreshDraftBtn();
+    var q = $('#pfGest .pf-ms__newq'); if (q) q.focus({ preventScroll: true });
   }
 
   /* Cantidad de tipos definida en el paso 2 → tarjetas del paso 3 */
@@ -460,9 +480,9 @@
   /* Documentación requerida (a nivel de programa) */
   function docsHTML() {
     var d = S.doc, forced = recOn();
-    var out = '<div class="pf-switch-row">' + (forced ? toggle(true, 'noop') : toggle(d.req, 'doc-req')) + '<span>¿El programa pide documentos al beneficiario?' + (forced ? ' <b>Sí (obligatorio en el recurrente)</b>' : '') + '</span></div>';
+    var out = forced ? '' : '<div class="pf-switch-row">' + toggle(d.req, 'doc-req') + '<span>¿El programa pide documentos al beneficiario?</span></div>';
     if (!docsReq()) return out + alertBox('<b>Flujo directo:</b> sin postulación ni cargue de documentos. El beneficiario elegible queda habilitado para que el Operador le asigne el incentivo.', 'informative');
-    out += alertBox('<b>Con postulación documental:</b> el beneficiario carga soportes (PDF, JPG, PNG) en la ventana de fechas, el Gestor de programa los revisa y solo con <b>Documentación aprobada</b> el Operador puede asignar.', 'informative');
+    out += alertBox((forced ? '<b>Obligatoria por ser recurrente.</b> ' : '<b>Con postulación documental:</b> ') + 'el beneficiario carga soportes (PDF, JPG, PNG) en la ventana de fechas, el Gestor de programa los revisa y solo con <b>Documentación aprobada</b> el Operador puede asignar.', 'informative');
     out += '<div><span class="pf-label">Documentos que pide</span><div class="pf-sec" style="gap:8px">' + (d.list.length ? d.list.map(function (x, i) {
       return '<div class="pf-doc"><span class="pf-doc__name">' + esc(x.name) + '</span>' + checkbox('Obligatorio', x.oblig, 'doc-oblig', null, i) + iconBtn('close', 'doc-del', 'Quitar documento', null, i) + '</div>';
     }).join('') : '<p class="pf-hint">Agrega al menos un documento obligatorio.</p>') + '</div></div>';
@@ -615,7 +635,7 @@
     var incTxt = S.inc.map(function (i) { return '<div>' + esc(i.nombre || 'Sin nombre') + (catOf(i) ? ' (' + esc(catOf(i).l) + ')' : '') + ' · ' + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + esc(incValTxt(i)) + '</div>'; }).join('');
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
       kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Evento', esc(d.evento || '—')) + kv('Gestores', esc(d.gestores.join(', ') || '—')) +
-      kv('Vigencia', fmtDate(d.desde) + ' → ' + fmtDate(d.hasta)) + kv('Roles', p.roles.length ? esc(p.roles.join(', ')) : nada + 'Sin roles definidos</span>') + kv('Cobertura', esc(p.cobertura.join(', '))) +
+      kv('Vigencia', fmtDate(d.desde) + ' → ' + fmtDate(d.hasta)) + kv('Roles', p.roles.length ? esc(p.roles.join(', ')) : nada + 'Sin roles definidos</span>') + kv('Cobertura', esc(p.cobertura.join(', ')) + (p.municipios.length ? '<br><span style="font-weight:400">Municipios: ' + esc(p.municipios.map(function (m) { return m.split(' · ')[0]; }).join(', ')) + '</span>' : '')) +
       kv('Selección de beneficiarios', p.seleccion === 'manual' ? 'Registro manual' : 'Cargue por plataforma') +
       kv('Recurrencia', recOn() ? 'Recurrente · ' + esc(frecuenciaTxt()) : 'Entrega única') +
       kv('Documentos y fechas', docsReq() ? esc(S.doc.list.map(function (x) { return x.name + (x.oblig ? '' : ' (opcional)'); }).join(', ') || '—') + '<br>' + esc(cronoSummary()) : 'No pide documentos (flujo directo)') +
@@ -739,7 +759,7 @@
     }).join('');
   }
   function render(keepScroll) {
-    cobOpen = false;
+    MSO = {};
     var html = [step1, step2, step3, step4][S.step - 1]();
     $('#pfStep').innerHTML = html;
     renderStepper(); banner();
@@ -805,13 +825,12 @@
 
   /* ── Acciones ───────────────────────────────────────────────── */
   var ACT = {
-    'cob-toggle': function () { cobOpen = !cobOpen; cobQuery = ''; cobRedraw(); if (cobOpen) { var q = $('#pfCob .pf-ms__q'); if (q) q.focus({ preventScroll: true }); } },
-    'cob-opt': function (x) { cobSet(x); },
-    'cob-del': function (x) { cobSet(x); },
+    'ms-toggle': function (x, key) { if (MSO.key === key) { msClose(); return; } var prev = MSO.key; MSO = { key: key, q: '' }; if (prev) msRedraw(prev); msRedraw(key); var q = $('#' + msCfg(key).id + ' .pf-ms__q'); if (q) q.focus({ preventScroll: true }); },
+    'ms-opt': function (x, key) { msToggleVal(key, x); },
+    'ms-del': function (x, key) { msToggleVal(key, x); },
+    'ms-add': function () { msAddPerson(); },
     'anexo-del': function () { S.datos.anexo = null; saveDraft(true); anexoRedraw(); },
     'rubro-tipos': function (x) { S.rubro.tipos = x; syncInc(); render(true); },
-    'rol-t': function (x) { var r = S.pob.roles, i = r.indexOf(x); if (i > -1) r.splice(i, 1); else r.push(x); render(true); },
-    'gestor-t': function (x) { var g = S.datos.gestores, i = g.indexOf(x); if (i > -1) g.splice(i, 1); else g.push(x); render(true); },
     'seleccion': function (x) { S.pob.seleccion = x; render(true); },
     'rec-on': function () { S.rec.on = !S.rec.on; if (S.rec.on && !S.doc.list.length) S.doc.list = [{ name: 'Documento de identidad', oblig: true }]; syncModalidades(); render(true); },
     'inc-tope': function (x, i) { var n = incById(i); n.tope = x; recalc(n); render(true); },
@@ -841,7 +860,7 @@
     noop: function () {}
   };
   function onClick(e) {
-    if (cobOpen && !e.target.closest('#pfCob')) { cobOpen = false; cobRedraw(); }
+    if (MSO.key && !e.target.closest('.pf-ms')) msClose();
     var t = e.target.closest('[data-act]'); if (!t) return;
     if (t.closest('[inert]')) return;
     var fn = ACT[t.dataset.act]; if (!fn) return;
@@ -858,7 +877,7 @@
     if (!e.target || e.target.id !== 'pfAnexoInput') return;
     var f = e.target.files && e.target.files[0]; if (f) anexoStart(f); e.target.value = '';
   }
-  function onKey(e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.nwt-tag[data-act], .nwt-checkbox[data-act], .nwt-switch[data-act], .pf-ms__content')) { e.preventDefault(); e.target.click(); } if (e.key === 'Escape' && cobOpen) { cobOpen = false; cobRedraw(); } }
+  function onKey(e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.nwt-tag[data-act], .nwt-checkbox[data-act], .nwt-switch[data-act], .pf-ms__content')) { e.preventDefault(); e.target.click(); } if (e.key === 'Escape' && MSO.key) msClose(); if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('pf-ms__newq')) { e.preventDefault(); msAddPerson(); } }
 
   function go(n) { S.step = n; if (n > S.max) S.max = n; render(); }
   function next() {
@@ -932,7 +951,7 @@
     try {
       var raw = localStorage.getItem(DRAFT_KEY); if (!raw) return false;
       var o = JSON.parse(raw); if (!o.S || o.S.done || !o.S.pob || !o.S.rec || !o.S.doc || !o.S.crono) return false;
-      S = o.S; uid = o.uid || uid; return true;
+      S = o.S; uid = o.uid || uid; if (!S.pob.municipios) S.pob.municipios = []; if (!S.datos.extra) S.datos.extra = []; return true;
     } catch (_) { return false; }
   }
 
@@ -964,7 +983,7 @@
     var root = $('#pfStep');
     root.addEventListener('input', onInput); root.addEventListener('change', onInput);
     root.addEventListener('click', onAnexoClick); root.addEventListener('change', onAnexoChange);
-    root.addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('pf-ms__q')) { cobQuery = e.target.value; var ul = $('#pfCobOpts'); if (ul) ul.innerHTML = cobOptsHTML(); } });
+    root.addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('pf-ms__q')) { var k = e.target.dataset.ms; MSO.q = e.target.value; var ul = $('#' + msCfg(k).id + 'Opts'); if (ul) ul.innerHTML = msOptsHTML(k); } });
     document.addEventListener('click', onClick); document.addEventListener('keydown', onKey);
     root.addEventListener('focusin', function (e) { var b = e.target.closest('.nwt-input-box'); if (b && !b.classList.contains('pf-ro-box')) { b.classList.add('nwt-input-box--focused'); var f = e.target.closest('.nwt-text-field,.nwt-select,.nwt-text-area'); if (f) f.classList.add(f.className.split(' ')[0] + '--focused'); } });
     root.addEventListener('focusout', function (e) { var b = e.target.closest('.nwt-input-box'); if (b) { b.classList.remove('nwt-input-box--focused'); var f = e.target.closest('.nwt-text-field,.nwt-select,.nwt-text-area'); if (f) f.classList.remove(f.className.split(' ')[0] + '--focused'); } });
