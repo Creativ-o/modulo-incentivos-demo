@@ -331,3 +331,7 @@ a.nwt-button{text-decoration:none}
 #pfModal .nwt-button[nwt-variant="mute"]:hover,#pfModal .nwt-button[nwt-variant="quiet"]:hover{background:var(--naotech-app-color-100)}
 #pfModal .nwt-button[nwt-variant="loud"],#pfModal .nwt-button[nwt-variant="loud"]:hover,#pfModal .nwt-button[nwt-variant="loud"]:focus,#pfModal .nwt-button[nwt-variant="loud"]:focus-visible,#pfModal .nwt-button[nwt-variant="loud"]:active{background:var(--naotech-primary-color-700,#d74009)}
 @media (max-width:640px){#pfModal .nwt-confirmation-modal__buttons{flex-direction:column-reverse}}
+
+#pfModal .pf-modal-x{position:absolute;top:var(--naotech-sizing-16);right:var(--naotech-sizing-16);z-index:5;width:32px;height:32px;align-items:center;justify-content:center;border-radius:50%;--naotech-icon-color:var(--naotech-app-color-700)}
+#pfModal .pf-modal-x:hover{background:var(--naotech-app-color-100)}
+#pfModal .nwt-confirmation-modal__buttons .nwt-button{flex:1 1 0}

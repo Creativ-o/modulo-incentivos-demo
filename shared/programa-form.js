@@ -989,13 +989,14 @@
     pfModalClose();
     var el = document.createElement('div');
     el.id = 'pfModal'; el.className = 'nwt-modal nwt-confirmation-modal nwt-modal--visible'; el.setAttribute('nwt-theme', o.theme || 'neutral'); el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
-    el.innerHTML = '<div class="nwt-modal__content"><div class="nwt-modal__component">' +
+    el.innerHTML = '<div class="nwt-modal__content">' + (o.dismissible ? '<span class="nwt-modal__close pf-modal-x" role="button" tabindex="0" aria-label="Cerrar" data-modal-close="1">' + icon('close') + '</span>' : '') + '<div class="nwt-modal__component">' +
       '<div class="nwt-confirmation-modal__content"><div class="nwt-confirmation-modal__icon">' + icon(o.icon || 'attention') + '</div>' +
       '<div class="nwt-confirmation-modal__text"><h2 class="nwt-confirmation-modal__title">' + esc(o.title) + '</h2><p class="nwt-confirmation-modal__message">' + o.message + '</p>' + (o.extra ? '<div class="pf-modal-extra">' + o.extra + '</div>' : '') + '</div></div>' +
       '<div class="nwt-confirmation-modal__footer"><div class="nwt-divider nwt-divider--horizontal nwt-confirmation-modal__divider"></div><div class="nwt-confirmation-modal__buttons">' +
       o.buttons.map(function (b, i) { return '<button type="button" class="nwt-button" nwt-variant="' + (b.variant || 'quiet') + '" nwt-size="large" data-modal="' + i + '"><span class="nwt-button__content">' + esc(b.label) + '</span></button>'; }).join('') +
       '</div></div></div></div><div class="nwt-modal__backdrop"></div>';
     el.addEventListener('click', function (e) {
+      if (e.target.closest('[data-modal-close]')) { pfModalClose(); return; }
       var b = e.target.closest('[data-modal]'); if (b) { var f = o.buttons[+b.dataset.modal].fn; pfModalClose(); if (f) f(); return; }
       if (o.dismissible && e.target.classList.contains('nwt-modal__backdrop')) pfModalClose();
     });
@@ -1007,12 +1008,11 @@
     if (S.done || snapState() === savedSnap) { leave(); return; } // sin cambios por guardar
     if (EDIT) {
       pfModal({ icon: 'attention', theme: 'caution', title: '¿Descartar los cambios?', message: 'Hiciste cambios en este programa que no se han guardado. Si sales ahora, se pierden.', dismissible: true,
-        buttons: [{ label: 'Seguir editando', variant: 'mute' }, { label: 'Descartar y salir', variant: 'loud', fn: leave }] });
+        buttons: [{ label: 'Descartar y salir', variant: 'quiet', fn: leave }, { label: 'Seguir editando', variant: 'loud' }] });
       return;
     }
     pfModal({ icon: 'attention', theme: 'caution', title: '¿Guardar como borrador?', message: 'Tienes cambios sin terminar. Guárdalos como borrador para retomarlos después o sal sin guardar.', dismissible: true,
       buttons: [
-        { label: 'Seguir editando', variant: 'mute' },
         { label: 'No guardar', variant: 'quiet', fn: function () { try { localStorage.removeItem(DRAFT_KEY); } catch (_) {} leave(); } },
         { label: 'Guardar borrador', variant: 'loud', fn: function () { savedSnap = snapState(); saveDraft(); leave(); } }
       ] });
