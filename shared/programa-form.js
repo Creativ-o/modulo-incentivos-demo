@@ -30,8 +30,8 @@
   ];
   function catOf(i) { return CATEGORIAS.filter(function (c) { return c.k === i.categoria; })[0] || null; }
   function conValor(i) { var c = catOf(i); return !c || !!c.valor; }
-  /* La modalidad se deriva: Diploma / reconocimiento → certificado digital; si el programa es recurrente → fijo recurrente; si no → entrega única con código. */
-  function modalidadOf(i) { var c = catOf(i); return c && c.cert ? 'certificado' : (S.rec.on ? 'fijo' : 'codigo'); }
+  /* La modalidad se deriva: Diploma / reconocimiento → certificado digital; si el programa es recurrente → fijo recurrente; si no → entrega única, con o sin código según elija el usuario. */
+  function modalidadOf(i) { var c = catOf(i); return c && c.cert ? 'certificado' : (S.rec.on ? 'fijo' : (i.codigos === false ? 'sincodigo' : 'codigo')); }
   function setModalidad(inc) { var m = modalidadOf(inc); if (inc.modalidad !== m) { inc.modalidad = m; inc.foto = true; } }
   function syncModalidades() { S.inc.forEach(function (i) { if (i.categoria) setModalidad(i); }); }
   function applyCategoria(inc) {
@@ -67,7 +67,7 @@
   function nextId() { uid += 1; return 'i' + uid; }
   function newCrono() { return { gracia: '3', primer: '', carga: { ini: '', fin: '' }, revision: { ini: '', fin: '' }, asignacion: { ini: '', fin: '' }, motivo: '' }; }
   /* tope: 'sin' = solo valor unitario · 'bottom' = unitario × cantidad = total · 'top' = tope total; la cantidad sale del unitario. Todo opcional. */
-  function newInc() { return { id: nextId(), nombre: '', categoria: '', modalidad: 'codigo', tope: 'bottom', unit: '', valor: '', cantidad: '', foto: true, grupos: [{ op: 'AND', rows: [] }], docOff: [] }; }
+  function newInc() { return { id: nextId(), nombre: '', categoria: '', modalidad: 'codigo', codigos: true, tope: 'bottom', unit: '', valor: '', cantidad: '', foto: true, grupos: [{ op: 'AND', rows: [] }], docOff: [] }; }
 
   var S = {
     step: 1, max: 1, done: false,
@@ -386,14 +386,13 @@
   }
 
   /* ── Tipos de incentivo (dentro del paso 1) ─────────────────── */
-  var MOD_TXT = { codigo: 'Entrega única con código', certificado: 'Certificado digital / reconocimiento', fijo: 'Incentivo fijo recurrente' };
+  var MOD_TXT = { codigo: 'Entrega única con código', sincodigo: 'Entrega única sin código', certificado: 'Certificado digital / reconocimiento', fijo: 'Incentivo fijo recurrente' };
   function numTxt(v) { return v ? Number(v).toLocaleString('es-CO') : ''; }
   function incCard(inc, idx) {
     var m = inc.modalidad, k = 'inc.' + inc.id + '.', cv = conValor(inc), cat = catOf(inc), n = S.inc.length, fijo = m === 'fijo';
-    var why = !cat ? '' : (m === 'certificado' ? 'Según la categoría' : m === 'fijo' ? 'Porque el programa es recurrente' : 'Cada código es único y equivale a una unidad entregable');
-    var modo = tf({ label: 'Modalidad', k: k + 'modalidad', val: cat ? MOD_TXT[m] : '', ph: 'Según la categoría', ro: 1, hint: why || 'Se define según la categoría y la recurrencia del programa' });
     var extra = '';
-    if (m === 'codigo') extra = alertBox('Los códigos se cargan en el paso 4 o después, y no se pueden eliminar si ya registran entregas.', 'informative');
+    if (cat && (m === 'codigo' || m === 'sincodigo')) extra = '<div class="pf-switch-row">' + toggle(inc.codigos !== false, 'inc-codigos', inc.id) + '<span>El incentivo <b>lleva códigos</b> (cada código es único y equivale a una unidad entregable)</span></div>' +
+      '<p class="pf-hint">' + (m === 'codigo' ? 'Podrás cargarlos en el paso 4; es opcional y no se pueden eliminar si ya registran entregas.' : 'Se entrega sin código: el Operador solo registra la entrega.') + '</p>';
     var unitL = fijo ? 'Valor unitario por ciclo' : 'Valor unitario', totL = fijo ? 'Valor total por ciclo' : 'Valor total';
     var cantL = m === 'codigo' ? 'Cantidad / stock de códigos' : (fijo ? 'Cantidad de beneficiarios' : 'Cantidad');
     var vals = '';
@@ -417,7 +416,6 @@
         '<div class="pf-grid">' +
           tf({ label: 'Nombre', req: 1, k: k + 'nombre', val: inc.nombre, ph: 'Ej. Beca educativa · Medallistas de oro' }) +
           sel({ label: 'Categoría', req: 1, k: k + 'categoria', val: inc.categoria, ph: 'Selecciona categoría', opts: CATEGORIAS.map(function (c) { return [c.k, c.l]; }), attrs: ' data-struct="1"', hint: inc.categoria ? (cv ? 'Con valor numérico.' : 'Sin valor monetario: no se pide valor.') : '' }) +
-          modo +
         '</div>' + extra + vals +
       '</div></div><div class="nwt-card__footer"></div></div></div>';
   }
@@ -586,7 +584,7 @@
   }
   function incPanel(inc, idx) {
     var cat = catOf(inc), open = isTipoOpen(inc, idx), issues = incIssues(inc).length;
-    var badges = '<span class="pf-row" style="gap:6px;flex-shrink:0">' + (issues ? badge('Incompleto', 'caution') : '') + (cat ? badge(cat.l, 'neutral') : '') + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[inc.modalidad], inc.modalidad === 'fijo' ? 'caution' : 'neutral') + '</span>';
+    var badges = '<span class="pf-row" style="gap:6px;flex-shrink:0">' + (issues ? badge('Incompleto', 'caution') : '') + (cat ? badge(cat.l, 'neutral') : '') + badge({ codigo: 'Con código', sincodigo: 'Sin código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[inc.modalidad], inc.modalidad === 'fijo' ? 'caution' : 'neutral') + '</span>';
     var body = '<div class="pf-inc"><div ' + (CONDITIONS_LOCKED ? 'inert class="pf-sec pf-readonly"' : 'class="pf-sec"') + '>' +
       '<div class="pf-subsec"><h4 class="pf-sub">Condiciones de elegibilidad</h4><p class="pf-hint">Quién puede recibir este incentivo. Se combinan con Y; si falla una, el sistema <b>bloquea y dice cuál</b>.</p>' + groupsHTML(inc) + eventWarn(inc) + '</div>' +
       '<div class="pf-subsec"><h4 class="pf-sub">Documentación</h4>' + docsAplicaHTML(inc) + '</div>' +
@@ -610,8 +608,9 @@
   /* ── Inventario de códigos ────────────────────────────── */
   function kv(k, v) { return '<div class="pf-kv"><dt>' + esc(k) + '</dt><dd>' + v + '</dd></div>'; }
   function codState(id) {
-    var c = S.codigos[id] || (S.codigos[id] = { modo: 'despues', n: 0 });
+    var c = S.codigos[id] || (S.codigos[id] = { modo: '', n: 0 });
     if (c.modo === 'ahora') c.modo = 'masivo';
+    if (c.modo === 'despues') c.modo = '';
     if (!Array.isArray(c.lista) || !c.lista.length) c.lista = [''];
     return c;
   }
@@ -647,14 +646,14 @@
       else if (c.modo === 'manual') body = '<div class="pf-cod-rows">' + c.lista.map(function (v, ix) {
         return '<div class="pf-cod-row">' + tf({ label: ix === 0 ? 'Código' : '', k: 'cod.' + i.id + '.' + ix, val: v, ph: 'Ej. BONO-0001' }) + '<div>' + (c.lista.length > 1 ? iconBtn('close', 'cod-del', 'Quitar código', i.id, ix) : '') + '</div></div>';
       }).join('') + '</div>' + btn('Agregar código', 'cod-add', { d: i.id, i: 'add' });
-      else body = '<p class="pf-hint">El Gestor de programa o el de incentivos podrán cargar los códigos cuando quieran, sin versionar el programa.</p>';
-      return '<div class="pf-modal-box"><b>' + esc(i.nombre || 'Incentivo sin nombre') + '</b>' + radios({ act: 'cod-modo', d: i.id, value: c.modo, dir: 'horizontal', compact: 1, options: [{ v: 'masivo', l: 'Carga masiva (archivo)' }, { v: 'manual', l: 'Carga manual' }, { v: 'despues', l: 'Cargar después' }] }) + body +
-        (c.modo === 'despues' ? '' : '<p class="pf-hint" id="pfCodCount-' + i.id + '">' + codCountText(i) + '</p>') + '</div>';
+      else body = '<p class="pf-hint">Opcional: si no los cargas ahora, el Gestor de programa o el de incentivos podrán cargarlos cuando quieran, sin versionar el programa. Vuelve a tocar la opción elegida para quitarla.</p>';
+      return '<div class="pf-modal-box"><b>' + esc(i.nombre || 'Incentivo sin nombre') + '</b>' + radios({ act: 'cod-modo', d: i.id, value: c.modo, dir: 'horizontal', compact: 1, options: [{ v: 'masivo', l: 'Carga masiva (archivo)' }, { v: 'manual', l: 'Carga manual' }] }) + body +
+        (!c.modo ? '' : '<p class="pf-hint" id="pfCodCount-' + i.id + '">' + codCountText(i) + '</p>') + '</div>';
     }).join('') : alertBox('Ningún incentivo de este programa usa códigos: no hay inventario que cargar.', 'informative');
 
     var d = S.datos, p = S.pob, nada = '<span style="color:var(--naotech-app-color-600);font-weight:400">';
     var total = S.inc.reduce(function (a, i) { return a + (Number(i.valor) || 0); }, 0);
-    var incTxt = S.inc.map(function (i) { return '<div>' + esc(i.nombre || 'Sin nombre') + (catOf(i) ? ' (' + esc(catOf(i).l) + ')' : '') + ' · ' + badge({ codigo: 'Con código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + esc(incValTxt(i)) + '</div>'; }).join('');
+    var incTxt = S.inc.map(function (i) { return '<div>' + esc(i.nombre || 'Sin nombre') + (catOf(i) ? ' (' + esc(catOf(i).l) + ')' : '') + ' · ' + badge({ codigo: 'Con código', sincodigo: 'Sin código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + esc(incValTxt(i)) + '</div>'; }).join('');
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
       kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Eventos', esc(d.eventos.join(', ') || '—')) + kv('Gestores', esc(d.gestores.join(', ') || '—')) +
       kv('Vigencia', fmtDate(d.desde) + ' → ' + fmtDate(d.hasta)) + kv('Roles', p.roles.length ? esc(p.roles.join(', ')) : nada + 'Sin roles definidos</span>') + kv('Cobertura', esc(p.cobertura.join(', ')) + (p.municipios.length ? '<br><span style="font-weight:400">Municipios: ' + esc(p.municipios.map(function (m) { return m.split(' · ')[0]; }).join(', ')) + '</span>' : '')) +
@@ -856,6 +855,7 @@
     'rubro-tipos': function (x) { S.rubro.tipos = x; syncInc(); render(true); },
     'seleccion': function (x) { S.pob.seleccion = x; render(true); },
     'rec-on': function () { S.rec.on = !S.rec.on; if (S.rec.on && !S.doc.list.length) S.doc.list = [{ name: 'Documento de identidad', oblig: true }]; syncModalidades(); render(true); },
+    'inc-codigos': function (x, i) { var n = incById(i); n.codigos = n.codigos === false; setModalidad(n); render(true); },
     'inc-tope': function (x, i) { var n = incById(i); n.tope = x; recalc(n); render(true); },
     'tipo-doc': function (x, id) { var n = incById(id), name = S.doc.list[+x].name, i = n.docOff.indexOf(name); if (i > -1) n.docOff.splice(i, 1); else n.docOff.push(name); render(true); },
     'tipo-toggle': function (x, id) { var i = S.inc.findIndex(function (n) { return n.id === id; }); tipoOpen[id] = !isTipoOpen(S.inc[i], i); render(true); },
@@ -870,7 +870,7 @@
     'doc-del': function (x) { var n = S.doc.list.splice(+x, 1)[0]; S.inc.forEach(function (i) { var k = i.docOff.indexOf(n.name); if (k > -1) i.docOff.splice(k, 1); }); render(true); },
     'doc-add-s': function (x) { S.doc.list.push({ name: x, oblig: true }); render(true); },
     'doc-add': function () { var inp = $('[data-k="ui.docNuevo"]'), v = inp && inp.value.trim(); if (!v) return toast('Escribe el nombre del documento.', 'caution'); S.doc.list.push({ name: v, oblig: true }); render(true); },
-    'cod-modo': function (x, i) { (S.codigos[i] || (S.codigos[i] = { n: 0 })).modo = x; render(true); },
+    'cod-modo': function (x, i) { var c = codState(i); c.modo = c.modo === x ? '' : x; render(true); },
     'cod-sim': function (x, i) { var inc = incById(i); S.codigos[i].n = (inc && Number(inc.cantidad)) || 50; render(true); },
     'cod-add': function (x, i) { codState(i).lista.push(''); render(true); },
     'cod-del': function (x, i) { var l = codState(i).lista; if (l.length > 1) l.splice(+x, 1); render(true); },
