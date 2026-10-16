@@ -77,7 +77,7 @@
   function nextId() { uid += 1; return 'i' + uid; }
   function newCrono() { return { gracia: '', primer: '', carga: { ini: '', fin: '' }, revision: { ini: '', fin: '' }, asignacion: { ini: '', fin: '' }, motivo: '' }; }
   /* tope: 'sin' = solo valor unitario · 'bottom' = unitario × cantidad = total · 'top' = tope total; la cantidad sale del unitario. Todo opcional. */
-  function newInc() { return { id: nextId(), nombre: '', categoria: '', modalidad: 'codigo', codigos: true, rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', desde: '', hasta: '' }, tope: 'bottom', unit: '', valor: '', cantidad: '', foto: true, grupos: [{ op: 'AND', rows: [] }], docOff: [] }; }
+  function newInc() { return { id: nextId(), nombre: '', categoria: '', modalidad: 'codigo', codigos: true, pobOff: { roles: [], cobertura: [], municipios: [] }, rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', desde: '', hasta: '' }, tope: 'bottom', unit: '', valor: '', cantidad: '', foto: true, grupos: [{ op: 'AND', rows: [] }], docOff: [] }; }
 
   var S = {
     step: 1, max: 1, done: false,
@@ -518,23 +518,37 @@
     return gs.length === 1 ? gs[0] : gs.map(function (s) { return '(' + s + ')'; }).join(' <em>o bien</em> ');
   }
   /* Cobertura y roles del paso 2 son condiciones de todos los incentivos del programa */
-  function heredadas() {
-    var h = [], p = S.pob;
-    if (p.roles.length) h.push(['Rol', p.roles.length > 1 ? 'es uno de: ' + listaO(p.roles) : 'es ' + p.roles[0]]);
-    if (p.cobertura.length && p.cobertura.indexOf('Nacional') < 0) h.push(['Departamento', p.cobertura.length > 1 ? 'es uno de: ' + listaO(p.cobertura) : 'es ' + p.cobertura[0]]);
-    if (p.municipios.length) { var m = p.municipios.map(function (x) { return x.split(' · ')[0]; }); h.push(['Municipio', m.length > 1 ? 'es uno de: ' + listaO(m) : 'es ' + m[0]]); }
+  /* Población del paso 2 que aplica a un tipo: por defecto toda; con varios tipos se puede acotar a una parte de lo ya elegido */
+  function aplica(inc, dim) {
+    var all = dim === 'roles' ? S.pob.roles : dim === 'cobertura' ? S.pob.cobertura : S.pob.municipios, off = (inc.pobOff && inc.pobOff[dim]) || [];
+    return all.filter(function (x) { return off.indexOf(x) < 0; });
+  }
+  function heredadas(inc) {
+    var h = [], p = S.pob, r = aplica(inc, 'roles'), c = aplica(inc, 'cobertura'), mu = aplica(inc, 'municipios');
+    if (p.roles.length) h.push(['Rol', r.length > 1 ? 'es uno de: ' + listaO(r) : 'es ' + r[0]]);
+    if (p.cobertura.length && p.cobertura.indexOf('Nacional') < 0) h.push(['Departamento', c.length > 1 ? 'es uno de: ' + listaO(c) : 'es ' + c[0]]);
+    if (p.municipios.length) { var m = mu.map(function (x) { return x.split(' · ')[0]; }); h.push(['Municipio', m.length > 1 ? 'es uno de: ' + listaO(m) : 'es ' + m[0]]); }
     return h;
   }
-  function heredadasTxt() { return heredadas().map(function (x) { return esc(x[0] + ' ' + x[1]); }); }
-  function heredadasHTML() {
-    var h = heredadas();
+  function heredadasTxt(inc) { return heredadas(inc).map(function (x) { return esc(x[0] + ' ' + x[1]); }); }
+  function heredadasHTML(inc) {
+    var h = heredadas(inc);
     if (!h.length) return '';
-    return '<div class="pf-inherit"><div class="pf-inherit__head"><b>Condiciones del programa</b>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', x: '2', i: 'edit' }) + '</div>' +
-      '<p class="pf-hint">Vienen de la población (paso 2): aplican a todos los incentivos y se suman con Y a las de este tipo. No se editan aquí.</p>' +
-      h.map(function (x) { return '<div class="pf-inherit__row">' + icon('padlock-close') + '<span><b>' + esc(x[0]) + '</b> ' + esc(x[1]) + '</span></div>'; }).join('') + '</div>';
+    if (S.inc.length < 2) { // un solo tipo: toda la población aplica
+      return '<div class="pf-inherit"><div class="pf-inherit__head"><b>Condiciones del programa</b>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', x: '2', i: 'edit' }) + '</div>' +
+        '<p class="pf-hint">Vienen de la población (paso 2) y se suman con Y a las de este tipo.</p>' +
+        h.map(function (x) { return '<div class="pf-inherit__row">' + icon('padlock-close') + '<span><b>' + esc(x[0]) + '</b> ' + esc(x[1]) + '</span></div>'; }).join('') + '</div>';
+    }
+    var p = S.pob, dims = [['roles', 'Roles', p.roles], ['cobertura', 'Departamentos', p.cobertura.indexOf('Nacional') < 0 ? p.cobertura : []], ['municipios', 'Municipios', p.municipios]];
+    return '<div class="pf-inherit"><div class="pf-inherit__head"><b>Población de este tipo</b>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', x: '2', i: 'edit' }) + '</div>' +
+      '<p class="pf-hint">De lo que elegiste en el paso 2, marca a quiénes aplica este tipo de incentivo. Por defecto aplica a todos; se suma con Y a las condiciones de abajo.</p>' +
+      dims.filter(function (d) { return d[2].length; }).map(function (d) {
+        var on = aplica(inc, d[0]);
+        return '<div><span class="pf-label">' + d[1] + '</span><div class="pf-row">' + d[2].map(function (v) { return tag(d[0] === 'municipios' ? v.split(' · ')[0] : v, on.indexOf(v) > -1, 'pob-t', inc.id, d[0] + '|' + v); }).join('') + '</div></div>';
+      }).join('') + '</div>';
   }
   function previewHTML(inc) {
-    var t = previewText(inc), h = heredadasTxt();
+    var t = previewText(inc), h = heredadasTxt(inc);
     if (h.length) return 'Podrá recibirlo quien cumpla: ' + h.join(' <em>y</em> ') + (t ? ' <em>y</em> (' + t + ')' : '') + '.';
     return t ? 'Podrá recibirlo quien cumpla: ' + t + '.' : '<span class="pf-pv-empty">Sin condiciones: cualquier persona podrá acceder a este incentivo.</span>';
   }
@@ -635,7 +649,7 @@
   function docsAplican(inc) { if (incRecOwn(inc)) return []; return S.doc.list.filter(function (x) { return inc.docOff.indexOf(x.name) < 0; }); }
   function incSummary(inc) {
     var nr = inc.grupos.reduce(function (a, g) { return a + g.rows.filter(ruleNat).length; }, 0), nd = docsAplican(inc).length;
-    var nh = heredadas().length;
+    var nh = heredadas(inc).length;
     return [nr ? nr + (nr > 1 ? ' condiciones' : ' condición') : 'sin condiciones propias', nh ? nh + ' del programa' : null, incRecOwn(inc) ? 'exento de documentos' : (docsReq() ? nd + (nd === 1 ? ' documento' : ' documentos') : 'sin documentos')].filter(Boolean).join(' · ');
   }
   /* Si el evento tiene una población acotada, avisa (sin bloquear: un programa puede apuntar a antiguos participantes) */
@@ -660,7 +674,7 @@
     var cat = catOf(inc), open = isTipoOpen(inc, idx), issues = incIssues(inc).length;
     var badges = '<span class="pf-row" style="gap:6px;flex-shrink:0">' + (issues ? badge('Incompleto', 'caution') : '') + (cat ? badge(cat.l, 'neutral') : '') + badge({ codigo: 'Con código', sincodigo: 'Sin código', certificado: 'Certificado', fijo: 'Fijo ' + incFreqTxt(inc) }[inc.modalidad], inc.modalidad === 'fijo' ? 'caution' : 'neutral') + (inc.modalidad === 'fijo' && hasCodes(inc) ? badge('Con código', 'neutral') : '') + '</span>';
     var body = '<div class="pf-inc"><div ' + (CONDITIONS_LOCKED ? 'inert class="pf-sec pf-readonly"' : 'class="pf-sec"') + '>' +
-      '<div class="pf-subsec"><h4 class="pf-sub">Condiciones de elegibilidad</h4><p class="pf-hint">Quién puede recibir este incentivo. Se combinan con Y; si falla una, el sistema <b>bloquea y dice cuál</b>.' + (soloEntidades() ? ' Para entidades (escenarios, instituciones) no aplican los campos de personas, como edad o género.' : '') + '</p>' + heredadasHTML() + groupsHTML(inc) + eventWarn(inc) + '</div>' +
+      '<div class="pf-subsec"><h4 class="pf-sub">Condiciones de elegibilidad</h4><p class="pf-hint">Quién puede recibir este incentivo. Se combinan con Y; si falla una, el sistema <b>bloquea y dice cuál</b>.' + (soloEntidades() ? ' Para entidades (escenarios, instituciones) no aplican los campos de personas, como edad o género.' : '') + '</p>' + heredadasHTML(inc) + groupsHTML(inc) + eventWarn(inc) + '</div>' +
       '<div class="pf-subsec"><h4 class="pf-sub">Documentación</h4>' + docsAplicaHTML(inc) + '</div>' +
       '</div></div>';
     var title = esc(inc.nombre || ('Tipo de incentivo #' + (idx + 1)));
@@ -845,7 +859,7 @@
     S.inc.forEach(function (i) {
       var s = SNAP.inc.filter(function (x) { return x.id === i.id; })[0]; if (!s) return;
       var nm = i.nombre || 'tipo';
-      if (JSON.stringify(i.grupos) !== JSON.stringify(s.grupos)) ch.push('Condicionales de elegibilidad (' + nm + ')');
+      if (JSON.stringify([i.grupos, i.pobOff]) !== JSON.stringify([s.grupos, s.pobOff])) ch.push('Condicionales de elegibilidad (' + nm + ')');
       if (i.modalidad !== s.modalidad || JSON.stringify(i.rec) !== JSON.stringify(s.rec)) ch.push('Modalidad / recurrencia (' + nm + ')');
       if (JSON.stringify(i.docOff) !== JSON.stringify(s.docOff)) ch.push('Documentos requeridos (' + nm + ')');
     });
@@ -956,6 +970,12 @@
     'rubro-tipos': function (x) { S.rubro.tipos = x; syncInc(); render(true); },
     'seleccion': function (x) { var s = S.pob.seleccion, i = s.indexOf(x); if (i > -1) { if (s.length === 1) return toast('Elige al menos una forma de selección.', 'caution'); s.splice(i, 1); } else s.push(x); render(true); },
     'rec-on': function () { S.rec.on = !S.rec.on; S.inc.forEach(function (i) { i.codigos = !S.rec.on; }); if (S.rec.on && !S.doc.list.length) S.doc.list = [{ name: 'Documento de identidad', oblig: true }]; syncModalidades(); render(true); },
+    'pob-t': function (x, id) {
+      var n = incById(id), d = x.split('|')[0], v = x.slice(d.length + 1), off = n.pobOff[d], i = off.indexOf(v);
+      if (i > -1) off.splice(i, 1);
+      else { if (aplica(n, d).length <= 1) return toast('Debe quedar al menos uno: si no, nadie podría recibir este incentivo.', 'caution'); off.push(v); }
+      render(true);
+    },
     'inc-rec': function (x, i) { var n = incById(i); n.rec.on = !n.rec.on; setModalidad(n); render(true); },
     'inc-codigos': function (x, i) { var n = incById(i); n.codigos = n.codigos === false; setModalidad(n); render(true); },
     'inc-tope': function (x, i) { var n = incById(i); n.tope = x; recalc(n); render(true); },
@@ -1050,7 +1070,7 @@
     });
     var cfg = { gestores: d.gestores.slice(), eventos: d.eventos.slice(), desde: d.desde, hasta: d.hasta, roles: p.roles.slice(), cobertura: p.cobertura.slice(), municipios: p.municipios.slice(), seleccion: p.seleccion.slice(),
       rec: clone(S.rec), doc: clone(S.doc), crono: clone(S.crono), activacion: status === 'active' ? ((existing && existing.config && existing.config.activacion) || new Date().toISOString().slice(0, 10)) : '',
-      inc: S.inc.map(function (i) { return { categoria: i.categoria, tope: i.tope, unit: Number(i.unit) || 0, valor: Number(i.valor) || 0, cantidad: Number(i.cantidad) || 0, codigos: hasCodes(i), grupos: clone(i.grupos), docOff: clone(i.docOff), rec: clone(i.rec) }; }) };
+      inc: S.inc.map(function (i) { return { categoria: i.categoria, tope: i.tope, unit: Number(i.unit) || 0, valor: Number(i.valor) || 0, cantidad: Number(i.cantidad) || 0, codigos: hasCodes(i), grupos: clone(i.grupos), docOff: clone(i.docOff), rec: clone(i.rec), pobOff: clone(i.pobOff) }; }) };
     var ver = existing ? (EDIT && versionChanges().length ? NEXT_VER : CUR_VER) : 'V1.0';
     return { id: existing ? existing.id : window.nextProgramId(), name: d.nombre.trim() || 'Programa sin nombre', shortDesc: (d.desc || '').slice(0, 80) || cov, longDesc: d.desc || '', iconBg: ico[0], iconColor: ico[1], status: status,
       event: d.eventos.join(', ') || '—', coverage: cov, responsible: d.gestores.join(', ') || '—', rubro: total, exec: existing ? existing.exec || 0 : 0, unit: (Number(S.inc[0].unit) || 0),
@@ -1068,7 +1088,7 @@
     S.inc = (pr.incentives || []).map(function (inc, i) {
       var x = c.inc[i] || {}, m = newInc(); n += 1;
       m.nombre = inc.name; m.categoria = x.categoria || ''; m.tope = x.tope || 'bottom'; m.unit = x.unit ? String(x.unit) : ''; m.valor = x.valor ? String(x.valor) : ''; m.cantidad = x.cantidad ? String(x.cantidad) : '';
-      m.codigos = x.codigos !== false; if (x.rec) m.rec = Object.assign(m.rec, clone(x.rec)); m.grupos = x.grupos && x.grupos.length ? clone(x.grupos) : [{ op: 'AND', rows: [] }]; m.docOff = x.docOff ? x.docOff.slice() : [];
+      m.codigos = x.codigos !== false; if (x.rec) m.rec = Object.assign(m.rec, clone(x.rec)); if (x.pobOff) m.pobOff = Object.assign({ roles: [], cobertura: [], municipios: [] }, clone(x.pobOff)); m.grupos = x.grupos && x.grupos.length ? clone(x.grupos) : [{ op: 'AND', rows: [] }]; m.docOff = x.docOff ? x.docOff.slice() : [];
       m.modalidad = modalidadOf(m); return m;
     });
     if (!S.inc.length) S.inc = [newInc()];

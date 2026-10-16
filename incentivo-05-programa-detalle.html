@@ -1450,7 +1450,7 @@ function hydrateProgram(){
 
   // Condiciones — si los incentivos tienen su propio bloque (multi mode), las
   // mostramos por incentivo. Si no, las del programa.
-  const incHasConditions = p.incentives && p.incentives.some(i => i.conditions && i.conditions.groups && i.conditions.groups.length);
+  const incHasConditions = p.incentives && (p.incentives.some(i => i.conditions && i.conditions.groups && i.conditions.groups.length) || window.getProgramConfig(p).inc.some(x => x && x.pobOff && ['roles','cobertura','municipios'].some(d => (x.pobOff[d] || []).length)));
   const renderGroupsHTML = (groups) => {
     return groups.map((g, gi) => {
       const rowHTML = g.rules.map(r => {
@@ -1469,11 +1469,16 @@ function hydrateProgram(){
     // Mostrar un bloque por cada incentivo con condiciones
     condBodyHTML = p.incentives.map((inc, idx) => {
       const groups = inc.conditions && inc.conditions.groups || [];
-      if(!groups.length) return '';
-      const intro = groups.length > 1
+      // Población acotada para este tipo (de lo elegido en el programa, solo una parte aplica)
+      const off = ((window.getProgramConfig(p).inc[idx] || {}).pobOff) || {}, cfgP = window.getProgramConfig(p);
+      const pick = (all, o) => (all || []).filter(x => (o || []).indexOf(x) < 0);
+      const narrow = [['Roles', pick(cfgP.roles, off.roles), (off.roles || []).length], ['Departamentos', pick(cfgP.cobertura, off.cobertura), (off.cobertura || []).length], ['Municipios', pick(cfgP.municipios, off.municipios).map(m => m.split(' · ')[0]), (off.municipios || []).length]]
+        .filter(x => x[2]).map(x => `<strong>${x[0]}</strong>: ${x[1].join(', ')}`).join(' · ');
+      if(!groups.length && !narrow) return '';
+      const intro = !groups.length ? `<strong>${inc.name}</strong> no tiene reglas propias: aplica la población del programa.` : groups.length > 1
         ? `El atleta es elegible para <strong>${inc.name}</strong> si cumple <strong>cualquiera</strong> de estas reglas:`
         : `El atleta es elegible para <strong>${inc.name}</strong> si cumple <strong>todas</strong> estas condiciones:`;
-      return `<div class="cond-inc-block"><div class="cond-inc-block__head"><span class="cond-inc-block__num">#${idx+1}</span><span class="cond-inc-block__name">${inc.name}</span><span class="naowee-badge naowee-badge--neutral naowee-badge--quiet naowee-badge--small">${inc.category}</span></div><p class="wz-cond-preview__intro">${intro}</p>${renderGroupsHTML(groups).join(orDivider)}</div>`;
+      return `<div class="cond-inc-block"><div class="cond-inc-block__head"><span class="cond-inc-block__num">#${idx+1}</span><span class="cond-inc-block__name">${inc.name}</span><span class="naowee-badge naowee-badge--neutral naowee-badge--quiet naowee-badge--small">${inc.category}</span></div><p class="wz-cond-preview__intro">${intro}</p>${narrow ? `<p class="wz-cond-preview__intro">Aplica solo a: ${narrow}.</p>` : ''}${renderGroupsHTML(groups).join(orDivider)}</div>`;
     }).join('');
   } else if(p.conditions.groups.length){
     const intro = p.conditions.groups.length > 1
