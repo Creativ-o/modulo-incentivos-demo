@@ -18,7 +18,7 @@
 
   /* ── Catálogos ─────────────────────────────────────────────── */
   var EVENTOS = ['Juegos Intercolegiados Nacionales 2026', 'Juegos Deportivos Nacionales 2026', 'Juegos Paranacionales 2026', 'Campeonato nacional de atletismo 2026', 'Sin evento asociado'];
-  var ROLES = ['Deportista', 'Paradeportista', 'Entrenador', 'Personal de apoyo', 'Médico', 'Metodólogo', 'Juez / árbitro', 'Delegado', 'Institución educativa', 'Escenarios deportivos', 'Otro'];
+  var ROLES = ['Deportista', 'Paradeportista', 'Entrenador', 'Personal de apoyo', 'Médico', 'Metodólogo', 'Juez / árbitro', 'Delegado', 'Institución educativa', 'Escenarios deportivos'];
   var ENTIDADES = ['Escenarios deportivos', 'Institución educativa']; // roles que son entidades, no personas
   var CAMPOS_PERSONA = ['edad', 'genero', 'escolaridad', 'grado', 'categoria', 'logro', 'etapa']; // no aplican a entidades
   var EVENTO_EDAD = { 'Juegos Intercolegiados Nacionales 2026': 17 }; // edad máxima de los participantes del evento
@@ -75,7 +75,7 @@
   var S = {
     step: 1, max: 1, done: false,
     datos: { nombre: '', desc: '', eventos: [], gestores: [], extra: [], desde: '', hasta: '', justificacion: '', anexo: null },
-    pob: { roles: [], otroRol: '', cobertura: ['Nacional'], municipios: [], seleccion: ['plataforma'] },
+    pob: { roles: [], rolesExtra: [], cobertura: ['Nacional'], municipios: [], seleccion: ['plataforma'] },
     rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
     doc: { req: false, list: [] },
     crono: newCrono(),
@@ -95,7 +95,7 @@
     var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'beca'; i1.modalidad = 'fijo'; i1.codigos = false; i1.tope = 'top'; i1.valor = '200000000'; i1.unit = '1000000'; i1.cantidad = '200';
     var i2 = newInc(); i2.codigos = false; i2.nombre = 'Beca educativa · Medallistas de plata'; i2.categoria = 'beca'; i2.modalidad = 'fijo'; i2.tope = 'bottom'; i2.unit = '700000'; i2.cantidad = '150'; i2.valor = '105000000';
     S.datos = { extra: [], nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', eventos: [EVENTOS[1]], gestores: ['Isa Pabon'], desde: '2026-04-22', hasta: '2026-12-31', justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 } };
-    S.pob = { roles: ['Deportista'], otroRol: '', cobertura: ['Nacional'], municipios: [], seleccion: ['plataforma'] };
+    S.pob = { roles: ['Deportista'], rolesExtra: [], cobertura: ['Nacional'], municipios: [], seleccion: ['plataforma'] };
     S.rec = { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' };
     S.doc = { req: true, list: [{ name: 'Documento de identidad', oblig: true }, { name: 'Certificado de resultado', oblig: true }, { name: 'Certificación bancaria', oblig: true }] };
     S.crono = { gracia: '3', primer: '2026-05-01', carga: { ini: '15', fin: '18' }, revision: { ini: '20', fin: '25' }, asignacion: { ini: '25', fin: '30' }, motivo: '' };
@@ -222,7 +222,7 @@
     var lockMsg = lock ? alertBox('Tu rol <b>solo visualiza</b> esta información. Puedes ajustar las <b>fechas y etapas</b>; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
     var especificas =
       card('Población a la que apunta', 'A quién va dirigido el programa. Las condiciones finas de cada incentivo se definen en el paso 3.', '<div class="pf-inc">' +
-        msHost('rol') + '<div id="pfOtroRol">' + otroRolHTML() + '</div><div class="pf-grid">' + msHost('cob') + msHost('mun') + '</div>' +
+        msHost('rol') + '<div class="pf-grid">' + msHost('cob') + msHost('mun') + '</div>' +
         '<div><span class="pf-label">Tipo de selección de beneficiarios</span><div class="pf-grid">' +
           [['plataforma', 'Cargue por plataforma', 'Las personas salen de las condiciones de elegibilidad con los datos de SUID.'], ['manual', 'Registro manual', 'El Gestor de programa busca y habilita personas (una a una o por lista) cuando la plataforma no puede identificarlas.']].map(function (o) {
             return '<div class="pf-modal-box pf-opt-box">' + checkbox(o[1], p.seleccion.indexOf(o[0]) > -1, 'seleccion', null, o[0]) + '<p class="pf-hint">' + o[2] + '</p></div>';
@@ -288,12 +288,11 @@
       cob: { id: 'pfCob', label: 'Cobertura territorial', req: 0, ph: 'Nacional o departamentos', sp: 'Buscar departamento', box: 'pob.cobertura', get: function () { return S.pob.cobertura; }, options: function () { return REGIONES; }, exclusive: 'Nacional', hint: '' },
       mun: { id: 'pfMun', label: 'Municipios (opcional)', req: 0, ph: 'Todos los municipios', sp: 'Buscar municipio', box: 'pob.municipios', get: function () { return S.pob.municipios; }, options: function () { var o = []; S.pob.cobertura.forEach(function (d) { (MUNI[d] || []).forEach(function (m) { o.push(m + ' · ' + d); }); }); return o; },
         off: function () { return S.pob.cobertura.indexOf('Nacional') > -1 ? 'Nacional' : (!S.pob.cobertura.length ? 'Elige un departamento' : ''); }, hint: '' },
-      gestor: { id: 'pfGest', label: 'Gestores asignados', req: 1, ph: 'Selecciona uno o varios gestores', sp: 'Buscar gestor', box: 'datos.gestores', get: function () { return S.datos.gestores; }, options: function () { return GESTORES.concat(S.datos.extra); }, add: 'Agregar a otra persona', hint: 'Puedes elegir más de uno o agregar a otra persona.' },
+      gestor: { id: 'pfGest', label: 'Gestores asignados', req: 1, ph: 'Selecciona uno o varios gestores', sp: 'Buscar gestor', box: 'datos.gestores', get: function () { return S.datos.gestores; }, options: function () { return GESTORES.concat(S.datos.extra); }, add: 'Agregar a otra persona', addKey: 'gestor', hint: 'Puedes elegir más de uno o agregar a otra persona.' },
       evento: { id: 'pfEvt', label: 'Evento / categoría asociado', req: 0, ph: 'Selecciona uno o varios eventos', sp: 'Buscar evento', box: 'datos.eventos', get: function () { return S.datos.eventos; }, options: function () { return EVENTOS; }, exclusive: 'Sin evento asociado', exTitle: 'Excluido por «Sin evento asociado»', hint: 'Útil para reportería y para validar las condiciones. Un programa puede existir sin evento.' },
-      rol: { id: 'pfRol', label: 'Roles', req: 0, ph: 'Selecciona uno o varios roles', sp: 'Buscar rol', box: 'pob.roles', get: function () { return S.pob.roles; }, options: function () { return ROLES; }, hint: 'Es el público al que apunta el programa. Puedes elegir varios.' }
+      rol: { id: 'pfRol', label: 'Roles', req: 0, ph: 'Selecciona uno o varios roles', sp: 'Buscar rol', box: 'pob.roles', get: function () { return S.pob.roles; }, options: function () { return ROLES.concat(S.pob.rolesExtra); }, add: 'Agregar otro rol', addKey: 'rol', hint: 'Es el público al que apunta el programa. Puedes elegir varios o agregar otro rol.' }
     }[key];
   }
-  function otroRolHTML() { return S.pob.roles.indexOf('Otro') > -1 ? '<div class="pf-grid">' + tf({ label: '¿Cuál otro rol?', req: 1, k: 'pob.otroRol', val: S.pob.otroRol, ph: 'Ej. Comunicador deportivo' }) + '</div>' : ''; }
   function msHost(key) { var c = msCfg(key); return '<div class="nwt-dropdown pf-ms" id="' + c.id + '" data-ms="' + key + '" nwt-size="medium">' + msInner(key) + '</div>'; }
   function msIsOpen(key) { return MSO.key === key; }
   function msOptsHTML(key) {
@@ -311,7 +310,7 @@
       return '<span class="nwt-tag nwt-tag--active" nwt-size="small">' + esc(r) + '<span class="pf-ms__x" role="button" aria-label="Quitar ' + esc(r) + '" data-act="ms-del" data-i="' + key + '" data-x="' + esc(r) + '">' + icon('close') + '</span></span>';
     }).join('') || '<span class="pf-ms__ph">' + esc(off || c.ph) + '</span>';
     var control = '<div class="nwt-dropdown__content pf-ms__content' + (off ? ' pf-ms__content--off' : '') + '" role="combobox" tabindex="' + (off ? -1 : 0) + '" aria-expanded="' + open + '"' + (off ? ' aria-disabled="true"' : ' data-act="ms-toggle" data-i="' + key + '"') + '><div class="pf-ms__chips">' + chips + '</div><div class="nwt-dropdown__chevron pf-ms__chev' + (open ? ' nwt-dropdown__chevron--open' : '') + '">' + icon('chevron-down') + '</div></div>';
-    var add = c.add ? '<div class="pf-ms__add"><input class="pf-ms__newq" type="text" autocomplete="off" data-ms="' + key + '" placeholder="' + esc(c.add) + ' (nombre)" aria-label="' + esc(c.add) + '"/>' + btn('Agregar', 'ms-add', { d: key, s: 'small', i: 'add' }) + '</div>' : '';
+    var add = c.add ? '<div class="pf-ms__add"><input class="pf-ms__newq" type="text" autocomplete="off" data-ms="' + key + '" placeholder="' + esc(c.add) + (key === 'rol' ? '' : ' (nombre)') + '" aria-label="' + esc(c.add) + '"/>' + btn('Agregar', 'ms-add', { d: key, s: 'small', i: 'add' }) + '</div>' : '';
     var list = open ? '<div class="nwt-dropdown__list pf-ms__list"><div class="pf-ms__search">' + icon('search') + '<input class="pf-ms__q" type="text" autocomplete="off" data-ms="' + key + '" placeholder="' + esc(c.sp) + '" value="' + esc(MSO.q || '') + '" aria-label="' + esc(c.sp) + '"/></div><ul class="nwt-dropdown__options" id="' + c.id + 'Opts">' + msOptsHTML(key) + '</ul>' + add + '</div>' : '';
     return inputBox(c.label, c.req, control, c.hint, c.box, off ? 'nwt-input-box--disabled' : '') + list;
   }
@@ -369,14 +368,17 @@
     else if (key === 'gestor') S.datos.gestores = v;
     else if (key === 'rol') S.pob.roles = v;
     else if (key === 'evento') S.datos.eventos = v;
-    msRedraw(key); if (key === 'cob') msRedraw('mun'); if (key === 'rol') { var oh = $('#pfOtroRol'); if (oh) oh.innerHTML = otroRolHTML(); } saveDraft(true); refreshDraftBtn();
+    msRedraw(key); if (key === 'cob') msRedraw('mun'); saveDraft(true); refreshDraftBtn();
     var box = document.querySelector('[data-box="' + c.box + '"]'); if (box && v.length) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
   }
-  function msAddPerson() {
-    var inp = $('.pf-ms__newq'), v = inp && inp.value.trim(); if (!v) { toast('Escribe el nombre de la persona.', 'caution'); return; }
-    var all = GESTORES.concat(S.datos.extra); if (all.map(norm).indexOf(norm(v)) > -1) { toast('Esa persona ya está en la lista.', 'caution'); return; }
-    S.datos.extra.push(v); S.datos.gestores.push(v); msRedraw('gestor'); saveDraft(true); refreshDraftBtn();
-    var q = $('#pfGest .pf-ms__newq'); if (q) q.focus({ preventScroll: true });
+  function msAdd(key) {
+    var c = msCfg(key), inp = $('#' + c.id + ' .pf-ms__newq'), v = inp && inp.value.trim(), who = key === 'rol' ? 'el nombre del rol' : 'el nombre de la persona';
+    if (!v) { toast('Escribe ' + who + '.', 'caution'); return; }
+    if (c.options().map(norm).indexOf(norm(v)) > -1) { toast(key === 'rol' ? 'Ese rol ya está en la lista.' : 'Esa persona ya está en la lista.', 'caution'); return; }
+    if (key === 'rol') { S.pob.rolesExtra.push(v); S.pob.roles.push(v); } else { S.datos.extra.push(v); S.datos.gestores.push(v); }
+    msRedraw(key); saveDraft(true); refreshDraftBtn();
+    var q = $('#' + c.id + ' .pf-ms__newq'); if (q) q.focus({ preventScroll: true });
+    var box = document.querySelector('[data-box="' + c.box + '"]'); if (box) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
   }
 
   /* Cantidad de tipos definida en el paso 2 → tarjetas del paso 3 */
@@ -486,7 +488,7 @@
   /* Cobertura y roles del paso 2 son condiciones de todos los incentivos del programa */
   function heredadas() {
     var h = [], p = S.pob;
-    if (p.roles.length) h.push(['Rol', p.roles.length > 1 ? 'es uno de: ' + listaO(p.roles.map(function (r) { return r === 'Otro' ? (p.otroRol || 'Otro') : r; })) : 'es ' + (p.roles[0] === 'Otro' ? (p.otroRol || 'Otro') : p.roles[0])]);
+    if (p.roles.length) h.push(['Rol', p.roles.length > 1 ? 'es uno de: ' + listaO(p.roles) : 'es ' + p.roles[0]]);
     if (p.cobertura.length && p.cobertura.indexOf('Nacional') < 0) h.push(['Departamento', p.cobertura.length > 1 ? 'es uno de: ' + listaO(p.cobertura) : 'es ' + p.cobertura[0]]);
     if (p.municipios.length) { var m = p.municipios.map(function (x) { return x.split(' · ')[0]; }); h.push(['Municipio', m.length > 1 ? 'es uno de: ' + listaO(m) : 'es ' + m[0]]); }
     return h;
@@ -656,7 +658,7 @@
   }
 
   /* ── Paso 3 · Códigos y activación ──────────────────────────── */
-  function rolesTxt() { return S.pob.roles.map(function (r) { return r === 'Otro' ? 'Otro: ' + (S.pob.otroRol || '?') : r; }).join(', '); }
+  function rolesTxt() { return S.pob.roles.join(', '); }
   function incValTxt(i) {
     if (!conValor(i)) return (Number(i.cantidad) ? ' · ' + Number(i.cantidad).toLocaleString('es-CO') + ' cupos' : '');
     var u = Number(i.unit) || 0, c = Number(i.cantidad) || 0, v = Number(i.valor) || 0, cic = i.modalidad === 'fijo' ? ' por ciclo' : '';
@@ -713,7 +715,6 @@
       if (d.desde && d.hasta && d.hasta < d.desde) e.push(['datos.hasta', 'La fecha de fin debe ser posterior al inicio.', 1]);
     }
     if (step >= 2) {
-      if (S.pob.roles.indexOf('Otro') > -1 && !S.pob.otroRol.trim()) e.push(['pob.otroRol', 'Indica cuál es el otro rol.', 2]);
       if (!S.pob.cobertura.length) e.push(['pob.cobertura', 'Selecciona «Nacional» o al menos un departamento.', 2]);
       if (recOn() && S.rec.frecuencia === 'otra' && !Number(S.rec.frecuenciaN)) e.push(['rec.frecuenciaN', 'Indica cada cuánto se repite.', 2]);
       if (docsReq() && !S.doc.list.some(function (x) { return x.oblig; })) e.push(['', 'Agrega al menos un documento obligatorio.', 2]);
@@ -881,7 +882,7 @@
     'ms-toggle': function (x, key) { if (MSO.key === key) { msClose(); return; } var prev = MSO.key; MSO = { key: key, q: '' }; if (prev) msRedraw(prev); msRedraw(key); var q = $('#' + msCfg(key).id + ' .pf-ms__q'); if (q) q.focus({ preventScroll: true }); },
     'ms-opt': function (x, key) { msToggleVal(key, x); },
     'ms-del': function (x, key) { msToggleVal(key, x); },
-    'ms-add': function () { msAddPerson(); },
+    'ms-add': function (x, key) { msAdd(key); },
     'anexo-del': function () { S.datos.anexo = null; saveDraft(true); anexoRedraw(); },
     'rubro-tipos': function (x) { S.rubro.tipos = x; syncInc(); render(true); },
     'seleccion': function (x) { var s = S.pob.seleccion, i = s.indexOf(x); if (i > -1) { if (s.length === 1) return toast('Elige al menos una forma de selección.', 'caution'); s.splice(i, 1); } else s.push(x); render(true); },
@@ -930,7 +931,7 @@
     if (!e.target || e.target.id !== 'pfAnexoInput') return;
     var f = e.target.files && e.target.files[0]; if (f) anexoStart(f); e.target.value = '';
   }
-  function onKey(e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.nwt-tag[data-act], .nwt-checkbox[data-act], .nwt-switch[data-act], .pf-ms__content')) { e.preventDefault(); e.target.click(); } if (e.key === 'Escape' && MSO.key) msClose(); if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('pf-ms__newq')) { e.preventDefault(); msAddPerson(); } }
+  function onKey(e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.nwt-tag[data-act], .nwt-checkbox[data-act], .nwt-switch[data-act], .pf-ms__content')) { e.preventDefault(); e.target.click(); } if (e.key === 'Escape' && MSO.key) msClose(); if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('pf-ms__newq')) { e.preventDefault(); msAdd(e.target.dataset.ms); } }
 
   function go(n) { S.step = n; if (n > S.max) S.max = n; render(); }
   function next() {
@@ -1036,7 +1037,7 @@
     try {
       var raw = localStorage.getItem(DRAFT_KEY); if (!raw) return false;
       var o = JSON.parse(raw); if (!o.S || o.S.done || !o.S.pob || !o.S.rec || !o.S.doc || !o.S.crono) return false;
-      S = o.S; uid = o.uid || uid; if (!S.pob.municipios) S.pob.municipios = []; if (typeof S.pob.seleccion === 'string') S.pob.seleccion = [S.pob.seleccion]; if (S.pob.otroRol == null) S.pob.otroRol = ''; if (!S.datos.eventos) { S.datos.eventos = S.datos.evento ? [S.datos.evento] : []; delete S.datos.evento; } if (!S.datos.extra) S.datos.extra = []; return true;
+      S = o.S; uid = o.uid || uid; if (!S.pob.municipios) S.pob.municipios = []; if (typeof S.pob.seleccion === 'string') S.pob.seleccion = [S.pob.seleccion]; if (!S.pob.rolesExtra) S.pob.rolesExtra = []; if (S.pob.roles.indexOf('Otro') > -1) { S.pob.roles.splice(S.pob.roles.indexOf('Otro'), 1); if (S.pob.otroRol && S.pob.otroRol.trim()) { S.pob.rolesExtra.push(S.pob.otroRol.trim()); S.pob.roles.push(S.pob.otroRol.trim()); } } delete S.pob.otroRol; if (!S.datos.eventos) { S.datos.eventos = S.datos.evento ? [S.datos.evento] : []; delete S.datos.evento; } if (!S.datos.extra) S.datos.extra = []; return true;
     } catch (_) { return false; }
   }
 
