@@ -1441,17 +1441,16 @@ const state = { all: [], filter: 'all', search: '', page: 1, pageSize: 10 };
 const asignState = { all: [], region: 'all', search: '', page: 1, pageSize: 10 };
 
 function seedCodigos(){
-  // Regla de negocio: solo Bono usa inventario de códigos
-  const primaryCat = CURRENT_PROGRAM?.incentives?.[0]?.category;
-  if(primaryCat !== 'Bono'){
+  // El inventario existe solo si algún tipo de incentivo se parametrizó con códigos
+  if(!HAS_CODES){
     state.all = [];
     return;
   }
   // Programa creado por el usuario en el wizard: usar SUS códigos reales.
   // Si no asignó nada todavía, mostrar lista vacía — sin operadores/beneficiarios fake.
   if(CURRENT_PROGRAM && CURRENT_PROGRAM._userCreated){
-    const codes = Array.isArray(CURRENT_PROGRAM.manualCodes) ? CURRENT_PROGRAM.manualCodes : [];
-    state.all = codes.map(code => ({ code, estado: 'disp', benef: null, op: null, fecha: null }));
+    const list = Array.isArray(CURRENT_PROGRAM.codesList) ? CURRENT_PROGRAM.codesList : (CURRENT_PROGRAM.manualCodes || []).map(code => ({ code }));
+    state.all = list.map(c => ({ code: c.code, tipo: c.tipo, valor: c.valor, estado: 'disp', benef: null, op: null, fecha: 'cargado', uploader: 'Danna Arrieta' }));
     return;
   }
   // Programa demo seeded en programs-data.js: mantener la data fake rica para la demo.
@@ -1503,7 +1502,9 @@ function seedCodigos(){
     }
     out.push({ code, estado, benef, op, fecha, uploader, reversionHistory });
   }
-  state.all = out;
+  // Códigos agregados después desde «Cargar códigos»
+  const extra = (CURRENT_PROGRAM.codesList || []).map(c => ({ code: c.code, tipo: c.tipo, valor: c.valor, estado: 'disp', benef: null, op: null, fecha: 'cargado', uploader: 'Danna Arrieta' }));
+  state.all = extra.concat(out);
 }
 
 function filteredCodigos(){
@@ -1537,7 +1538,27 @@ function renderCodigos(){
 
   // Empty state especial: este programa no usa códigos (no es Bono)
   const primaryCat = CURRENT_PROGRAM?.incentives?.[0]?.category;
-  const isBonoProg = primaryCat === 'Bono';
+  const isBonoProg = HAS_CODES;
+  const codeTypes = HAS_CODES ? ccCodeTypes().map(t => t.inc.name) : [];
+
+  if(isBonoProg && state.all.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" style="padding:0">
+      <div class="naowee-message naowee-message--informative" style="margin:18px;border-radius:12px">
+        <div class="naowee-message__header">
+          <div class="naowee-message__text">
+            Este programa <strong>sí lleva códigos</strong> (${codeTypes.join(', ')}), pero todavía no se ha cargado ninguno.
+            Cargarlos es opcional: usa <strong>Cargar códigos</strong> cuando los tengas.
+          </div>
+        </div>
+      </div>
+    </td></tr>`;
+    document.getElementById('pagInfo').textContent = '—';
+    document.getElementById('pagInput').value = 1;
+    document.getElementById('pagTotal').textContent = 1;
+    document.getElementById('pagPrev').disabled = true;
+    document.getElementById('pagNext').disabled = true;
+    return;
+  }
 
   if(!isBonoProg){
     tbody.innerHTML = `<tr><td colspan="5" style="padding:0">
@@ -1574,11 +1595,11 @@ function renderCodigos(){
          </button>`
       : '';
     return `<tr>
-      <td><span class="cod-cell"><code>${r.code}</code>${histBtn}</span></td>
+      <td><span class="cod-cell"><code>${r.code}</code>${histBtn}</span>${r.tipo && codeTypes.length > 1 ? `<div style="font-size:11px;color:#646587;margin-top:2px">${r.tipo}</div>` : ''}</td>
       <td>${badges[r.estado] || badges.disp}</td>
       <td>${r.uploader || '—'}</td>
       <td${mutedStyle}>${r.fecha || '—'}</td>
-      <td style="${valStyle}">$1.000.000</td>
+      <td style="${valStyle}">${(r.valor != null ? r.valor : CURRENT_PROGRAM.unit) ? '$' + Number(r.valor != null ? r.valor : CURRENT_PROGRAM.unit).toLocaleString('es-CO') : '—'}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--naowee-color-text-secondary,#646587)">Sin resultados para los filtros actuales.</td></tr>`;
 
@@ -1855,36 +1876,10 @@ document.addEventListener('keydown', e => {
 
     <div class="cc-body">
       <!-- Step 1: tipo de incentivo -->
-      <div class="cc-type-block">
+      <div class="cc-type-block" id="ccTypeBlock">
         <label class="cc-type-block__lbl">Tipo de incentivo</label>
-        <p class="cc-type-block__hint">Solo los <strong>bonos</strong> manejan códigos canjeables. El resto de tipos se cargan como cantidad de cupos disponibles.</p>
-        <div class="cc-type-grid" id="ccTypeGrid">
-          <button type="button" class="cc-type-card" data-cat="Bono" onclick="selectCCType('Bono', this)">
-            <span class="cc-type-card__ico" style="background:#f3e8ff;color:#7c3aed"></span>
-            <span class="cc-type-card__lbl">Bono</span>
-            <span class="cc-type-card__hint">Código canjeable</span>
-          </button>
-          <button type="button" class="cc-type-card" data-cat="Beca" onclick="selectCCType('Beca', this)">
-            <span class="cc-type-card__ico" style="background:#fff3e6;color:#d74009"></span>
-            <span class="cc-type-card__lbl">Beca</span>
-            <span class="cc-type-card__hint">Sin código</span>
-          </button>
-          <button type="button" class="cc-type-card" data-cat="Kit" onclick="selectCCType('Kit', this)">
-            <span class="cc-type-card__ico" style="background:#eef5ff;color:#1f78d1"></span>
-            <span class="cc-type-card__lbl">Kit</span>
-            <span class="cc-type-card__hint">Sin código</span>
-          </button>
-          <button type="button" class="cc-type-card" data-cat="Inscripción" onclick="selectCCType('Inscripción', this)">
-            <span class="cc-type-card__ico" style="background:#e6f4e7;color:#15803d"></span>
-            <span class="cc-type-card__lbl">Inscripción</span>
-            <span class="cc-type-card__hint">Sin código</span>
-          </button>
-          <button type="button" class="cc-type-card" data-cat="Transporte" onclick="selectCCType('Transporte', this)">
-            <span class="cc-type-card__ico" style="background:#cffafe;color:#0891b2"></span>
-            <span class="cc-type-card__lbl">Transporte</span>
-            <span class="cc-type-card__hint">Sin código</span>
-          </button>
-        </div>
+        <p class="cc-type-block__hint" id="ccTypeHint">Elige a cuál tipo de incentivo del programa se agregan los códigos. Solo aparecen los que parametrizaste con códigos.</p>
+        <div class="cc-type-grid" id="ccTypeGrid"></div>
       </div>
 
       <!-- Step 2 — Bono: file/manual -->
@@ -1973,56 +1968,54 @@ document.addEventListener('keydown', e => {
 /* ══ Modal Cargar inventario ══ */
 let ccSelectedType = null;
 
+let ccSelectedIdx = null;
+/* Tipos de incentivo del programa que se parametrizaron con códigos (el tipo ya se definió en el formulario: aquí solo se elige entre ellos) */
+function ccCodeTypes(){
+  const c = window.getProgramConfig(CURRENT_PROGRAM);
+  return (CURRENT_PROGRAM.incentives || []).map((inc, i) => ({ inc, i, x: c.inc[i] || {} })).filter(t => t.x.codigos);
+}
 function openCargarCodigos(){
   const ov = document.getElementById('ccOverlay');
   if(!ov) return;
-  // Inyecta iconos en las cards de tipo desde el catálogo central CAT_ICONS
+  const types = ccCodeTypes();
   const grid = document.getElementById('ccTypeGrid');
-  if(grid && !grid.dataset.ready){
-    grid.querySelectorAll('.cc-type-card').forEach(card => {
-      const cat = card.dataset.cat;
-      const icoBox = card.querySelector('.cc-type-card__ico');
-      if(icoBox && window.CAT_ICONS && window.CAT_ICONS[cat]){
-        icoBox.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${window.CAT_ICONS[cat]}</svg>`;
-      }
-    });
-    grid.dataset.ready = '1';
-  }
-  // Reset estado: ninguna sección visible, ningún tipo seleccionado
-  ccSelectedType = null;
-  grid.querySelectorAll('.cc-type-card').forEach(c => c.classList.remove('is-selected'));
+  grid.innerHTML = types.map(t => {
+    const ico = (window.CAT_ICONS && window.CAT_ICONS[t.inc.category]) || window.CAT_ICONS['Bono'];
+    const unit = t.x.unit ? '$' + Number(t.x.unit).toLocaleString('es-CO') + ' c/u' : 'Con código';
+    return `<button type="button" class="cc-type-card" data-idx="${t.i}" onclick="selectCCType(${t.i}, this)">
+      <span class="cc-type-card__ico" style="background:${CURRENT_PROGRAM.iconBg};color:${CURRENT_PROGRAM.iconColor}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ico}</svg></span>
+      <span class="cc-type-card__lbl">${t.inc.name}</span>
+      <span class="cc-type-card__hint">${unit}</span></button>`;
+  }).join('');
+  // Reset estado
+  ccSelectedType = null; ccSelectedIdx = null;
   document.getElementById('ccBonoSection').hidden = true;
   document.getElementById('ccNonBonoSection').hidden = true;
   document.getElementById('ccSummaryMsg').style.display = 'none';
-  // Reset estado upload (file chip oculto)
   document.getElementById('ccFileChip')?.classList.remove('visible');
   if(document.getElementById('ccDropzone')) document.getElementById('ccDropzone').style.display = '';
   if(document.getElementById('ccFileInput')) document.getElementById('ccFileInput').value = '';
-  // Limpiar y agregar 3 filas vacías iniciales
   const rows = document.getElementById('ccManualRows');
   if(rows){ rows.innerHTML = ''; for(let i = 0; i < 3; i++) addCCRow(); }
   ov.classList.add('open');
+  // Un solo tipo con códigos: ya está elegido, no hay nada que decidir
+  const single = types.length === 1;
+  document.getElementById('ccTypeBlock').style.display = single ? 'none' : '';
+  if(single) selectCCType(types[0].i, grid.querySelector('.cc-type-card'));
   updateCCConfirmState();
 }
 
-function selectCCType(cat, btn){
-  ccSelectedType = cat;
+function selectCCType(idx, btn){
+  ccSelectedIdx = idx; ccSelectedType = 'codigo';
   document.querySelectorAll('#ccTypeGrid .cc-type-card').forEach(c => c.classList.toggle('is-selected', c === btn));
-  const isBono = cat === 'Bono';
-  document.getElementById('ccBonoSection').hidden = !isBono;
-  document.getElementById('ccNonBonoSection').hidden = isBono;
-  updateCCConfirmState();
-  // Summary message contextual
+  document.getElementById('ccBonoSection').hidden = false;
+  document.getElementById('ccNonBonoSection').hidden = true;
+  const t = ccCodeTypes().find(x => x.i === idx), unit = t && t.x.unit ? ' × $' + Number(t.x.unit).toLocaleString('es-CO') : '';
   const msg = document.getElementById('ccSummaryMsg');
-  const text = document.getElementById('ccSummaryText');
+  document.getElementById('ccSummaryText').innerHTML = `Los códigos se agregan al inventario de <strong>${t ? t.inc.name : 'este tipo'}</strong>${unit ? ` (valor unitario ${unit.slice(3)})` : ''}. Quedan <strong>${CURRENT_PROGRAM.codes.avail}</strong> disponibles hoy.`;
   msg.style.display = 'flex';
-  if(isBono){
-    text.innerHTML = `Rubro disponible: <strong>$18.000.000</strong> (18 códigos × $1.000.000). Los nuevos códigos se agregarán al inventario actual.`;
-    setTimeout(positionCCPill, 50);
-  } else {
-    text.innerHTML = `Los <strong>${cat.toLowerCase()}s</strong> no manejan código canjeable. Indica la cantidad de cupos y el valor por unidad — quedarán disponibles para asignar directamente al beneficiario.`;
-    updateCCNbTotal();
-  }
+  setTimeout(positionCCPill, 50);
+  updateCCConfirmState();
 }
 
 function updateCCNbTotal(){
@@ -2047,7 +2040,7 @@ function updateCCConfirmState(){
   const btn = document.getElementById('btnCcConfirm');
   if(!btn) return;
   let valid = false;
-  if(ccSelectedType === 'Bono'){
+  if(ccSelectedType){
     const activeMode = document.querySelector('.cc-mode.active')?.dataset.mode;
     if(activeMode === 'upload'){
       const chip = document.getElementById('ccFileChip');
@@ -2056,10 +2049,6 @@ function updateCCConfirmState(){
       const inputs = document.querySelectorAll('#ccManualRows .cc-manual__code-input');
       valid = Array.from(inputs).some(inp => inp.value.trim().length > 0);
     }
-  } else if(ccSelectedType){
-    const qty = parseInt(document.getElementById('ccNbQty')?.value || '0', 10) || 0;
-    const val = parseInt(document.getElementById('ccNbValue')?.value || '0', 10) || 0;
-    valid = qty > 0 && val > 0;
   }
   btn.disabled = !valid;
 }
@@ -2168,7 +2157,26 @@ document.getElementById('ccFileInput')?.addEventListener('change', e => {
   updateCCConfirmState();
 });
 function confirmCargar(){
+  const t = ccCodeTypes().find(x => x.i === ccSelectedIdx);
+  if(!t){ closeCargarCodigos(); return; }
+  const tipo = t.inc.name, unit = Number(t.x.unit) || 0;
+  const prefix = (tipo.normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 4).toUpperCase() || 'COD') + '-';
+  const have = new Set(state.all.map(r => r.code));
+  let codes = [];
+  if(document.querySelector('.cc-mode.active')?.dataset.mode === 'manual'){
+    codes = Array.from(document.querySelectorAll('#ccManualRows .cc-manual__code-input')).map(i => i.value.trim()).filter(Boolean);
+  } else {
+    const n = Number(t.x.cantidad) || 50; let k = state.all.filter(r => r.tipo === tipo).length;
+    while(codes.length < n){ k++; codes.push(prefix + String(k).padStart(5, '0')); }
+  }
+  codes = codes.filter((c, i) => !have.has(c) && codes.indexOf(c) === i);
+  const entries = codes.map(code => ({ code, tipo, valor: unit }));
+  const P = CURRENT_PROGRAM;
+  P.codesList = (P.codesList || []).concat(entries);
+  P.codes = { total: (P.codes.total || 0) + codes.length, avail: (P.codes.avail || 0) + codes.length, asig: P.codes.asig || 0, rev: P.codes.rev || 0 };
+  if(window.persistProgramEdit) window.persistProgramEdit(P.id, P);
   closeCargarCodigos();
+  hydrateProgram(); seedCodigos(); renderCodigos();
 }
 // Click outside to close
 document.getElementById('ccOverlay')?.addEventListener('click', e => {
