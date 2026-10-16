@@ -638,6 +638,12 @@
     display:flex;gap:10px;justify-content:flex-end;align-items:center;
   }
 
+  /* Cupo de códigos y reversión desde el perfil */
+  .cupo-note{margin-right:12px;font-size:12.5px;color:#646587;max-width:420px;line-height:1.35}
+  .cupo-note--full{color:#9e0015;font-weight:600}
+  .naowee-btn:disabled{cursor:not-allowed}
+  .rv2-sum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:12px 14px;border:1px solid #e7e9f3;border-radius:12px;background:#f4f5f9}
+  .rv2-sum__l{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#646587;margin-bottom:2px}
   /* Ciclo y documentos */
   .cyc-card{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border:1px solid #e7e9f3;border-radius:14px;background:#fff}
   .cyc-card__top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -941,6 +947,7 @@
                   <th>Subido por</th>
                   <th>Última actualización</th>
                   <th style="text-align:right">Valor</th>
+                  <th aria-label="Acciones"></th>
                 </tr>
               </thead>
               <tbody id="codigosTbody"></tbody>
@@ -1451,6 +1458,7 @@ function seedCodigos(){
   if(CURRENT_PROGRAM && CURRENT_PROGRAM._userCreated){
     const list = Array.isArray(CURRENT_PROGRAM.codesList) ? CURRENT_PROGRAM.codesList : (CURRENT_PROGRAM.manualCodes || []).map(code => ({ code }));
     state.all = list.map(c => ({ code: c.code, tipo: c.tipo, valor: c.valor, estado: 'disp', benef: null, op: null, fecha: 'cargado', uploader: 'Danna Arrieta' }));
+    applyReversions();
     return;
   }
   // Programa demo seeded en programs-data.js: mantener la data fake rica para la demo.
@@ -1504,7 +1512,10 @@ function seedCodigos(){
   }
   // Códigos agregados después desde «Cargar códigos»
   const extra = (CURRENT_PROGRAM.codesList || []).map(c => ({ code: c.code, tipo: c.tipo, valor: c.valor, estado: 'disp', benef: null, op: null, fecha: 'cargado', uploader: 'Danna Arrieta' }));
+  const firstT = (typeof ccCodeTypes === 'function' && ccCodeTypes()[0]) || null;
+  out.forEach(r => { if(firstT) r.tipo = firstT.inc.name; r.valor = firstT && firstT.x.unit ? firstT.x.unit : r.valor; });
   state.all = extra.concat(out);
+  applyReversions();
 }
 
 function filteredCodigos(){
@@ -1541,8 +1552,9 @@ function renderCodigos(){
   const isBonoProg = HAS_CODES;
   const codeTypes = HAS_CODES ? ccCodeTypes().map(t => t.inc.name) : [];
 
+  updateCupoUI();
   if(isBonoProg && state.all.length === 0){
-    tbody.innerHTML = `<tr><td colspan="5" style="padding:0">
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:0">
       <div class="naowee-message naowee-message--informative" style="margin:18px;border-radius:12px">
         <div class="naowee-message__header">
           <div class="naowee-message__text">
@@ -1561,7 +1573,7 @@ function renderCodigos(){
   }
 
   if(!isBonoProg){
-    tbody.innerHTML = `<tr><td colspan="5" style="padding:0">
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:0">
       <div class="naowee-message naowee-message--informative" style="margin:18px;border-radius:12px">
         <div class="naowee-message__header">
           <div class="naowee-message__icon">
@@ -1600,14 +1612,16 @@ function renderCodigos(){
       <td>${r.uploader || '—'}</td>
       <td${mutedStyle}>${r.fecha || '—'}</td>
       <td style="${valStyle}">${(r.valor != null ? r.valor : CURRENT_PROGRAM.unit) ? '$' + Number(r.valor != null ? r.valor : CURRENT_PROGRAM.unit).toLocaleString('es-CO') : '—'}</td>
+      <td style="text-align:right">${canRevertRow(r) ? `<button type="button" class="naowee-btn naowee-btn--mute naowee-btn--small" onclick="openRevertCode('${r.code}')">Revertir</button>` : ''}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--naowee-color-text-secondary,#646587)">Sin resultados para los filtros actuales.</td></tr>`;
+  }).join('') : `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--naowee-color-text-secondary,#646587)">Sin resultados para los filtros actuales.</td></tr>`;
 
   document.getElementById('pagInfo').textContent = total === 0 ? 'Sin resultados' : `Mostrando ${start + 1}–${end} de ${total}`;
   document.getElementById('pagInput').value = state.page;
   document.getElementById('pagTotal').textContent = totalPages;
   document.getElementById('pagPrev').disabled = state.page <= 1;
   document.getElementById('pagNext').disabled = state.page >= totalPages;
+  updateCupoUI();
 }
 
 function changePage(delta){
@@ -1653,7 +1667,8 @@ function seedAsign(){
   }
   const out = [];
   const avColors = ['purple','orange','green','blue','pink','teal'];
-  const total = (CURRENT_PROGRAM && CURRENT_PROGRAM.codes && CURRENT_PROGRAM.codes.asig) || 182;
+  const reverted = new Set(((CURRENT_PROGRAM && CURRENT_PROGRAM.reversions) || []).map(r => r.code));
+  const total = ((CURRENT_PROGRAM && CURRENT_PROGRAM.codes && CURRENT_PROGRAM.codes.asig) || 182) + reverted.size;
   for(let i = 1; i <= total; i++){
     const code = (HAS_CODES ? '2026BEC-' : 'ENT-2026-') + String(i).padStart(5, '0');
     const person = PEOPLE[(i * 7) % PEOPLE.length];
@@ -1664,7 +1679,7 @@ function seedAsign(){
     const hour = String((6 + i) % 18 + 6).padStart(2, '0');
     const min = String((i * 13) % 60).padStart(2, '0');
     const fecha = `${day} abr · ${hour}:${min}`;
-    const estado = (i % 60 === 0) ? 'rev' : 'asig';
+    const estado = (i % 60 === 0 || reverted.has(code)) ? 'rev' : 'asig';
     const initials = person.split(' ').map(p => p[0]).slice(0, 2).join('');
     out.push({ person, cc, code, op, regKey: region[0], region: region[1], fecha, estado, avClass: avColors[i % avColors.length], initials });
   }
@@ -1964,11 +1979,61 @@ document.addEventListener('keydown', e => {
   </div>
 </div>
 
+<!-- Modal: revertir un código desde el perfil del programa -->
+<div class="cc-overlay" id="rv2Overlay" role="dialog" aria-modal="true" aria-labelledby="rv2Title">
+  <div class="cc-modal" style="max-width:560px">
+    <div class="cc-header">
+      <div>
+        <h2 class="cc-header__title" id="rv2Title">Revertir código</h2>
+        <p class="cc-header__sub">La entrega se anula y el código vuelve a estar <strong>disponible</strong> para asignarse de nuevo; el valor se reintegra al rubro del programa. Queda registrado en el historial del código.</p>
+      </div>
+      <button type="button" class="cc-close" onclick="closeRevertCode()" aria-label="Cerrar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="cc-body">
+      <div class="rv2-sum">
+        <div><span class="rv2-sum__l">Código</span><code id="rv2Code">—</code></div>
+        <div><span class="rv2-sum__l">Beneficiario</span><b id="rv2Benef">—</b></div>
+        <div><span class="rv2-sum__l">Se reintegra</span><b id="rv2Valor">—</b></div>
+      </div>
+      <div class="naowee-textfield" style="margin-top:14px">
+        <label class="naowee-textfield__label">Motivo de la reversión *</label>
+        <div class="naowee-textfield__input-wrap">
+          <select class="naowee-textfield__input" id="rv2Motivo" onchange="updateRevertState()">
+            <option value="" disabled selected>Selecciona un motivo</option>
+            <option value="devolucion">Devolución del beneficiario</option>
+            <option value="error">Error en la asignación</option>
+            <option value="no-elegible">Beneficiario no elegible</option>
+            <option value="fraude">Sospecha de fraude</option>
+          </select>
+        </div>
+      </div>
+      <div class="naowee-textfield" style="margin-top:12px">
+        <label class="naowee-textfield__label">Justificación *</label>
+        <div class="naowee-textfield__input-wrap" style="height:auto">
+          <textarea class="naowee-textfield__input" id="rv2Just" rows="3" placeholder="Describe por qué se revierte esta entrega" oninput="updateRevertState()" style="height:auto;padding:10px 0;resize:vertical"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="cc-footer">
+      <button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="closeRevertCode()">Cancelar</button>
+      <button class="naowee-btn naowee-btn--loud naowee-btn--large" id="btnRv2Confirm" onclick="confirmRevertCode()" disabled>Revertir código</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ══ Modal Cargar inventario ══ */
 let ccSelectedType = null;
 
-let ccSelectedIdx = null;
+let ccSelectedIdx = null, ccMax = Infinity;
+/* El cupo limita cuántas filas manuales se pueden agregar */
+function syncCCRowLimit(){
+  const rows = document.getElementById('ccManualRows'); if(!rows) return;
+  while(rows.children.length > Math.max(1, ccMax) && ccMax !== Infinity) rows.lastElementChild.remove();
+  const add = document.querySelector('.cc-manual__add'); if(add){ const full = ccMax !== Infinity && rows.children.length >= ccMax; add.disabled = full; add.title = full ? 'Llegaste al cupo de códigos' : ''; }
+}
 /* Tipos de incentivo del programa que se parametrizaron con códigos (el tipo ya se definió en el formulario: aquí solo se elige entre ellos) */
 function ccCodeTypes(){
   const c = window.getProgramConfig(CURRENT_PROGRAM);
@@ -1981,14 +2046,15 @@ function openCargarCodigos(){
   const grid = document.getElementById('ccTypeGrid');
   grid.innerHTML = types.map(t => {
     const ico = (window.CAT_ICONS && window.CAT_ICONS[t.inc.category]) || window.CAT_ICONS['Bono'];
-    const unit = t.x.unit ? '$' + Number(t.x.unit).toLocaleString('es-CO') + ' c/u' : 'Con código';
-    return `<button type="button" class="cc-type-card" data-idx="${t.i}" onclick="selectCCType(${t.i}, this)">
+    const cu = cupoInfo().rows.find(r => r.t.i === t.i), full = cu && cu.left === 0;
+    const unit = full ? 'Sin cupo' : (cu && cu.cap ? cu.left + ' libres de ' + cu.cap : (t.x.unit ? '$' + Number(t.x.unit).toLocaleString('es-CO') + ' c/u' : 'Con código'));
+    return `<button type="button" class="cc-type-card" data-idx="${t.i}" ${full ? 'disabled style="opacity:.5;cursor:not-allowed"' : `onclick="selectCCType(${t.i}, this)"`}>
       <span class="cc-type-card__ico" style="background:${CURRENT_PROGRAM.iconBg};color:${CURRENT_PROGRAM.iconColor}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ico}</svg></span>
       <span class="cc-type-card__lbl">${t.inc.name}</span>
       <span class="cc-type-card__hint">${unit}</span></button>`;
   }).join('');
   // Reset estado
-  ccSelectedType = null; ccSelectedIdx = null;
+  ccSelectedType = null; ccSelectedIdx = null; ccMax = Infinity;
   document.getElementById('ccBonoSection').hidden = true;
   document.getElementById('ccNonBonoSection').hidden = true;
   document.getElementById('ccSummaryMsg').style.display = 'none';
@@ -1999,9 +2065,10 @@ function openCargarCodigos(){
   if(rows){ rows.innerHTML = ''; for(let i = 0; i < 3; i++) addCCRow(); }
   ov.classList.add('open');
   // Un solo tipo con códigos: ya está elegido, no hay nada que decidir
-  const single = types.length === 1;
+  const open = types.filter(t => { const cu = cupoInfo().rows.find(r => r.t.i === t.i); return cu && cu.left > 0; });
+  const single = open.length === 1;
   document.getElementById('ccTypeBlock').style.display = single ? 'none' : '';
-  if(single) selectCCType(types[0].i, grid.querySelector('.cc-type-card'));
+  if(single) selectCCType(open[0].i, grid.querySelector(`.cc-type-card[data-idx="${open[0].i}"]`));
   updateCCConfirmState();
 }
 
@@ -2012,8 +2079,10 @@ function selectCCType(idx, btn){
   document.getElementById('ccNonBonoSection').hidden = true;
   const t = ccCodeTypes().find(x => x.i === idx);
   const msg = document.getElementById('ccSummaryMsg');
+  const cuI = cupoInfo().rows.find(r => r.t.i === idx), cupoTxt = cuI && cuI.cap ? `Puedes cargar hasta <strong>${cuI.left}</strong> códigos más (cupo de ${cuI.cap}). ` : '';
+  ccMax = cuI ? cuI.left : Infinity; syncCCRowLimit();
   const unitTxt = t && t.x.unit ? `Cada código vale <strong>$${Number(t.x.unit).toLocaleString('es-CO')}</strong>, el valor unitario que definiste en la parametrización. ` : '';
-  document.getElementById('ccSummaryText').innerHTML = `Los códigos se agregan al inventario de <strong>${t ? t.inc.name : 'este tipo'}</strong>. ${unitTxt}Quedan <strong>${CURRENT_PROGRAM.codes.avail}</strong> disponibles hoy.`;
+  document.getElementById('ccSummaryText').innerHTML = `Los códigos se agregan al inventario de <strong>${t ? t.inc.name : 'este tipo'}</strong>. ${unitTxt}${cupoTxt}Quedan <strong>${CURRENT_PROGRAM.codes.avail}</strong> disponibles hoy.`;
   msg.style.display = 'flex';
   setTimeout(positionCCPill, 50);
   updateCCConfirmState();
@@ -2054,6 +2123,86 @@ function updateCCConfirmState(){
   btn.disabled = !valid;
 }
 
+/* ══ Cupo de códigos: la cantidad parametrizada de cada tipo es el tope de códigos que se pueden cargar ══ */
+function cupoInfo(){
+  const types = ccCodeTypes();
+  const rows = types.map((t, k) => {
+    const cap = Number(t.x.cantidad) || 0;
+    const used = state.all.filter(r => r.tipo ? r.tipo === t.inc.name : k === 0).length;
+    return { t, cap, used, left: cap ? Math.max(0, cap - used) : Infinity };
+  });
+  return { rows, blocked: rows.length > 0 && rows.every(r => r.left === 0) };
+}
+function updateCupoUI(){
+  const btn = document.getElementById('btnCargarCodigos');
+  if(!btn) return;
+  const ci = cupoInfo();
+  btn.disabled = ci.blocked;
+  btn.title = ci.blocked ? 'Sin cupo para más códigos' : '';
+  let note = document.getElementById('cupoNote');
+  if(!note){ note = document.createElement('span'); note.id = 'cupoNote'; note.className = 'cupo-note'; btn.parentNode.insertBefore(note, btn); }
+  const lim = ci.rows.filter(r => r.cap);
+  if(!lim.length){ note.textContent = ''; return; }
+  note.className = 'cupo-note' + (ci.blocked ? ' cupo-note--full' : '');
+  note.textContent = ci.blocked
+    ? 'Cupo completo: ' + lim.map(r => r.used + ' de ' + r.cap).join(' · ') + ' códigos cargados. Para cargar más, amplía la cantidad en la parametrización.'
+    : 'Cupo libre: ' + lim.map(r => (lim.length > 1 ? r.t.inc.name + ' ' : '') + r.left + ' de ' + r.cap).join(' · ') + ' códigos';
+}
+
+/* ══ Revertir un código desde el perfil del programa ══ */
+const RV_MOTIVOS2 = [
+  ['devolucion','Devolución del beneficiario'],['error','Error en la asignación'],['no-elegible','Beneficiario no elegible'],['fraude','Sospecha de fraude']
+];
+function canRevertRow(r){
+  const role = (localStorage.getItem('naowee-incentivos-role') || 'admin');
+  return (role === 'admin' || role === 'gestor') && CURRENT_PROGRAM && CURRENT_PROGRAM.status === 'active' && (r.estado === 'asig' || r.estado === 'reasig');
+}
+/* Reaplica sobre la lista las reversiones guardadas: el código vuelve a Disponible con su historial */
+function applyReversions(){
+  const rv = (CURRENT_PROGRAM && CURRENT_PROGRAM.reversions) || [];
+  rv.forEach(x => {
+    const row = state.all.find(r => r.code === x.code); if(!row) return;
+    row.estado = 'disp'; row.benef = null; row.op = null; row.fecha = x.fecha;
+    row.reversionHistory = [x.entry].concat(row.reversionHistory || []);
+  });
+}
+let rvCode = null;
+function openRevertCode(code){
+  const row = state.all.find(r => r.code === code); if(!row) return;
+  rvCode = code;
+  const val = row.valor != null ? row.valor : CURRENT_PROGRAM.unit;
+  document.getElementById('rv2Code').textContent = code;
+  document.getElementById('rv2Benef').textContent = row.benef || '—';
+  document.getElementById('rv2Valor').textContent = val ? '$' + Number(val).toLocaleString('es-CO') : '—';
+  document.getElementById('rv2Motivo').value = '';
+  document.getElementById('rv2Just').value = '';
+  updateRevertState();
+  document.getElementById('rv2Overlay').classList.add('open');
+}
+function closeRevertCode(){ document.getElementById('rv2Overlay').classList.remove('open'); rvCode = null; }
+function updateRevertState(){
+  const ok = document.getElementById('rv2Motivo').value && document.getElementById('rv2Just').value.trim().length > 0;
+  document.getElementById('btnRv2Confirm').disabled = !ok;
+}
+function confirmRevertCode(){
+  const row = state.all.find(r => r.code === rvCode); if(!row) return closeRevertCode();
+  const mk = document.getElementById('rv2Motivo').value, label = (RV_MOTIVOS2.find(m => m[0] === mk) || ['', ''])[1];
+  const now = new Date(), pad = n => String(n).padStart(2, '0');
+  const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const fecha = `${pad(now.getDate())} ${MES[now.getMonth()]} · ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const val = row.valor != null ? row.valor : CURRENT_PROGRAM.unit;
+  const entry = { beneficiarioPrevio: row.benef, operadorPrevio: row.op, fechaAsignacion: row.fecha, motivo: mk, motivoLabel: label,
+    solicitante: '—', justificacion: document.getElementById('rv2Just').value.trim(), autor: 'Danna Arrieta · Gestor de incentivos',
+    fecha: `${pad(now.getDate())} ${MES[now.getMonth()]} ${now.getFullYear()} · ${pad(now.getHours())}:${pad(now.getMinutes())}`, valor: val };
+  const P = CURRENT_PROGRAM;
+  P.reversions = (P.reversions || []).concat({ code: rvCode, fecha, entry });
+  P.codes = { total: P.codes.total, avail: (P.codes.avail || 0) + 1, asig: Math.max(0, (P.codes.asig || 0) - 1), rev: (P.codes.rev || 0) + 1 };
+  P.exec = Math.max(0, (P.exec || 0) - (Number(val) || 0));
+  if(window.persistProgramEdit) window.persistProgramEdit(P.id, P);
+  closeRevertCode();
+  hydrateProgram(); seedCodigos(); seedAsign(); renderCodigos(); renderAsign();
+}
+
 function closeCargarCodigos(){
   document.getElementById('ccOverlay').classList.remove('open');
 }
@@ -2079,6 +2228,7 @@ function positionCCPill(){
 function addCCRow(){
   const rows = document.getElementById('ccManualRows');
   if(!rows) return;
+  if(ccMax !== Infinity && rows.children.length >= ccMax) return;
   const idx = rows.children.length + 1;
   const row = document.createElement('div');
   row.className = 'cc-manual__row';
@@ -2135,6 +2285,7 @@ function removeCCRow(btn){
   const rows = document.getElementById('ccManualRows');
   if(rows && rows.children.length <= 1) return;
   row.remove();
+  syncCCRowLimit();
 }
 function resetCCFile(){
   document.getElementById('ccFileChip').classList.remove('visible');
@@ -2162,9 +2313,9 @@ function confirmCargar(){
     codes = Array.from(document.querySelectorAll('#ccManualRows .cc-manual__code-input')).map(i => i.value.trim()).filter(Boolean);
   } else {
     const n = Number(t.x.cantidad) || 50; let k = state.all.filter(r => r.tipo === tipo).length;
-    while(codes.length < n){ k++; codes.push(prefix + String(k).padStart(5, '0')); }
+    while(codes.length < Math.min(n, ccMax)){ k++; codes.push(prefix + String(k).padStart(5, '0')); }
   }
-  codes = codes.filter((c, i) => !have.has(c) && codes.indexOf(c) === i);
+  codes = codes.filter((c, i) => !have.has(c) && codes.indexOf(c) === i).slice(0, ccMax === Infinity ? undefined : ccMax);
   const entries = codes.map(code => ({ code, tipo, valor: unit }));
   const P = CURRENT_PROGRAM;
   P.codesList = (P.codesList || []).concat(entries);
