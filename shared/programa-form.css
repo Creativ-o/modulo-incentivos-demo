@@ -148,7 +148,7 @@ a.nwt-button{text-decoration:none}
 /* Cobertura territorial: dropdown multiselección */
 .pf-ms{position:relative}
 .pf-ms__content{cursor:pointer;min-height:var(--naotech-sizing-32);outline:none}
-.pf-ms__chips{display:flex;flex-wrap:wrap;gap:var(--naotech-sizing-6);flex:1;align-items:center;padding:var(--naotech-sizing-4) 0}
+.pf-ms__chips{display:flex;flex-wrap:nowrap;overflow:hidden;gap:var(--naotech-sizing-6);flex:1;min-width:0;align-items:center;padding:var(--naotech-sizing-4) 0}
 .pf-ms__x{margin-left:var(--naotech-sizing-6);font-weight:700;cursor:pointer;line-height:1}
 .pf-ms__x:hover{color:var(--naotech-primary-color-700)}
 .pf-ms__list{z-index:10;margin:0}
@@ -240,7 +240,9 @@ a.nwt-button{text-decoration:none}
 /* Cobertura: opciones deshabilitadas cuando «Nacional» está marcada, y placeholder sin selección */
 .pf-ms__list .nwt-dropdown__option--disabled{cursor:not-allowed}
 .pf-ms__list .nwt-dropdown__option--disabled .nwt-dropdown__option-checkbox{background:var(--naotech-app-color-100);border-color:var(--naotech-app-color-300);opacity:.6}
-.pf-ms__ph{color:var(--naotech-app-color-700);font-size:var(--naotech-sizing-14)}
+.pf-ms__ph{color:var(--naotech-app-color-700);font-size:var(--naotech-sizing-14);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-ms__chips .nwt-tag{flex:0 0 auto}
+.pf-ms__more{background:var(--naotech-app-color-200);color:var(--naotech-app-color-800);border-color:transparent;cursor:default}
 
 /* Prefijo de texto en campos (p. ej. «$» en el presupuesto) */
 .pf-pre{flex:0 0 auto;color:var(--naotech-app-color-700);font-weight:var(--naotech-font-weight-semibold)}
@@ -301,5 +303,7 @@ a.nwt-button{text-decoration:none}
 .pf-ms__newq{flex:1;min-width:0;height:var(--naotech-sizing-32);border:1px solid var(--naotech-app-color-300);border-radius:var(--naotech-sizing-8);padding:0 var(--naotech-sizing-8);font:inherit;font-size:var(--naotech-sizing-14);color:var(--naotech-app-color-900);outline:0}
 .pf-ms__newq:focus{border-color:var(--naotech-primary-color-600)}
 /* Recurrencia: el interruptor y la periodicidad van en la misma fila */
-.pf-rec-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:var(--naotech-sizing-16);align-items:center}
-@media (max-width:720px){.pf-rec-row{grid-template-columns:1fr}}
+.pf-rec-row{display:flex;align-items:flex-end;flex-wrap:wrap;gap:var(--naotech-sizing-24)}
+.pf-rec-row .pf-switch-row{padding-bottom:var(--naotech-sizing-12)}
+.pf-rec-row .nwt-select{width:260px;max-width:100%}
+
