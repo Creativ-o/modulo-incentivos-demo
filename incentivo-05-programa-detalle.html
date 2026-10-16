@@ -1341,7 +1341,7 @@ function renderCiclo(p){
     <div class="info-row-plain"><dt>Roles</dt><dd>${c.roles.join(', ') || '—'}</dd></div>
     <div class="info-row-plain"><dt>Departamentos</dt><dd>${c.cobertura.join(', ')}</dd></div>
     <div class="info-row-plain"><dt>Municipios</dt><dd>${c.cobertura.indexOf('Nacional') > -1 ? 'No aplica (cobertura nacional)' : mun}</dd></div>
-    <div class="info-row-plain"><dt>Selección de beneficiarios</dt><dd>${c.seleccion.map(s => s === 'manual' ? 'Registro manual' : 'Cargue por plataforma').join(' + ')}</dd></div>`;
+    <div class="info-row-plain"><dt>Selección de beneficiarios</dt><dd>${c.seleccion.map(s => s === 'manual' ? 'Registro manual' : 'Registrado por plataforma').join(' + ')}</dd></div>`;
 }
 
 let HAS_CODES = true; // el programa lleva códigos solo si algún tipo de incentivo lo tiene activado

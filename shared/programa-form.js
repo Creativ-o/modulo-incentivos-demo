@@ -30,7 +30,7 @@
   var CATEGORIAS = [
     { k: 'bono', l: 'Bono', valor: 1 }, { k: 'beca', l: 'Beca', valor: 1 }, { k: 'kit', l: 'Kit', valor: 1 }, { k: 'transporte', l: 'Transporte', valor: 1 },
     { k: 'inscripcion', l: 'Inscripción', valor: 1 }, { k: 'descuento', l: 'Descuento', valor: 1 }, { k: 'dinero', l: 'Dinero', valor: 1 },
-    { k: 'pase', l: 'Pase / acceso', valor: 0 }, { k: 'diploma', l: 'Diploma / reconocimiento', valor: 0, cert: 1 }
+    { k: 'pase', l: 'Pase / acceso', valor: 1 }, { k: 'diploma', l: 'Diploma / reconocimiento', valor: 0, cert: 1 }
   ];
   function catOf(i) { return CATEGORIAS.filter(function (c) { return c.k === i.categoria; })[0] || null; }
   function conValor(i) { var c = catOf(i); return !c || !!c.valor; }
@@ -158,7 +158,7 @@
       '</div></div>';
   }
   function tf(o) {
-    var control = (o.ico ? icon(o.ico) : '') + (o.pre ? '<span class="pf-pre">' + esc(o.pre) + '</span>' : '') + '<input class="nwt-text-field__input" type="' + (o.type || 'text') + '" data-k="' + esc(o.k) + '" value="' + esc(o.val) + '" placeholder="' + esc(o.ph || '') + '"' + (o.mode ? ' inputmode="' + o.mode + '"' : '') + (o.ro ? ' readonly tabindex="-1"' : '') + '/>';
+    var control = (o.ico ? icon(o.ico) : '') + (o.pre ? '<span class="pf-pre">' + esc(o.pre) + '</span>' : '') + '<input class="nwt-text-field__input" type="' + (o.type || 'text') + '" data-k="' + esc(o.k) + '" value="' + esc(o.val) + '" placeholder="' + esc(o.ph || '') + '"' + (o.mode ? ' inputmode="' + o.mode + '"' : '') + (o.attrs || '') + (o.ro ? ' readonly tabindex="-1"' : '') + '/>';
     return '<div class="nwt-text-field' + (o.ro ? ' nwt-text-field--readonly' : '') + (o.ico || o.pre ? ' pf-tf-ico' : '') + '" nwt-size="medium">' + inputBox(o.label, o.req, control, o.hint, o.k, o.ro ? 'nwt-input-box--disabled pf-ro-box' : '') + '</div>';
   }
   function ta(o) {
@@ -226,7 +226,7 @@
       card('Población a la que apunta', 'A quién va dirigido el programa. Las condiciones finas de cada incentivo se definen en el paso 3.', '<div class="pf-inc">' +
         msHost('rol') + '<div class="pf-grid">' + msHost('cob') + msHost('mun') + '</div>' +
         '<div><span class="pf-label">Tipo de selección de beneficiarios</span><div class="pf-grid">' +
-          [['plataforma', 'Cargue por plataforma', 'Las personas salen de las condiciones de elegibilidad con los datos de SUID.'], ['manual', 'Registro manual', 'El Gestor de programa busca y habilita personas (una a una o por lista) cuando la plataforma no puede identificarlas.']].map(function (o) {
+          [['plataforma', 'Registrado por plataforma', 'Las personas salen de las condiciones de elegibilidad con los datos de SUID.'], ['manual', 'Registro manual', 'El Gestor de programa busca y habilita personas (una a una o por lista) cuando la plataforma no puede identificarlas.']].map(function (o) {
             return '<div class="pf-modal-box pf-opt-box">' + checkbox(o[1], p.seleccion.indexOf(o[0]) > -1, 'seleccion', null, o[0]) + '<p class="pf-hint">' + o[2] + '</p></div>';
           }).join('') + '</div><p class="pf-hint">Puedes marcar una o ambas.</p></div>' +
       '</div>', N()) +
@@ -443,6 +443,12 @@
       return '<optgroup label="' + FAMILIAS[fam] + '">' + Object.keys(FIELDS).filter(function (k) { return FIELDS[k].fam === fam && (k === cur || !(soloEntidades() && CAMPOS_PERSONA.indexOf(k) > -1)); }).map(function (k) { return '<option value="' + k + '"' + (cur === k ? ' selected' : '') + '>' + FIELDS[k].label + '</option>'; }).join('') + '</optgroup>';
     }).join('');
   }
+  /* Las opciones de «Rol» son los roles elegidos en el paso 2, para repartirlos entre los tipos de incentivo */
+  function optsOf(r) {
+    var f = FIELDS[r.f], base = r.f === 'rol' && S.pob.roles.length ? S.pob.roles.slice() : f.opts.slice();
+    (Array.isArray(r.v) ? r.v : (r.v ? [r.v] : [])).forEach(function (x) { if (base.indexOf(x) < 0) base.push(x); });
+    return base;
+  }
   function ruleRow(inc, gi, ri, r) {
     var f = FIELDS[r.f], key = inc.id + '.' + gi + '.' + ri, multi = r.op === '∈' || r.op === '∉';
     var fieldSel = sel({ label: ri === 0 ? 'Campo' : '', k: 'rule.' + key + '.f', val: r.f, ph: 'Campo', groups: '<option value="" disabled' + (r.f ? '' : ' selected') + '>Campo</option>' + fieldGroups(r.f), attrs: ' data-struct="1"' });
@@ -458,9 +464,9 @@
         opSel = sel({ label: ri === 0 ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op || '=', opts: OPS_SEL, attrs: ' data-struct="1"' });
         if (multi) {
           var arr = Array.isArray(r.v) ? r.v : [];
-          val = '<div>' + (ri === 0 ? '<span class="pf-label">Valores</span>' : '') + '<div class="pf-rule__chips">' + f.opts.map(function (o) { return tag(o, arr.indexOf(o) > -1, 'rule-multi', key, o); }).join('') + '</div></div>';
+          val = '<div>' + (ri === 0 ? '<span class="pf-label">Valores</span>' : '') + '<div class="pf-rule__chips">' + optsOf(r).map(function (o) { return tag(o, arr.indexOf(o) > -1, 'rule-multi', key, o); }).join('') + '</div></div>';
         } else {
-          val = sel({ label: ri === 0 ? 'Valor' : '', k: 'rule.' + key + '.v', val: Array.isArray(r.v) ? '' : r.v, ph: 'Selecciona', opts: f.opts });
+          val = sel({ label: ri === 0 ? 'Valor' : '', k: 'rule.' + key + '.v', val: Array.isArray(r.v) ? '' : r.v, ph: 'Selecciona', opts: optsOf(r) });
         }
       }
     } else { opSel = '<div></div>'; val = '<div></div>'; }
@@ -544,13 +550,22 @@
     });
     return (fases.length ? fases.join(' · ') : 'Etapas sin fechas definidas') + (c.gracia ? ' · Gracia ' + c.gracia + ' días hábiles' : ' · Sin plazo de gracia');
   }
+  /* Cuántos días tiene un ciclo según la periodicidad elegida: acota los días de las etapas */
+  /* Sin ciclos, las fechas no pueden salirse de la vigencia: el selector ya no deja marcarlas */
+  function vigAttrs() { var d = S.datos; return (d.desde ? ' min="' + d.desde + 'T00:00"' : '') + (d.hasta ? ' max="' + d.hasta + 'T23:59"' : ''); }
+  function cycleDays() {
+    var f = S.rec.frecuencia;
+    if (f === 'mensual') return 31; if (f === 'bimestral') return 61; if (f === 'trimestral') return 92; if (f === 'semestral') return 184;
+    var n = Number(S.rec.frecuenciaN) || 0, u = S.rec.frecuenciaU;
+    return n ? Math.max(1, n * (u === 'días' ? 1 : u === 'semanas' ? 7 : 31)) : 31;
+  }
   function cronoBlock() {
     var rec = recOn(), c = S.crono, kk = 'crono.';
     var rows = FASES.map(function (f, i) {
       var k = f[0];
       return '<div class="pf-phase"><div class="pf-phase__head"><span class="pf-num">' + (i + 1) + '</span><div><b>' + f[1] + '</b><p class="pf-hint">' + f[2] + '</p></div></div><div class="pf-grid">' +
-        (rec ? tf({ label: 'Desde el día del ciclo', type: 'number', k: kk + k + '.ini', val: c[k].ini, ph: '1', hint: 'Opcional.' }) + tf({ label: 'Cierre: hasta el día del ciclo', type: 'number', k: kk + k + '.fin', val: c[k].fin, ph: '30', hint: 'Opcional. Si la defines, es estricta.' })
-          : tf({ label: 'Inicio', type: 'datetime-local', k: kk + k + '.ini', val: c[k].ini, hint: 'Opcional.' }) + tf({ label: 'Cierre', type: 'datetime-local', k: kk + k + '.fin', val: c[k].fin, hint: 'Opcional. Si la defines, es estricta.' })) +
+        (rec ? tf({ label: 'Desde el día del ciclo', type: 'number', k: kk + k + '.ini', val: c[k].ini, ph: '1', attrs: ' min="1" max="' + cycleDays() + '"', hint: 'Opcional. Entre 1 y ' + cycleDays() + ' (ciclo ' + frecuenciaTxt() + ').' }) + tf({ label: 'Cierre: hasta el día del ciclo', type: 'number', k: kk + k + '.fin', val: c[k].fin, ph: String(cycleDays()), attrs: ' min="1" max="' + cycleDays() + '"', hint: 'Opcional. Si la defines, es estricta.' })
+          : tf({ label: 'Inicio', type: 'datetime-local', k: kk + k + '.ini', val: c[k].ini, attrs: vigAttrs(), hint: 'Opcional.' }) + tf({ label: 'Cierre', type: 'datetime-local', k: kk + k + '.fin', val: c[k].fin, attrs: vigAttrs(), hint: 'Opcional. Si la defines, es estricta.' })) +
       '</div></div>';
     }).join('');
     var top = '<div class="pf-grid">' + tf({ label: 'Plazo de gracia para subsanar (días hábiles)', type: 'number', k: kk + 'gracia', val: c.gracia, ph: 'Ej. 3', hint: 'Opcional. Excluye sábados, domingos y festivos de Colombia.' }) + '<div></div></div>';
@@ -688,7 +703,7 @@
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
       kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · ' + CUR_VER, 'positive') : badge('Configuración', 'caution'))) + kv('Eventos', esc(d.eventos.join(', ') || '—')) + kv('Gestores', esc(d.gestores.join(', ') || '—')) +
       kv('Vigencia', (d.desde ? fmtDate(d.desde) : 'Desde la activación') + ' → ' + (d.hasta ? fmtDate(d.hasta) : 'Sin fecha de fin')) + kv('Roles', p.roles.length ? esc(rolesTxt()) : nada + 'Sin roles definidos</span>') + kv('Cobertura', esc(p.cobertura.join(', ')) + (p.municipios.length ? '<br><span style="font-weight:400">Municipios: ' + esc(p.municipios.map(function (m) { return m.split(' · ')[0]; }).join(', ')) + '</span>' : '')) +
-      kv('Selección de beneficiarios', esc(p.seleccion.map(function (s) { return s === 'manual' ? 'Registro manual' : 'Cargue por plataforma'; }).join(' + '))) +
+      kv('Selección de beneficiarios', esc(p.seleccion.map(function (s) { return s === 'manual' ? 'Registro manual' : 'Registrado por plataforma'; }).join(' + '))) +
       kv('Recurrencia', recOn() ? 'Recurrente · ' + esc(frecuenciaTxt()) : 'Entrega única') +
       kv('Documentos y fechas', docsReq() ? esc(S.doc.list.map(function (x) { return x.name + (x.oblig ? '' : ' (opcional)'); }).join(', ') || '—') + '<br>' + esc(cronoSummary()) : 'No pide documentos (flujo directo)') +
       kv('Justificación', d.justificacion.trim() ? esc(d.justificacion) : nada + 'No registrada</span>') + kv('Doc. de la resolución', d.anexo ? esc(d.anexo.name) + ' (' + fmtSize(d.anexo.size) + ')' : nada + 'Sin archivo adjunto</span>') +
@@ -734,19 +749,17 @@
     return e;
   }
   function cronoErrors(e) {
-    var c = S.crono, rec = recOn(), kk = 'crono.';
+    var c = S.crono, rec = recOn(), kk = 'crono.', mx = cycleDays();
     if (c.gracia !== '' && !(+c.gracia > 0)) e.push([kk + 'gracia', 'Usa un número de días mayor que cero o déjalo vacío.', 2]);
-    FASES.forEach(function (f) { // las etapas son independientes: solo se valida cada una contra sí misma y contra la vigencia
+    var rango = 'Usa días entre 1 y ' + mx + ' (ciclo ' + frecuenciaTxt() + ').';
+    FASES.forEach(function (f) { // las etapas son independientes: cada una se valida contra sí misma, contra el ciclo y contra la vigencia
       var k = f[0], a = c[k].ini, b = c[k].fin;
-      if (a && b) {
-        if (rec) {
-          if (+a < 1 || +b > 31) e.push([kk + k + '.fin', 'Usa días entre 1 y 31.', 2]);
-          else if (+b < +a) e.push([kk + k + '.fin', 'El cierre no puede ser antes del inicio.', 2]);
-        } else if (b <= a) e.push([kk + k + '.fin', 'El cierre debe ser posterior al inicio.', 2]);
-      }
-      if (rec && a && (+a < 1 || +a > 31)) e.push([kk + k + '.ini', 'Usa días entre 1 y 31.', 2]);
-      if (rec && b && (+b < 1 || +b > 31)) e.push([kk + k + '.fin', 'Usa días entre 1 y 31.', 2]);
-      if (!rec) {
+      if (rec) {
+        if (a && (+a < 1 || +a > mx)) e.push([kk + k + '.ini', rango, 2]);
+        if (b && (+b < 1 || +b > mx)) e.push([kk + k + '.fin', rango, 2]);
+        if (a && b && +a >= 1 && +b <= mx && +b < +a) e.push([kk + k + '.fin', 'El cierre no puede ser antes del inicio.', 2]);
+      } else {
+        if (a && b && b <= a) e.push([kk + k + '.fin', 'El cierre debe ser posterior al inicio.', 2]);
         if (a && S.datos.desde && a.slice(0, 10) < S.datos.desde) e.push([kk + k + '.ini', 'Queda fuera de la vigencia del programa.', 2]);
         if (b && S.datos.hasta && b.slice(0, 10) > S.datos.hasta) e.push([kk + k + '.fin', 'Queda fuera de la vigencia del programa.', 2]);
       }
@@ -758,6 +771,17 @@
       var v = rec ? +b : b;
       if (prev !== null && v < prev) e.push([kk + f[0] + '.fin', 'El cierre de ' + f[1].toLowerCase() + ' no puede ser antes del cierre de ' + prevName.toLowerCase() + '.', 2]);
       else { prev = v; prevName = f[1]; }
+    });
+  }
+  /* Valida las etapas mientras se escribe (sin esperar a «Continuar») */
+  function liveCrono() {
+    document.querySelectorAll('[data-box^="crono."]').forEach(function (b) { if (/\.motivo$/.test(b.dataset.box)) return; b.classList.remove('nwt-input-box--error'); var m = b.querySelector('.pf-err'); if (m) m.remove(); });
+    if (!docsReq()) return;
+    var errs = []; cronoErrors(errs);
+    errs.forEach(function (x) {
+      var box = document.querySelector('[data-box="' + x[0] + '"]'); if (!box || box.querySelector('.pf-err')) return;
+      box.classList.add('nwt-input-box--error');
+      var c = box.querySelector('.nwt-input-box__content'), m = document.createElement('div'); m.className = 'nwt-input-box__message pf-err'; m.innerHTML = '<span>' + esc(x[1]) + '</span>'; c.appendChild(m);
     });
   }
   function showErrors(errs, step) {
@@ -821,7 +845,7 @@
     $('#pfPrev').style.visibility = S.step === 1 ? 'hidden' : 'visible';
     var nx = $('#pfNext .nwt-button__content');
     if (S.step < LAST) nx.innerHTML = 'Continuar' + icon('arrow-right');
-    if (S.step === 2) updateDist();
+    if (S.step === 2) { updateDist(); liveCrono(); }
     if (S.step === LAST) { banner(); issues(); }
     if (!keepScroll) $('#pfScroll').scrollTo({ top: 0, behavior: 'smooth' });
     saveDraft(true);
@@ -860,7 +884,12 @@
     if (k.indexOf('ui.docNuevo') === 0) return;
     var isMoney = /(\.valor|\.unit|\.cantidad)$/.test(k);
     if (isMoney) { var d = digits(t.value); if (e.type === 'change' && k.indexOf('cantidad') < 0) t.value = d ? Number(d).toLocaleString('es-CO') : ''; else if (e.type === 'input') t.value = d && (k.indexOf('cantidad') < 0) ? Number(d).toLocaleString('es-CO') : d; }
+    var mc2 = /^crono\.(carga|revision|asignacion)\.(ini|fin)$/.exec(k);
+    if (mc2 && recOn() && e.type === 'input' && t.value !== '' && !(/^\d+$/.test(t.value) && +t.value >= 1 && +t.value <= cycleDays())) { // fuera del ciclo: no deja marcarlo
+      t.value = S.crono[mc2[1]][mc2[2]] || ''; return;
+    }
     setByKey(k, t.value);
+    if (k.indexOf('crono.') === 0 && !/\.motivo$/.test(k)) liveCrono();
     if (k === 'rubro.n') syncInc();
     if (k.indexOf('cod.') === 0) { var ci0 = incById(k.split('.')[1]), ce = $('#pfCodCount-' + k.split('.')[1]); if (ci0 && ce) ce.textContent = codCountText(ci0); }
     var mc = /^inc\.([^.]+)\.categoria$/.exec(k); if (mc && incById(mc[1])) applyCategoria(incById(mc[1]));
@@ -871,7 +900,7 @@
       var msg = $('#pfCupo-' + mv[1]); if (msg) msg.textContent = cupoText(inc0);
     }
     if (t.dataset.struct && e.type === 'change') { render(true); return; }
-    var box = t.closest('.nwt-input-box'); if (box && box.classList.contains('nwt-input-box--error')) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
+    var box = t.closest('.nwt-input-box'); if (box && box.classList.contains('nwt-input-box--error') && !(k.indexOf('crono.') === 0 && !/\.motivo$/.test(k))) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
     if (k.indexOf('rule.') === 0) updateRules(k.split('.')[1]);
     if (k.indexOf('crono.') === 0 && !/\.motivo$/.test(k)) { var ch = $('#pfCronoChg'); if (ch && e.type === 'change') ch.innerHTML = cronoChgHTML(); banner(); }
     if (S.step === 2) updateDist();
