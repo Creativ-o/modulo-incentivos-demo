@@ -33,6 +33,7 @@
   function catOf(i) { return CATEGORIAS.filter(function (c) { return c.k === i.categoria; })[0] || null; }
   function conValor(i) { var c = catOf(i); return !c || !!c.valor; }
   /* La modalidad se deriva: Diploma / reconocimiento → certificado digital; si el programa es recurrente → fijo recurrente; si no → entrega única, con o sin código según elija el usuario. */
+  function hasCodes(i) { return i.modalidad !== 'certificado' && i.codigos !== false; } // los certificados no llevan código; los demás, según elija el usuario (también en recurrentes)
   function modalidadOf(i) { var c = catOf(i); return c && c.cert ? 'certificado' : (S.rec.on ? 'fijo' : (i.codigos === false ? 'sincodigo' : 'codigo')); }
   function setModalidad(inc) { var m = modalidadOf(inc); if (inc.modalidad !== m) { inc.modalidad = m; inc.foto = true; } }
   function syncModalidades() { S.inc.forEach(function (i) { if (i.categoria) setModalidad(i); }); }
@@ -91,8 +92,8 @@
   var SNAP = null; // foto del programa publicado (modo edición) para detectar versionamiento
 
   function seedEdit() {
-    var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'beca'; i1.modalidad = 'fijo'; i1.tope = 'top'; i1.valor = '200000000'; i1.unit = '1000000'; i1.cantidad = '200';
-    var i2 = newInc(); i2.nombre = 'Beca educativa · Medallistas de plata'; i2.categoria = 'beca'; i2.modalidad = 'fijo'; i2.tope = 'bottom'; i2.unit = '700000'; i2.cantidad = '150'; i2.valor = '105000000';
+    var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'beca'; i1.modalidad = 'fijo'; i1.codigos = false; i1.tope = 'top'; i1.valor = '200000000'; i1.unit = '1000000'; i1.cantidad = '200';
+    var i2 = newInc(); i2.codigos = false; i2.nombre = 'Beca educativa · Medallistas de plata'; i2.categoria = 'beca'; i2.modalidad = 'fijo'; i2.tope = 'bottom'; i2.unit = '700000'; i2.cantidad = '150'; i2.valor = '105000000';
     S.datos = { extra: [], nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', eventos: [EVENTOS[1]], gestores: ['Isa Pabon'], desde: '2026-04-22', hasta: '2026-12-31', justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 } };
     S.pob = { roles: ['Deportista'], otroRol: '', cobertura: ['Nacional'], municipios: [], seleccion: ['plataforma'] };
     S.rec = { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' };
@@ -231,7 +232,7 @@
         '<div class="pf-rec-row"><div class="pf-switch-row">' + toggle(S.rec.on, 'rec-on') + '<span>El programa es <b>recurrente</b> (se entrega en ciclos)</span></div>' +
         (S.rec.on ? sel({ label: 'Periodicidad', req: 1, k: 'rec.frecuencia', val: S.rec.frecuencia, opts: FRECUENCIAS, attrs: ' data-struct="1"' }) : '') + '</div>' +
         (S.rec.on && S.rec.frecuencia === 'otra' ? '<div class="pf-grid">' + tf({ label: 'Cada', req: 1, type: 'number', k: 'rec.frecuenciaN', val: S.rec.frecuenciaN, ph: '2' }) + sel({ label: 'Unidad', k: 'rec.frecuenciaU', val: S.rec.frecuenciaU, opts: ['días', 'semanas', 'meses'] }) + '</div>' : '') +
-        (S.rec.on ? alertBox('Al ser recurrente, el programa <b>siempre pide documentos</b> y todos los tipos de incentivo son <b>fijos recurrentes</b> (sin código).', 'informative')
+        (S.rec.on ? alertBox('Al ser recurrente, el programa <b>siempre pide documentos</b> y los tipos de incentivo se entregan en cada ciclo. Cada tipo elige si lleva códigos.', 'informative')
           : alertBox('Entrega única: el beneficiario recibe el incentivo una vez, con código o como certificado.', 'informative')) +
       '</div>', N()) +
       card('Documentación requerida', 'Documentos que el beneficiario carga. Son los mismos para todo el programa; en el paso 3 eliges a qué tipo aplica cada uno.', '<div class="pf-inc">' + docsHTML() + '</div>', N());
@@ -394,11 +395,11 @@
   function incCard(inc, idx) {
     var m = inc.modalidad, k = 'inc.' + inc.id + '.', cv = conValor(inc), cat = catOf(inc), n = S.inc.length, fijo = m === 'fijo';
     var extra = '';
-    if (fijo || m === 'certificado') extra = '<div class="pf-codes pf-codes--off"><div class="pf-switch-row">' + toggle(false, 'noop') + '<span>El incentivo <b>lleva códigos</b></span></div><p class="pf-hint">' + (fijo ? 'No aplica: el programa es recurrente y estos incentivos no llevan código.' : 'No aplica: los certificados no llevan código.') + '</p></div>';
+    if (m === 'certificado') extra = '<div class="pf-codes pf-codes--off"><div class="pf-switch-row">' + toggle(false, 'noop') + '<span>El incentivo <b>lleva códigos</b></span></div><p class="pf-hint">No aplica: los certificados no llevan código.</p></div>';
     else extra = '<div class="pf-codes"><div class="pf-switch-row">' + toggle(inc.codigos !== false, 'inc-codigos', inc.id) + '<span>El incentivo <b>lleva códigos</b> (cada código es único y equivale a una unidad entregable)</span></div>' +
-      '<p class="pf-hint">' + (m === 'codigo' ? 'Podrás cargarlos en el paso 4; es opcional y no se pueden eliminar si ya registran entregas.' : 'Se entrega sin código: el Operador solo registra la entrega.') + '</p></div>';
+      '<p class="pf-hint">' + (inc.codigos !== false ? 'Podrás cargarlos en el paso 4; es opcional y no se pueden eliminar si ya registran entregas.' : 'Se entrega sin código: el Operador solo registra la entrega.') + '</p></div>';
     var unitL = fijo ? 'Valor unitario por ciclo' : 'Valor unitario', totL = fijo ? 'Valor total por ciclo' : 'Valor total';
-    var cantL = m === 'codigo' ? 'Cantidad / stock de códigos' : (fijo ? 'Cantidad de beneficiarios' : 'Cantidad');
+    var cantL = hasCodes(inc) ? 'Cantidad / stock de códigos' : (fijo ? 'Cantidad de beneficiarios' : 'Cantidad');
     var vals = '';
     if (cv && cat) {
       var u = tf({ label: unitL, k: k + 'unit', val: numTxt(inc.unit), ph: '0', mode: 'numeric', pre: '$' });
@@ -609,7 +610,7 @@
   }
   function incPanel(inc, idx) {
     var cat = catOf(inc), open = isTipoOpen(inc, idx), issues = incIssues(inc).length;
-    var badges = '<span class="pf-row" style="gap:6px;flex-shrink:0">' + (issues ? badge('Incompleto', 'caution') : '') + (cat ? badge(cat.l, 'neutral') : '') + badge({ codigo: 'Con código', sincodigo: 'Sin código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[inc.modalidad], inc.modalidad === 'fijo' ? 'caution' : 'neutral') + '</span>';
+    var badges = '<span class="pf-row" style="gap:6px;flex-shrink:0">' + (issues ? badge('Incompleto', 'caution') : '') + (cat ? badge(cat.l, 'neutral') : '') + badge({ codigo: 'Con código', sincodigo: 'Sin código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[inc.modalidad], inc.modalidad === 'fijo' ? 'caution' : 'neutral') + (inc.modalidad === 'fijo' && hasCodes(inc) ? badge('Con código', 'neutral') : '') + '</span>';
     var body = '<div class="pf-inc"><div ' + (CONDITIONS_LOCKED ? 'inert class="pf-sec pf-readonly"' : 'class="pf-sec"') + '>' +
       '<div class="pf-subsec"><h4 class="pf-sub">Condiciones de elegibilidad</h4><p class="pf-hint">Quién puede recibir este incentivo. Se combinan con Y; si falla una, el sistema <b>bloquea y dice cuál</b>.' + (soloEntidades() ? ' Para entidades (escenarios, instituciones) no aplican los campos de personas, como edad o género.' : '') + '</p>' + heredadasHTML() + groupsHTML(inc) + eventWarn(inc) + '</div>' +
       '<div class="pf-subsec"><h4 class="pf-sub">Documentación</h4>' + docsAplicaHTML(inc) + '</div>' +
@@ -664,7 +665,7 @@
     return (v ? ' · tope ' + money(v) + cic : '') + (u ? ' · ' + money(u) + ' c/u' : '') + (c ? ' → ' + c.toLocaleString('es-CO') + ' entregas' : '');
   }
   function step4() {
-    var cod = S.inc.filter(function (i) { return i.modalidad === 'codigo'; });
+    var cod = S.inc.filter(hasCodes);
     var codHTML = cod.length ? cod.map(function (i) {
       var c = codState(i.id);
       var body = '';
@@ -679,7 +680,7 @@
 
     var d = S.datos, p = S.pob, nada = '<span style="color:var(--naotech-app-color-600);font-weight:400">';
     var total = S.inc.reduce(function (a, i) { return a + (Number(i.valor) || 0); }, 0);
-    var incTxt = S.inc.map(function (i) { return '<div>' + esc(i.nombre || 'Sin nombre') + (catOf(i) ? ' (' + esc(catOf(i).l) + ')' : '') + ' · ' + badge({ codigo: 'Con código', sincodigo: 'Sin código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + esc(incValTxt(i)) + '</div>'; }).join('');
+    var incTxt = S.inc.map(function (i) { return '<div>' + esc(i.nombre || 'Sin nombre') + (catOf(i) ? ' (' + esc(catOf(i).l) + ')' : '') + ' · ' + badge({ codigo: 'Con código', sincodigo: 'Sin código', certificado: 'Certificado', fijo: 'Fijo ' + frecuenciaTxt() }[i.modalidad], i.modalidad === 'fijo' ? 'caution' : 'neutral') + (i.modalidad === 'fijo' && hasCodes(i) ? ' ' + badge('Con código', 'neutral') : '') + esc(incValTxt(i)) + '</div>'; }).join('');
     var rev = card('Resumen del programa', 'Revisa antes de guardar. Puedes volver a cualquier paso.', '<div class="pf-sum"><dl style="margin:0">' +
       kv('Programa', esc(d.nombre) + ' ' + (EDIT ? badge('Activo · V1.0', 'positive') : badge('Configuración', 'caution'))) + kv('Eventos', esc(d.eventos.join(', ') || '—')) + kv('Gestores', esc(d.gestores.join(', ') || '—')) +
       kv('Vigencia', (d.desde ? fmtDate(d.desde) : 'Desde la activación') + ' → ' + (d.hasta ? fmtDate(d.hasta) : 'Sin fecha de fin')) + kv('Roles', p.roles.length ? esc(rolesTxt()) : nada + 'Sin roles definidos</span>') + kv('Cobertura', esc(p.cobertura.join(', ')) + (p.municipios.length ? '<br><span style="font-weight:400">Municipios: ' + esc(p.municipios.map(function (m) { return m.split(' · ')[0]; }).join(', ')) + '</span>' : '')) +
@@ -884,7 +885,7 @@
     'anexo-del': function () { S.datos.anexo = null; saveDraft(true); anexoRedraw(); },
     'rubro-tipos': function (x) { S.rubro.tipos = x; syncInc(); render(true); },
     'seleccion': function (x) { var s = S.pob.seleccion, i = s.indexOf(x); if (i > -1) { if (s.length === 1) return toast('Elige al menos una forma de selección.', 'caution'); s.splice(i, 1); } else s.push(x); render(true); },
-    'rec-on': function () { S.rec.on = !S.rec.on; if (S.rec.on && !S.doc.list.length) S.doc.list = [{ name: 'Documento de identidad', oblig: true }]; syncModalidades(); render(true); },
+    'rec-on': function () { S.rec.on = !S.rec.on; S.inc.forEach(function (i) { i.codigos = !S.rec.on; }); if (S.rec.on && !S.doc.list.length) S.doc.list = [{ name: 'Documento de identidad', oblig: true }]; syncModalidades(); render(true); },
     'inc-codigos': function (x, i) { var n = incById(i); n.codigos = n.codigos === false; setModalidad(n); render(true); },
     'inc-tope': function (x, i) { var n = incById(i); n.tope = x; recalc(n); render(true); },
     'tipo-doc': function (x, id) { var n = incById(id), name = S.doc.list[+x].name, i = n.docOff.indexOf(name); if (i > -1) n.docOff.splice(i, 1); else n.docOff.push(name); render(true); },
