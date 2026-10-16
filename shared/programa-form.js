@@ -67,11 +67,11 @@
   function nextId() { uid += 1; return 'i' + uid; }
   function newCrono() { return { gracia: '3', primer: '', carga: { ini: '', fin: '' }, revision: { ini: '', fin: '' }, asignacion: { ini: '', fin: '' }, motivo: '' }; }
   /* tope: 'sin' = solo valor unitario · 'bottom' = unitario × cantidad = total · 'top' = tope total; la cantidad sale del unitario. Todo opcional. */
-  function newInc() { return { id: nextId(), nombre: '', categoria: '', modalidad: 'codigo', tope: 'bottom', unit: '', valor: '', cantidad: '', foto: true, plantilla: 'Diploma institucional', grupos: [{ op: 'AND', rows: [] }], docOff: [] }; }
+  function newInc() { return { id: nextId(), nombre: '', categoria: '', modalidad: 'codigo', tope: 'bottom', unit: '', valor: '', cantidad: '', foto: true, grupos: [{ op: 'AND', rows: [] }], docOff: [] }; }
 
   var S = {
     step: 1, max: 1, done: false,
-    datos: { nombre: '', desc: '', evento: '', gestores: [], desde: '', hasta: '', activacion: '', justificacion: '', anexo: null },
+    datos: { nombre: '', desc: '', evento: '', gestores: [], desde: '', hasta: '', justificacion: '', anexo: null },
     pob: { roles: [], cobertura: ['Nacional'], seleccion: 'plataforma' },
     rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
     doc: { req: false, list: [] },
@@ -81,7 +81,7 @@
     codigos: {},
     activar: 'config'
   };
-  var LAST = 3;
+  var LAST = 4;
   var LOG_KEY = 'inc-crono-log-v1';
   var PERSONAS = { admin: ['Danna Arrieta', 'Gestor de incentivos'], gestor: ['Danna Arrieta', 'Gestor de incentivos'], programa: ['Isa Pabon', 'Gestor de programa'], operador: ['Jorge Guzman', 'Operador'] };
   var FASES = [['carga', 'Carga de documentos', 'El beneficiario sube sus soportes'], ['revision', 'Revisión documental', 'El Gestor de programa aprueba o rechaza'], ['asignacion', 'Asignación', 'El Operador entrega el beneficio']];
@@ -91,7 +91,7 @@
   function seedEdit() {
     var i1 = newInc(); i1.nombre = 'Beca educativa · Medallistas de oro'; i1.categoria = 'beca'; i1.modalidad = 'fijo'; i1.tope = 'top'; i1.valor = '200000000'; i1.unit = '1000000'; i1.cantidad = '200';
     var i2 = newInc(); i2.nombre = 'Beca educativa · Medallistas de plata'; i2.categoria = 'beca'; i2.modalidad = 'fijo'; i2.tope = 'bottom'; i2.unit = '700000'; i2.cantidad = '150'; i2.valor = '105000000';
-    S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], gestores: ['Isa Pabon'], desde: '2026-04-22', hasta: '2026-12-31', activacion: '2026-04-22', justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 } };
+    S.datos = { nombre: 'Becas deportivas medallistas 2026', desc: 'Beca dirigida a deportistas medallistas de los Juegos Nacionales para apoyar su formación profesional.', evento: EVENTOS[1], gestores: ['Isa Pabon'], desde: '2026-04-22', hasta: '2026-12-31', justificacion: 'Resolución 0123 de 2026 del Ministerio del Deporte, que crea el programa de becas para deportistas medallistas de los Juegos Nacionales.', anexo: { name: 'Resolucion-0123-2026.pdf', size: 482000 } };
     S.pob = { roles: ['Deportista'], cobertura: ['Nacional'], seleccion: 'plataforma' };
     S.rec = { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' };
     S.doc = { req: true, list: [{ name: 'Documento de identidad', oblig: true }, { name: 'Certificado de resultado', oblig: true }, { name: 'Certificación bancaria', oblig: true }] };
@@ -189,11 +189,10 @@
 
   /* ── Paso 1 · Datos generales del programa ─────────────────── */
   function step1() {
-    var d = S.datos, p = S.pob, n = 0, lock = EDIT && role === 'programa';
+    var d = S.datos, n = 0, lock = EDIT && role === 'programa';
     function N() { n += 1; return { n: n }; }
     function wrap(h) { return lock ? '<div inert class="pf-sec pf-readonly">' + h + '</div>' : h; }
-    var lockMsg = lock ? alertBox('Tu rol <b>solo visualiza</b> los datos del programa. Puedes ajustar las <b>fechas y etapas</b>; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
-
+    var lockMsg = lock ? alertBox('Tu rol <b>solo visualiza</b> los datos del programa. Puedes ajustar las <b>fechas y etapas</b> en el paso 2; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
     var generales =
       card('Información general', '', '<div class="pf-grid">' +
         '<div class="pf-span2">' + tf({ label: 'Nombre del programa', req: 1, k: 'datos.nombre', val: d.nombre, ph: 'Ej. Becas deportivas medallistas 2026', hint: 'Aparecerá en listados, reportes y notificaciones.' }) + '</div>' +
@@ -205,18 +204,25 @@
         '<div class="pf-row">' + GESTORES.map(function (g) { return tag(g, d.gestores.indexOf(g) > -1, 'gestor-t', null, g); }).join('') + '</div>' +
         '<div class="nwt-input-box__message"><span>Puedes elegir más de uno.</span></div></div>' +
         alertBox('Los gestores <b>solo leen</b> las condiciones; ajustan las fechas y etapas.', 'informative') + '</div>', N()) +
-      card('Vigencia y activación', 'Al cumplirse la fecha de fin el programa se inactiva solo.', '<div class="pf-grid">' +
+      card('Vigencia', 'Al cumplirse la fecha de fin el programa se inactiva solo.', '<div class="pf-grid">' +
         tf({ label: 'Vigencia desde', req: 1, type: 'date', k: 'datos.desde', val: d.desde }) +
         tf({ label: 'Vigencia hasta', req: 1, type: 'date', k: 'datos.hasta', val: d.hasta }) +
-        tf({ label: 'Fecha de activación', type: 'date', k: 'datos.activacion', val: d.activacion, hint: 'Opcional. Si la dejas vacía, activas manualmente en el paso final.' }) +
         '<div class="pf-ro"><div><span class="pf-label">Estado inicial</span>' + badge('Configuración', 'caution') + '</div></div>' +
       '</div>', N()) +
       card('Soporte del programa', 'Acto administrativo que respalda el programa. Es opcional.', '<div class="pf-inc">' +
         ta({ label: 'Justificación / acto administrativo', k: 'datos.justificacion', val: d.justificacion, rows: 3, ph: 'Resolución / acto administrativo que soporta el programa...' }) +
         '<div id="pfAnexo">' + anexoInner() + '</div></div>', N());
+    return '<div class="pf-sec">' + head('Datos generales del programa', 'Identidad del programa. El estado inicial es <b>Configuración</b>: solo opera (postulaciones y asignaciones) cuando esté <b>Activo</b>.') + lockMsg + wrap(generales) + '</div>';
+  }
 
+  /* ── Paso 2 · Información específica del programa ──────────── */
+  function step2() {
+    var p = S.pob, n = 0, lock = EDIT && role === 'programa';
+    function N() { n += 1; return { n: n }; }
+    function wrap(h) { return lock ? '<div inert class="pf-sec pf-readonly">' + h + '</div>' : h; }
+    var lockMsg = lock ? alertBox('Tu rol <b>solo visualiza</b> esta información. Puedes ajustar las <b>fechas y etapas</b>; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
     var especificas =
-      card('Población a la que apunta', 'A quién va dirigido el programa. Las condiciones finas de cada incentivo se definen en el paso 2.', '<div class="pf-inc">' +
+      card('Población a la que apunta', 'A quién va dirigido el programa. Las condiciones finas de cada incentivo se definen en el paso 3.', '<div class="pf-inc">' +
         '<div><span class="pf-label">Roles</span><div class="pf-row">' + ROLES.map(function (r) { return tag(r, p.roles.indexOf(r) > -1, 'rol-t', null, r); }).join('') + '</div><p class="pf-hint">Puedes elegir varios. Es el público al que apunta el programa.</p></div>' +
         '<div class="nwt-dropdown pf-ms" id="pfCob" nwt-size="medium">' + cobInner() + '</div>' +
         radios({ label: 'Tipo de selección de beneficiarios', act: 'seleccion', value: p.seleccion, dir: 'horizontal', options: [
@@ -231,14 +237,11 @@
           alertBox('Todos los tipos de incentivo serán <b>fijos recurrentes</b>: sin código y con <b>documentación obligatoria</b>.', 'informative')
           : alertBox('Entrega única: el beneficiario recibe el incentivo una vez, con código o como certificado.', 'informative')) +
       '</div>', N()) +
-      card('Documentación requerida', 'Documentos que el beneficiario carga. Son los mismos para todo el programa; en el paso 2 eliges a qué tipo aplica cada uno.', '<div class="pf-inc">' + docsHTML() + '</div>', N());
-
+      card('Documentación requerida', 'Documentos que el beneficiario carga. Son los mismos para todo el programa; en el paso 3 eliges a qué tipo aplica cada uno.', '<div class="pf-inc">' + docsHTML() + '</div>', N());
     var crono = docsReq() ? card(recOn() ? 'Etapas de cada ciclo' : 'Fechas de cargue y revisión', 'Fechas únicas para todo el programa: no cambian por tipo de incentivo.', cronoBlock(), N()) : '';
     var tipos = card('Tipos de incentivo', 'Cuántos tipos tendrá el programa y cómo se valora cada uno. Todo es opcional.', '<div class="pf-inc">' + tiposHead() + '<div id="pfIncs" class="pf-sec">' + S.inc.map(incCard).join('') + '</div><div id="pfDist"></div></div>', N());
-
-    return '<div class="pf-sec">' + head('Datos generales del programa', 'Identidad, población a la que apunta, recurrencia, documentos y tipos de incentivo. El estado inicial es <b>Configuración</b>: solo opera (postulaciones y asignaciones) cuando esté <b>Activo</b>.') + lockMsg +
-      wrap(generales + '<div class="pf-block-label">Información específica del programa</div>' + especificas) +
-      crono + wrap(tipos) + (EDIT ? logCard(n) : '') + '</div>';
+    return '<div class="pf-sec">' + head('Información específica del programa', 'A quién apunta, si es recurrente, qué documentos pide y qué tipos de incentivo entrega.') + lockMsg +
+      wrap(especificas) + crono + wrap(tipos) + (EDIT ? logCard(n) : '') + '</div>';
   }
   function tiposHead() {
     var r = S.rubro, varios = r.tipos !== 'uno', n = tiposObjetivo(), nOpts = []; for (var i = 2; i <= 10; i++) nOpts.push(String(i));
@@ -296,7 +299,7 @@
     }).join('') || '<span class="pf-ms__ph">Selecciona Nacional o uno o varios departamentos</span>';
     var control = '<div class="nwt-dropdown__content pf-ms__content" role="combobox" tabindex="0" aria-expanded="' + cobOpen + '" data-act="cob-toggle"><div class="pf-ms__chips">' + chips + '</div><div class="nwt-dropdown__chevron pf-ms__chev' + (cobOpen ? ' nwt-dropdown__chevron--open' : '') + '">' + icon('chevron-down') + '</div></div>';
     var list = cobOpen ? '<div class="nwt-dropdown__list pf-ms__list"><div class="pf-ms__search">' + icon('search') + '<input class="pf-ms__q" type="text" autocomplete="off" placeholder="Buscar departamento" value="' + esc(cobQuery) + '" aria-label="Buscar departamento"/></div><ul class="nwt-dropdown__options" id="pfCobOpts">' + cobOptsHTML() + '</ul></div>' : '';
-    return inputBox('Cobertura territorial', false, control, '«Nacional» incluye todos los departamentos. Quítalo para elegir departamentos específicos.', 'pob.cobertura') + list;
+    return inputBox('Cobertura territorial', false, control, '', 'pob.cobertura') + list;
   }
   function cobRedraw() {
     var el = $('#pfCob'); if (!el) return;
@@ -352,8 +355,7 @@
     var why = !cat ? '' : (m === 'certificado' ? 'Según la categoría' : m === 'fijo' ? 'Porque el programa es recurrente' : 'Cada código es único y equivale a una unidad entregable');
     var modo = cat ? '<div><span class="pf-label">Modalidad</span><div class="pf-row">' + badge(MOD_TXT[m], fijo ? 'caution' : 'neutral') + '<span class="pf-hint">' + why + '</span></div></div>' : '<p class="pf-hint">Selecciona la categoría: ella define si lleva valor y la modalidad de entrega.</p>';
     var extra = '';
-    if (m === 'certificado') extra = '<div class="pf-grid">' + sel({ label: 'Plantilla institucional del certificado', k: k + 'plantilla', val: inc.plantilla, opts: ['Diploma institucional', 'Reconocimiento al mérito deportivo'] }) + '<div>' + alertBox('Incluye firma digital y <b>código QR</b> de verificación.', 'caution', 'attention') + '</div></div>';
-    else if (m === 'codigo') extra = alertBox('Los códigos se cargan en el paso 3 o después, y no se pueden eliminar si ya registran entregas.', 'informative');
+    if (m === 'codigo') extra = alertBox('Los códigos se cargan en el paso 4 o después, y no se pueden eliminar si ya registran entregas.', 'informative');
     var unitL = fijo ? 'Valor unitario por ciclo' : 'Valor unitario', totL = fijo ? 'Valor total por ciclo' : 'Valor total';
     var cantL = m === 'codigo' ? 'Cantidad / stock de códigos' : (fijo ? 'Cantidad de beneficiarios' : 'Cantidad');
     var vals = '';
@@ -536,7 +538,7 @@
   }
   function docsAplicaHTML(inc) {
     if (!docsReq()) return alertBox('El programa no pide documentos: este tipo sigue el <b>flujo directo</b>.', 'informative');
-    return '<p class="pf-hint">Marca los documentos que exige este tipo. Las fechas de cargue y revisión son las del paso 1 y no cambian por tipo.</p><div class="pf-sec" style="gap:8px">' + S.doc.list.map(function (x, i) {
+    return '<p class="pf-hint">Marca los documentos que exige este tipo. Las fechas de cargue y revisión son las del paso 2 y no cambian por tipo.</p><div class="pf-sec" style="gap:8px">' + S.doc.list.map(function (x, i) {
       return '<div class="pf-doc"><span class="pf-doc__name">' + esc(x.name) + (x.oblig ? '' : ' <span class="pf-hint">(opcional)</span>') + '</span>' + checkbox('Aplica a este tipo', inc.docOff.indexOf(x.name) < 0, 'tipo-doc', inc.id, i) + '</div>';
     }).join('') + '</div>';
   }
@@ -555,8 +557,8 @@
       '</div>' + (open ? '' : '<p class="pf-card-sub pf-type__sum">' + esc(incSummary(inc)) + '</p>') + '</div>' +
       (open ? '<div class="nwt-card__content">' + body + '</div>' : '') + '<div class="nwt-card__footer"></div></div></div>';
   }
-  function step2() {
-    var lockMsg = CONDITIONS_LOCKED ? alertBox('Tu rol <b>solo visualiza</b> las condiciones y los documentos. Puedes ajustar las <b>fechas y etapas</b> en el paso 1; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
+  function step3() {
+    var lockMsg = CONDITIONS_LOCKED ? alertBox('Tu rol <b>solo visualiza</b> las condiciones y los documentos. Puedes ajustar las <b>fechas y etapas</b> en el paso 2; para lo demás, solicítalo al Gestor de incentivos.', 'caution', 'padlock-close') : '';
     var man = S.pob.seleccion === 'manual' ? alertBox('Con <b>registro manual</b> las condiciones son opcionales: el Gestor de programa habilita a las personas que la plataforma no puede identificar.', 'informative') : '';
     return '<div class="pf-sec">' + head('Condiciones de elegibilidad', 'Define condiciones por cada tipo de incentivo. Dentro de un grupo todas las condiciones se cumplen simultáneamente (Y). Agrega otro grupo si aceptas reglas alternativas (O entre grupos).') + lockMsg + man +
       (S.inc.length >= 3 ? '<div class="pf-row" style="justify-content:flex-end">' + btn('Abrir todos', 'tipo-all', { v: 'mute', d: 'open', i: 'chevron-down' }) + btn('Colapsar', 'tipo-all', { v: 'mute', d: 'close', i: 'chevron-up' }) + '</div>' : '') +
@@ -594,7 +596,7 @@
     if (i.tope === 'bottom') return (u ? ' · ' + money(u) + ' c/u' : '') + (c ? ' × ' + c.toLocaleString('es-CO') : '') + (v ? ' = ' + money(v) + cic : '');
     return (v ? ' · tope ' + money(v) + cic : '') + (u ? ' · ' + money(u) + ' c/u' : '') + (c ? ' → ' + c.toLocaleString('es-CO') + ' entregas' : '');
   }
-  function step3() {
+  function step4() {
     var cod = S.inc.filter(function (i) { return i.modalidad === 'codigo'; });
     var codHTML = cod.length ? cod.map(function (i) {
       var c = codState(i.id);
@@ -628,7 +630,7 @@
       : alertBox('Sin cambios de fondo: se conserva la <b>versión V1.0</b>. Solo se registra la edición en la bitácora de auditoría.', 'positive', 'positive'), { n: 3 })
     : card('Activación', 'El programa solo opera cuando está <b>Activo</b>. Al activarlo queda en <b>versión V1.0</b>.', radios({ act: 'activar', value: S.activar, options: [
       { v: 'config', l: 'Guardar en Configuración', s: 'Queda como borrador operativo. Puedes terminar de parametrizar y activar después.' },
-      { v: 'activo', l: d.activacion ? 'Activar el ' + fmtDate(d.activacion) : 'Activar ahora', s: 'Habilita postulaciones y asignaciones. Se registra auditoría con usuario, fecha, hora e IP.' }
+      { v: 'activo', l: 'Activar ahora', s: 'Habilita postulaciones y asignaciones. Se registra auditoría con usuario, fecha, hora e IP.' }
     ] }), { n: 3 });
     return '<div class="pf-sec">' + head('Códigos y activación', 'Carga el inventario de códigos (opcional, solo incentivos con código) y revisa el programa completo.') +
       card('Inventario de códigos', 'Aplica solo a incentivos de entrega única con código. Es opcional: puedes cargarlos después.', '<div class="pf-inc">' + codHTML + '</div>', { n: 1 }) + rev + act + '<div id="pfIssues"></div></div>';
@@ -643,41 +645,42 @@
       if (!d.desde) e.push(['datos.desde', 'Indica la fecha de inicio.', 1]);
       if (!d.hasta) e.push(['datos.hasta', 'Indica la fecha de fin.', 1]);
       if (d.desde && d.hasta && d.hasta < d.desde) e.push(['datos.hasta', 'La fecha de fin debe ser posterior al inicio.', 1]);
-      if (d.activacion && d.desde && d.activacion < d.desde) e.push(['datos.activacion', 'La activación no puede ser anterior a la vigencia.', 1]);
-      if (!S.pob.cobertura.length) e.push(['pob.cobertura', 'Selecciona «Nacional» o al menos un departamento.', 1]);
-      if (recOn() && S.rec.frecuencia === 'otra' && !Number(S.rec.frecuenciaN)) e.push(['rec.frecuenciaN', 'Indica cada cuánto se repite.', 1]);
-      if (docsReq() && !S.doc.list.some(function (x) { return x.oblig; })) e.push(['', 'Agrega al menos un documento obligatorio.', 1]);
+    }
+    if (step >= 2) {
+      if (!S.pob.cobertura.length) e.push(['pob.cobertura', 'Selecciona «Nacional» o al menos un departamento.', 2]);
+      if (recOn() && S.rec.frecuencia === 'otra' && !Number(S.rec.frecuenciaN)) e.push(['rec.frecuenciaN', 'Indica cada cuánto se repite.', 2]);
+      if (docsReq() && !S.doc.list.some(function (x) { return x.oblig; })) e.push(['', 'Agrega al menos un documento obligatorio.', 2]);
       if (docsReq()) cronoErrors(e);
-      if (EDIT && cronoChanges().length && !S.crono.motivo.trim()) e.push(['crono.motivo', 'Indica el motivo del cambio de etapas.', 1]);
+      if (EDIT && cronoChanges().length && !S.crono.motivo.trim()) e.push(['crono.motivo', 'Indica el motivo del cambio de etapas.', 2]);
       S.inc.forEach(function (i) {
-        if (!i.nombre.trim()) e.push(['inc.' + i.id + '.nombre', 'Nombra el incentivo.', 1]);
-        if (!i.categoria) e.push(['inc.' + i.id + '.categoria', 'Selecciona la categoría.', 1]);
+        if (!i.nombre.trim()) e.push(['inc.' + i.id + '.nombre', 'Nombra el incentivo.', 2]);
+        if (!i.categoria) e.push(['inc.' + i.id + '.categoria', 'Selecciona la categoría.', 2]);
       });
     }
-    if (step >= 2) S.inc.forEach(function (inc) {
+    if (step >= 3) S.inc.forEach(function (inc) {
       var nm = '«' + (inc.nombre || 'tipo sin nombre') + '»';
-      inc.grupos.forEach(function (g) { g.rows.forEach(function (r) { if (r.f && !ruleNat(r)) e.push(['', 'Condición incompleta en ' + nm + ': ' + FIELDS[r.f].label + '.', 2]); }); });
+      inc.grupos.forEach(function (g) { g.rows.forEach(function (r) { if (r.f && !ruleNat(r)) e.push(['', 'Condición incompleta en ' + nm + ': ' + FIELDS[r.f].label + '.', 3]); }); });
     });
     return e;
   }
   function cronoErrors(e) {
     var c = S.crono, rec = recOn(), prev = null, prevName = '', kk = 'crono.';
-    if (rec && !c.primer) e.push([kk + 'primer', 'Indica cuándo inicia el primer ciclo.', 1]);
+    if (rec && !c.primer) e.push([kk + 'primer', 'Indica cuándo inicia el primer ciclo.', 2]);
     FASES.forEach(function (f) {
       var k = f[0], a = c[k].ini, b = c[k].fin;
-      if (!a) e.push([kk + k + '.ini', 'Falta el inicio.', 1]);
-      if (!b) e.push([kk + k + '.fin', 'Falta el cierre.', 1]);
+      if (!a) e.push([kk + k + '.ini', 'Falta el inicio.', 2]);
+      if (!b) e.push([kk + k + '.fin', 'Falta el cierre.', 2]);
       if (a && b) {
         if (rec) {
-          if (+a < 1 || +b > 31) e.push([kk + k + '.fin', 'Usa días entre 1 y 31.', 1]);
-          else if (+b < +a) e.push([kk + k + '.fin', 'El cierre no puede ser antes del inicio.', 1]);
-          else if (prev != null && +a < prev) e.push([kk + k + '.ini', f[1] + ' no puede empezar antes de que cierre ' + prevName + ' (día ' + prev + ').', 1]);
+          if (+a < 1 || +b > 31) e.push([kk + k + '.fin', 'Usa días entre 1 y 31.', 2]);
+          else if (+b < +a) e.push([kk + k + '.fin', 'El cierre no puede ser antes del inicio.', 2]);
+          else if (prev != null && +a < prev) e.push([kk + k + '.ini', f[1] + ' no puede empezar antes de que cierre ' + prevName + ' (día ' + prev + ').', 2]);
           if (!(+b < +a)) { prev = +b; prevName = f[1]; }
         } else {
-          if (b <= a) e.push([kk + k + '.fin', 'El cierre debe ser posterior al inicio.', 1]);
-          else if (prev && a < prev) e.push([kk + k + '.ini', f[1] + ' no puede empezar antes de que cierre ' + prevName + '.', 1]);
-          if (S.datos.desde && a.slice(0, 10) < S.datos.desde) e.push([kk + k + '.ini', 'Queda fuera de la vigencia del programa.', 1]);
-          if (S.datos.hasta && b.slice(0, 10) > S.datos.hasta) e.push([kk + k + '.fin', 'Queda fuera de la vigencia del programa.', 1]);
+          if (b <= a) e.push([kk + k + '.fin', 'El cierre debe ser posterior al inicio.', 2]);
+          else if (prev && a < prev) e.push([kk + k + '.ini', f[1] + ' no puede empezar antes de que cierre ' + prevName + '.', 2]);
+          if (S.datos.desde && a.slice(0, 10) < S.datos.desde) e.push([kk + k + '.ini', 'Queda fuera de la vigencia del programa.', 2]);
+          if (S.datos.hasta && b.slice(0, 10) > S.datos.hasta) e.push([kk + k + '.fin', 'Queda fuera de la vigencia del programa.', 2]);
           if (b > a) { prev = b; prevName = f[1]; }
         }
       }
@@ -728,7 +731,7 @@
   }
 
   /* ── Render ─────────────────────────────────────────────────── */
-  var STEPS = ['Datos generales', 'Condiciones', 'Códigos y activación'];
+  var STEPS = ['Datos generales', 'Información específica', 'Condiciones', 'Códigos y activación'];
   function renderStepper() {
     $('#pfStepper').innerHTML = STEPS.map(function (l, i) {
       var n = i + 1, act = S.step === n, dn = S.step > n;
@@ -737,20 +740,20 @@
   }
   function render(keepScroll) {
     cobOpen = false;
-    var html = [step1, step2, step3][S.step - 1]();
+    var html = [step1, step2, step3, step4][S.step - 1]();
     $('#pfStep').innerHTML = html;
     renderStepper(); banner();
     $('#pfPrev').style.visibility = S.step === 1 ? 'hidden' : 'visible';
     var nx = $('#pfNext .nwt-button__content');
     if (S.step < LAST) nx.innerHTML = 'Continuar' + icon('arrow-right');
-    if (S.step === 1) updateDist();
+    if (S.step === 2) updateDist();
     if (S.step === LAST) { banner(); issues(); }
     if (!keepScroll) $('#pfScroll').scrollTo({ top: 0, behavior: 'smooth' });
     saveDraft(true);
   }
   function issues() {
     var host = $('#pfIssues'); if (!host) return;
-    var e = validate(2);
+    var e = validate(3);
     host.innerHTML = e.length ? alertBox('Faltan datos para guardar: <b>' + e.map(function (x) { return esc(x[1]); }).join(' · ') + '</b>', 'negative', 'attention') : alertBox('Todo listo: el programa tiene los datos mínimos para guardarse.', 'positive', 'positive');
   }
   function updateRules(incId) {
@@ -795,7 +798,7 @@
     var box = t.closest('.nwt-input-box'); if (box && box.classList.contains('nwt-input-box--error')) { box.classList.remove('nwt-input-box--error'); var m = box.querySelector('.pf-err'); if (m) m.remove(); }
     if (k.indexOf('rule.') === 0) updateRules(k.split('.')[1]);
     if (k.indexOf('crono.') === 0 && !/\.motivo$/.test(k)) { var ch = $('#pfCronoChg'); if (ch && e.type === 'change') ch.innerHTML = cronoChgHTML(); banner(); }
-    if (S.step === 1) updateDist();
+    if (S.step === 2) updateDist();
     if (EDIT) banner();
     refreshDraftBtn();
   }
@@ -861,7 +864,7 @@
   function next() {
     if (S.done) return;
     var errs = validate(S.step);
-    if (S.step === 2 && errs.some(function (x) { return x[2] === 2; })) { // abre los tipos plegados que tengan algo pendiente
+    if (S.step === 3 && errs.some(function (x) { return x[2] === 3; })) { // abre los tipos plegados que tengan algo pendiente
       var opened = false;
       S.inc.forEach(function (inc, i) { if (incIssues(inc).length && !isTipoOpen(inc, i)) { tipoOpen[inc.id] = true; opened = true; } });
       if (opened) render(true);
@@ -872,7 +875,7 @@
       var b = $('#pfNext'); b.classList.remove('pf-shake'); void b.offsetWidth; return;
     }
     if (S.step < LAST) { go(S.step + 1); return; }
-    var all = validate(2);
+    var all = validate(3);
     if (all.length) { toast('Completa los datos faltantes antes de guardar.', 'negative'); return; }
     if (!EDIT && !CAN_EDIT_PROGRAM) { toast('Tu rol no puede crear programas.', 'caution'); return; }
     finish();
