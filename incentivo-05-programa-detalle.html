@@ -638,6 +638,15 @@
     display:flex;gap:10px;justify-content:flex-end;align-items:center;
   }
 
+  /* Versiones */
+  .ver-pill{display:inline-flex;align-items:center;padding:0 8px;height:18px;border-radius:999px;background:#d74009;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.02em}
+  .ver-sub{margin:-4px 0 12px;font-size:13px;color:#646587}
+  .ver-table td{vertical-align:middle}
+  .ver-table .ver-v{font-weight:700}
+  .ver-table .ver-who small,.ver-table .ver-when small{display:block;font-size:11.5px;color:#646587}
+  .ver-note{margin-top:12px;padding:12px 16px;border-radius:14px;font-size:13.5px;line-height:1.5}
+  .ver-note--warn{background:#fdecc8;color:#282834}
+  .ver-note--info{background:#d3f1fd;color:#282834}
   /* Cupo de códigos y reversión desde el perfil */
   .cod-revert-icon{padding:0 8px}
   .cupo-wrap{display:inline-flex}
@@ -963,6 +972,7 @@
               <span class="naowee-badge__dot"></span>
               <span id="hdBadgeText">—</span>
             </span>
+            <span class="ver-pill" id="hdVer" hidden></span>
           </div>
           <h1 class="detail-head__title" id="hdTitle">—</h1>
           <div class="detail-head__meta" id="hdMeta"></div>
@@ -1015,6 +1025,7 @@
             <button type="button" class="naowee-tab" data-tab="codigos" role="tab" onclick="switchTab('codigos', this)">Códigos <span class="naowee-tab__count" id="tabCodCount">—</span></button>
             <button type="button" class="naowee-tab" data-tab="asignaciones" role="tab" onclick="switchTab('asignaciones', this)">Asignaciones <span class="naowee-tab__count" id="tabAsigCount">—</span></button>
             <button type="button" class="naowee-tab" data-tab="historial" role="tab" onclick="switchTab('historial', this)">Historial</button>
+            <button type="button" class="naowee-tab" data-tab="versiones" role="tab" onclick="switchTab('versiones', this)">Versiones <span class="naowee-tab__count" id="tabVerCount">—</span></button>
             <span class="naowee-tabs__indicator"></span>
           </div>
         </div>
@@ -1216,6 +1227,19 @@
           </div>
 
           <!-- Tab: Historial -->
+          <!-- Tab: Versiones -->
+          <div class="tab-pane" data-pane="versiones" hidden>
+            <div class="section">
+              <div class="section-label">Versiones del programa</div>
+              <p class="ver-sub">Un cambio de fondo crea una versión nueva. Los ciclos ya ejecutados no se tocan.</p>
+              <table class="cg-table ver-table" id="verTable">
+                <thead><tr><th>Versión</th><th>Estado</th><th>Qué cambió</th><th>Quién</th><th>Fecha</th></tr></thead>
+                <tbody id="verBody"></tbody>
+              </table>
+              <div id="verAlerts"></div>
+            </div>
+          </div>
+
           <div class="tab-pane" data-pane="historial" hidden>
             <div class="section">
               <div class="section-label">Historial de cambios del programa</div>
@@ -1352,6 +1376,25 @@ function renderCiclo(p){
 }
 
 let HAS_CODES = true; // el programa lleva códigos solo si algún tipo de incentivo lo tiene activado
+/* Versiones: tabla de versiones del programa (la vigente arriba) y avisos */
+function renderVersiones(p){
+  const base = [{ v: p.version || 'V1.0', estado: 'vigente', cambio: 'Versión inicial', quien: (window.getProgramConfig(p).gestores[0] || 'Danna Arrieta'), rol: 'Gestor de incentivos', fecha: p.from && p.from !== 'Desde la activación' ? p.from : '' }];
+  const vs = (p.versions && p.versions.length) ? p.versions : base;
+  const cur = vs[0];
+  const pill = document.getElementById('hdVer');
+  if(pill){ pill.textContent = cur.v; pill.hidden = false; }
+  document.getElementById('tabVerCount').textContent = vs.length;
+  document.getElementById('verBody').innerHTML = vs.map((x, i) => {
+    const st = i === 0 ? '<span class="naowee-badge naowee-badge--positive naowee-badge--quiet naowee-badge--small">Vigente</span>' : '<span class="naowee-badge naowee-badge--neutral naowee-badge--quiet naowee-badge--small">Histórica</span>';
+    const f = String(x.fecha || '').split(' · ');
+    return `<tr><td class="ver-v">${x.v}</td><td>${st}</td><td>${x.cambio}</td><td class="ver-who">${x.quien}${x.rol ? `<small>${x.rol}</small>` : ''}</td><td class="ver-when">${f[0] || '—'}${f[1] ? `<small>${f[1]}</small>` : ''}</td></tr>`;
+  }).join('');
+  const n = (p.codes && p.codes.asig) || 0;
+  document.getElementById('verAlerts').innerHTML =
+    (cur.docs ? `<div class="ver-note ver-note--warn"><strong>${cur.v} pide un documento nuevo.</strong> ${n ? n + ' beneficiarios con documentación aprobada pasan' : 'Los beneficiarios con documentación aprobada pasan'} a «Pendiente de documentación (${cur.v})» y deben cargarlo antes del siguiente ciclo.</div>` : '') +
+    '<div class="ver-note ver-note--info">Crean versión: condicionales, frecuencia, documentos y montos. Extender la fecha de fin o reactivar no crea versión.</div>';
+}
+
 function hydrateProgram(){
   const params = new URLSearchParams(location.search);
   const id = params.get('id') || (window.PROGRAMS_DATA && window.PROGRAMS_DATA[0]?.id);
@@ -1491,6 +1534,7 @@ function hydrateProgram(){
   document.getElementById('condPreviewBody').innerHTML = condBodyHTML;
 
   renderCiclo(p);
+  renderVersiones(p);
 
   // Modal cargar codigos — program name
   const ccName = document.getElementById('ccProgramName');

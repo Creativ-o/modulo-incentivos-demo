@@ -894,6 +894,7 @@
       if (JSON.stringify([i.grupos, i.pobOff]) !== JSON.stringify([s.grupos, s.pobOff])) ch.push('Condicionales de elegibilidad (' + nm + ')');
       if (i.modalidad !== s.modalidad || JSON.stringify(i.rec) !== JSON.stringify(s.rec)) ch.push('Modalidad / recurrencia (' + nm + ')');
       if (JSON.stringify(i.docOff) !== JSON.stringify(s.docOff)) ch.push('Documentos requeridos (' + nm + ')');
+      if (JSON.stringify([i.tope, i.unit, i.valor, i.cantidad]) !== JSON.stringify([s.tope, s.unit, s.valor, s.cantidad])) ch.push('Montos (' + nm + ')');
     });
     return ch;
   }
@@ -1104,7 +1105,14 @@
       rec: clone(S.rec), doc: clone(S.doc), crono: clone(S.crono), activacion: status === 'active' ? ((existing && existing.config && existing.config.activacion) || new Date().toISOString().slice(0, 10)) : '',
       inc: S.inc.map(function (i) { return { categoria: i.categoria, tope: i.tope, unit: Number(i.unit) || 0, valor: Number(i.valor) || 0, cantidad: Number(i.cantidad) || 0, codigos: hasCodes(i), grupos: clone(i.grupos), docOff: clone(i.docOff), rec: clone(i.rec), pobOff: clone(i.pobOff) }; }) };
     var ver = existing ? (EDIT && versionChanges().length ? NEXT_VER : CUR_VER) : 'V1.0';
-    return { id: existing ? existing.id : window.nextProgramId(), name: d.nombre.trim() || 'Programa sin nombre', shortDesc: (d.desc || '').slice(0, 80) || cov, longDesc: d.desc || '', iconBg: ico[0], iconColor: ico[1], status: status,
+    var P = PERSONAS[role] || PERSONAS.admin, now = new Date(), pad2 = function (n) { return String(n).padStart(2, '0'); };
+    var stamp = pad2(now.getDate()) + ' ' + MESES[now.getMonth()] + ' ' + now.getFullYear() + ' · ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+    var versions = (existing && existing.versions) ? existing.versions.slice() : [{ v: CUR_VER || 'V1.0', cambio: existing ? 'Versión inicial' : 'Versión inicial', quien: P[0], rol: P[1], fecha: stamp }];
+    if (existing && EDIT && versionChanges().length) {
+      var chs = versionChanges();
+      versions.unshift({ v: NEXT_VER, cambio: chs.join(' · '), quien: P[0], rol: P[1], fecha: stamp, docs: chs.some(function (x) { return /Documentos/.test(x); }) });
+    }
+    return { versions: versions, id: existing ? existing.id : window.nextProgramId(), name: d.nombre.trim() || 'Programa sin nombre', shortDesc: (d.desc || '').slice(0, 80) || cov, longDesc: d.desc || '', iconBg: ico[0], iconColor: ico[1], status: status,
       event: d.eventos.join(', ') || '—', coverage: cov, responsible: d.gestores.join(', ') || '—', rubro: total, exec: existing ? existing.exec || 0 : 0, unit: (Number(S.inc[0].unit) || 0),
       codes: (function () { var ex = existing && existing.codes || { total: 0, avail: 0, asig: 0, rev: 0 }, any = S.inc.some(hasCodes); if (!any) return { total: 0, avail: 0, asig: ex.asig || 0, rev: ex.rev || 0 }; return codes ? { total: (ex.total || 0) + codes, avail: (ex.avail || 0) + codes, asig: ex.asig || 0, rev: ex.rev || 0 } : ex; })(),
       codesList: (function () { var list = []; S.inc.forEach(function (i) { var c = hasCodes(i) && S.codigos[i.id]; if (!c) return; var pf = (String(i.nombre || '').normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 4).toUpperCase() || 'COD') + '-', v = Number(i.unit) || 0; if (c.modo === 'manual') { var seen = {}; c.lista.forEach(function (x) { x = x.trim(); if (x && !seen[x.toLowerCase()]) { seen[x.toLowerCase()] = 1; list.push({ code: x, tipo: i.nombre, valor: v }); } }); } else if (c.modo === 'masivo') { for (var k = 1; k <= (c.n || 0); k++) list.push({ code: pf + String(k).padStart(5, '0'), tipo: i.nombre, valor: v }); } }); var prev = existing && existing.codesList || []; return S.inc.some(hasCodes) ? prev.concat(list) : []; })(),

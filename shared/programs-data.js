@@ -7,6 +7,11 @@
 window.PROGRAMS_DATA = [
   {
     id: 'PRG-2026-001',
+    version: 'V2.0',
+    versions: [
+      { v: 'V2.0', cambio: 'Documento nuevo: certificación bancaria', quien: 'Danna Arrieta', rol: 'Gestor de incentivos', fecha: '14 oct 2026 · 09:40', docs: true },
+      { v: 'V1.0', cambio: 'Versión inicial. Ciclos de enero a septiembre', quien: 'Danna Arrieta', rol: 'Gestor de incentivos', fecha: '01 ene 2026' }
+    ],
     name: 'Becas deportivas 2026',
     shortDesc: 'Medallistas de oro · Nacional',
     longDesc: 'Beca educativa dirigida a deportistas medallistas de oro y plata de los Juegos Nacionales 2025, para apoyar su formación profesional universitaria.',
