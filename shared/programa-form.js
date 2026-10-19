@@ -377,8 +377,11 @@
     else { if (c.exclusive && v.indexOf(c.exclusive) > -1) return; if (i > -1) v.splice(i, 1); else v.push(r); }
     if (key.indexOf('fx:') === 0) { // se guarda lo que NO aplica a este tipo; debe quedar al menos un valor
       var fp = key.split(':'), fi = incById(fp[1]), fd = fp[2], off = fi.pobOff[fd], oi = off.indexOf(r);
-      if (oi > -1) off.splice(oi, 1); else { if (aplica(fi, fd).length <= 1) { toast('Debe quedar al menos uno: si no, nadie podría recibir este incentivo.', 'caution'); return; } off.push(r); }
-      msRedraw(key); updateRules(fp[1]); saveDraft(true); refreshDraftBtn(); return;
+      if (oi > -1) off.splice(oi, 1); else off.push(r);
+      msRedraw(key); updateRules(fp[1]);
+      var fbox = document.querySelector('[data-box="' + msCfg(key).box + '"]');
+      if (fbox && !aplica(fi, fd).length) { fbox.classList.add('nwt-input-box--error'); var fc = fbox.querySelector('.nwt-input-box__content'), fm = document.createElement('div'); fm.className = 'nwt-input-box__message pf-err'; fm.innerHTML = '<span>Elige al menos un valor.</span>'; fc.appendChild(fm); }
+       saveDraft(true); refreshDraftBtn(); return;
     }
     if (key === 'cob') { S.pob.cobertura = v; S.pob.municipios = S.pob.municipios.filter(function (m) { return v.indexOf(muniDepto(m)) > -1; }); }
     else if (key === 'mun') S.pob.municipios = v;
@@ -535,9 +538,9 @@
   }
   function heredadas(inc) {
     var h = [], p = S.pob, r = aplica(inc, 'roles'), c = aplica(inc, 'cobertura'), mu = aplica(inc, 'municipios');
-    if (p.roles.length) h.push(['Rol', r.length > 1 ? 'es uno de: ' + listaO(r) : 'es ' + r[0]]);
-    if (p.cobertura.length && p.cobertura.indexOf('Nacional') < 0) h.push(['Departamento', c.length > 1 ? 'es uno de: ' + listaO(c) : 'es ' + c[0]]);
-    if (p.municipios.length) { var m = mu.map(function (x) { return x.split(' · ')[0]; }); h.push(['Municipio', m.length > 1 ? 'es uno de: ' + listaO(m) : 'es ' + m[0]]); }
+    if (p.roles.length) h.push(['Rol', !r.length ? 'sin valores elegidos' : r.length > 1 ? 'es uno de: ' + listaO(r) : 'es ' + r[0]]);
+    if (p.cobertura.length && p.cobertura.indexOf('Nacional') < 0) h.push(['Departamento', !c.length ? 'sin valores elegidos' : c.length > 1 ? 'es uno de: ' + listaO(c) : 'es ' + c[0]]);
+    if (p.municipios.length) { var m = mu.map(function (x) { return x.split(' · ')[0]; }); h.push(['Municipio', !m.length ? 'sin valores elegidos' : m.length > 1 ? 'es uno de: ' + listaO(m) : 'es ' + m[0]]); }
     return h;
   }
   function heredadasTxt(inc) { return heredadas(inc).map(function (x) { return esc(x[0] + ' ' + x[1]); }); }
@@ -657,6 +660,7 @@
   function isTipoOpen(inc, idx) { return inc.id in tipoOpen ? tipoOpen[inc.id] : idx === 0; }
   function incIssues(inc) { // pendientes del tipo (para avisar aunque esté plegado)
     var e = [];
+    popDims(inc).forEach(function (d) { if (!aplica(inc, d[0]).length) e.push(1); });
     inc.grupos.forEach(function (g) { g.rows.forEach(function (r) { if (r.f && !ruleNat(r)) e.push(1); }); });
     return e;
   }
@@ -809,6 +813,7 @@
     });
     if (step >= 3) S.inc.forEach(function (inc) {
       var nm = '«' + (inc.nombre || 'tipo sin nombre') + '»';
+      popDims(inc).forEach(function (d) { if (!aplica(inc, d[0]).length) e.push(['fx.' + inc.id + '.' + d[0], 'Elige al menos un valor en ' + d[1].toLowerCase() + ' para ' + nm + '.', 3]); });
       inc.grupos.forEach(function (g) { g.rows.forEach(function (r) { if (r.f && !ruleNat(r)) e.push(['', 'Condición incompleta en ' + nm + ': ' + FIELDS[r.f].label + '.', 3]); }); });
     });
     return e;
