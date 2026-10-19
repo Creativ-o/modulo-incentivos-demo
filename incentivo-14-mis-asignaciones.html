@@ -667,7 +667,7 @@ function render(){
 function canRevert(a){
   const role = localStorage.getItem('naowee-incentivos-role') || 'admin';
   if(a.estado !== 'asig' || !a.prg || a.prg.status !== 'active') return false;
-  if(role === 'admin' || role === 'gestor' || role === 'programa') return true;   // globales: cualquiera · gestor de programa: los de sus programas (la lista ya viene filtrada)
+  if(role === 'admin' || role === 'gestor') return true;   // globales: cualquiera · gestor de programa: solo consulta, no revierte
   if(role === 'operador') return a.op === CURRENT_OPERATOR;                  // operador: solo sus entregas
   return false;
 }
