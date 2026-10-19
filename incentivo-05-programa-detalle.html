@@ -1046,10 +1046,7 @@
           <!-- Tab: Ciclo y documentos (lo que define el formulario: recurrencia, documentos, etapas y población) -->
           <div class="tab-pane" data-pane="ciclo" hidden>
             <div class="section">
-              <div class="section-label section-label--row">
-                <span>Recurrencia</span>
-                <button class="naowee-btn naowee-btn--link naowee-btn--small" onclick="editCurrentProgram(2)" style="text-transform:none;letter-spacing:0">Editar</button>
-              </div>
+              <div class="section-label">Recurrencia</div>
               <div id="cycRec"></div>
             </div>
             <div class="section">
@@ -1334,7 +1331,7 @@ function renderCiclo(p){
   document.getElementById('cycRec').innerHTML = `<div class="cyc-card">
       <div class="cyc-card__top"><span class="cyc-card__t">${freq}</span>${c.rec.on ? badge('Se entrega en ciclos','caution') : badge('Se entrega una sola vez')}${docsOn ? badge('Con documentos','informative') : badge('Flujo directo')}</div>
       <div class="cyc-card__s">${c.rec.on
-        ? `Periodicidad <strong>${freq.replace('Recurrente · ','')}</strong>. El primer ciclo empieza el <strong>día en que se activa</strong> el programa${act ? ` (${fmt(act)})` : ''} y nunca antes; luego se repite en cada período.`
+        ? `Periodicidad <strong>${freq.replace('Recurrente · ','')}</strong>. El primer ciclo empieza el <strong>día en que se activa</strong> el programa${act ? ` (${fmt(act)})` : ''} luego se repite en cada período.`
         : 'El beneficiario recibe el incentivo una vez, cuando cumple las condiciones' + (docsOn ? ' y su documentación es aprobada.' : '.')}</div>
       <div class="cyc-card__s">Vigencia: <strong>${p.from}</strong> → <strong>${p.to}</strong>${c.hasta ? '' : ' · sin fecha de fin, se cierra manualmente'}</div>
     </div>${ownRecHTML}`;
