@@ -79,6 +79,17 @@
   /* tope: 'sin' = solo valor unitario · 'bottom' = unitario × cantidad = total · 'top' = tope total; la cantidad sale del unitario. Todo opcional. */
   function newInc() { return { id: nextId(), nombre: '', categoria: '', modalidad: 'codigo', codigos: true, pobOff: { roles: [], cobertura: [], municipios: [] }, rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', desde: '', hasta: '' }, tope: 'bottom', unit: '', valor: '', cantidad: '', foto: true, grupos: [{ op: 'AND', rows: [] }], docOff: [] }; }
 
+  /* Completa los campos que un borrador guardado con una versión anterior del formulario pudiera no tener */
+  function normInc(i) {
+    var d = newInc();
+    ['pobOff', 'rec'].forEach(function (k) { i[k] = Object.assign({}, d[k], i[k] || {}); });
+    ['roles', 'cobertura', 'municipios'].forEach(function (k) { if (!Array.isArray(i.pobOff[k])) i.pobOff[k] = []; });
+    if (!Array.isArray(i.docOff)) i.docOff = [];
+    if (!Array.isArray(i.grupos) || !i.grupos.length) i.grupos = [{ op: 'AND', rows: [] }];
+    if (i.codigos == null) i.codigos = true;
+    if (!i.tope) i.tope = 'bottom';
+    return i;
+  }
   var S = {
     step: 1, max: 1, done: false,
     datos: { nombre: '', desc: '', eventos: [], gestores: [], extra: [], desde: '', hasta: '', justificacion: '', anexo: null },
@@ -376,7 +387,7 @@
     if (c.exclusive && r === c.exclusive) v = i > -1 ? [] : [r]; // marcar «Nacional» reemplaza todo; desmarcarla libera los departamentos
     else { if (c.exclusive && v.indexOf(c.exclusive) > -1) return; if (i > -1) v.splice(i, 1); else v.push(r); }
     if (key.indexOf('fx:') === 0) { // se guarda lo que NO aplica a este tipo; debe quedar al menos un valor
-      var fp = key.split(':'), fi = incById(fp[1]), fd = fp[2], off = fi.pobOff[fd], oi = off.indexOf(r);
+      var fp = key.split(':'), fi = incById(fp[1]), fd = fp[2]; normInc(fi); var off = fi.pobOff[fd], oi = off.indexOf(r);
       if (oi > -1) off.splice(oi, 1); else off.push(r);
       msRedraw(key); updateRules(fp[1]);
       var fbox = document.querySelector('[data-box="' + msCfg(key).box + '"]');
@@ -990,7 +1001,7 @@
     'seleccion': function (x) { var s = S.pob.seleccion, i = s.indexOf(x); if (i > -1) { if (s.length === 1) return toast('Elige al menos una forma de selección.', 'caution'); s.splice(i, 1); } else s.push(x); render(true); },
     'rec-on': function () { S.rec.on = !S.rec.on; S.inc.forEach(function (i) { i.codigos = !S.rec.on; }); if (S.rec.on && !S.doc.list.length) S.doc.list = [{ name: 'Documento de identidad', oblig: true }]; syncModalidades(); render(true); },
     'pob-t': function (x, id) {
-      var n = incById(id), d = x.split('|')[0], v = x.slice(d.length + 1), off = n.pobOff[d], i = off.indexOf(v);
+      var n = incById(id); normInc(n); var d = x.split('|')[0], v = x.slice(d.length + 1), off = n.pobOff[d], i = off.indexOf(v);
       if (i > -1) off.splice(i, 1);
       else { if (aplica(n, d).length <= 1) return toast('Debe quedar al menos uno: si no, nadie podría recibir este incentivo.', 'caution'); off.push(v); }
       render(true);
@@ -1207,7 +1218,7 @@
     try {
       var raw = localStorage.getItem(DRAFT_KEY); if (!raw) return false;
       var o = JSON.parse(raw); if (!o.S || o.S.done || !o.S.pob || !o.S.rec || !o.S.doc || !o.S.crono) return false;
-      S = o.S; uid = o.uid || uid; if (!S.pob.municipios) S.pob.municipios = []; if (typeof S.pob.seleccion === 'string') S.pob.seleccion = [S.pob.seleccion]; if (!S.pob.rolesExtra) S.pob.rolesExtra = []; if (S.pob.roles.indexOf('Otro') > -1) { S.pob.roles.splice(S.pob.roles.indexOf('Otro'), 1); if (S.pob.otroRol && S.pob.otroRol.trim()) { S.pob.rolesExtra.push(S.pob.otroRol.trim()); S.pob.roles.push(S.pob.otroRol.trim()); } } delete S.pob.otroRol; if (!S.datos.eventos) { S.datos.eventos = S.datos.evento ? [S.datos.evento] : []; delete S.datos.evento; } if (!S.datos.extra) S.datos.extra = []; return true;
+      S = o.S; uid = o.uid || uid; S.inc.forEach(normInc); if (!S.pob.municipios) S.pob.municipios = []; if (typeof S.pob.seleccion === 'string') S.pob.seleccion = [S.pob.seleccion]; if (!S.pob.rolesExtra) S.pob.rolesExtra = []; if (S.pob.roles.indexOf('Otro') > -1) { S.pob.roles.splice(S.pob.roles.indexOf('Otro'), 1); if (S.pob.otroRol && S.pob.otroRol.trim()) { S.pob.rolesExtra.push(S.pob.otroRol.trim()); S.pob.roles.push(S.pob.otroRol.trim()); } } delete S.pob.otroRol; if (!S.datos.eventos) { S.datos.eventos = S.datos.evento ? [S.datos.evento] : []; delete S.datos.evento; } if (!S.datos.extra) S.datos.extra = []; return true;
     } catch (_) { return false; }
   }
 
