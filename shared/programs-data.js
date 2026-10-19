@@ -309,7 +309,7 @@ window.PROGRAMS_DATA = [
     rubro: 0,
     exec: 69750000, // sin rubro: suma de lo que cuesta entregar (67 kits × $450.000 + 33 becas × $1.200.000)
     unit: 450000,
-    codes: { total: 175, avail: 75, asig: 100, rev: 4 },
+    codes: { total: 175, avail: 71, asig: 100, rev: 4 },
     from: '15 jul 2026',
     to: 'Sin fecha de fin',
     actoAdmin: 'Resolución 2026-171',
@@ -471,11 +471,11 @@ window.getProgramCategory = function(p){
   /* ── Persistencia de los programas creados / editados desde el formulario ── */
   var K_CREATED = 'naowee:programs-created', K_EDITS = 'naowee:programs-edits';
   /* Revisión de los datos de demo: una edición guardada contra otra revisión (datos viejos) se descarta, para que los cambios al demo se vean */
-  var BASE_REV = 'demo-2026-10-19b';
+  var BASE_REV = 'demo-2026-10-19d';
   function read(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (_) { return d; } }
   function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} }
   window.persistCreatedProgram = function (prog) {
-    var list = read(K_CREATED, []).filter(function (x) { return x.id !== prog.id; }); list.unshift(prog); write(K_CREATED, list);
+    var list = read(K_CREATED, []).filter(function (x) { return x.id !== prog.id; }); list.unshift(unoverlay(prog)); write(K_CREATED, list);
     var i = window.PROGRAMS_DATA.findIndex(function (x) { return x.id === prog.id; });
     if (i > -1) window.PROGRAMS_DATA[i] = prog; else window.PROGRAMS_DATA.unshift(prog);
   };
@@ -483,7 +483,7 @@ window.getProgramCategory = function(p){
     var created = read(K_CREATED, []);
     if (created.some(function (x) { return x.id === id; })) { window.persistCreatedProgram(prog); return; }
     prog._base = BASE_REV;
-    var ed = read(K_EDITS, {}); ed[id] = prog; write(K_EDITS, ed);
+    var ed = read(K_EDITS, {}); ed[id] = unoverlay(prog); write(K_EDITS, ed);
     var i = window.PROGRAMS_DATA.findIndex(function (x) { return x.id === id; });
     if (i > -1) window.PROGRAMS_DATA[i] = prog;
   };
@@ -537,18 +537,45 @@ window.getProgramCategory = function(p){
     return lim;
   }
   function slug(t) { return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/-+$/, ''); }
+  /* ── Habilitación excepcional: personas autorizadas a participar fuera de las reglas normales ── */
+  var K_EXC = 'naowee:exceptions', K_UP = 'naowee:doc-uploads';
+  window.EXC_CATALOG = [
+    ['Mariana Pajón', 'CC', '1.020.331.045'], ['Sofía Ramírez', 'TI', '1.104.552.310'], ['Tomás Herrera', 'TI', '1.099.771.208'], ['Laura Bermúdez', 'CC', '1.032.664.917'],
+    ['Daniel Castaño', 'CC', '1.017.445.882'], ['Valeria Ospina', 'TI', '1.108.220.563'], ['Samuel Quintero', 'CC', '1.026.917.340'], ['Isabela Cortés', 'TI', '1.101.886.472'],
+    ['Julián Arango', 'CC', '1.036.502.719'], ['Camila Duarte', 'CC', '1.023.774.106'], ['Mateo Londoño', 'TI', '1.105.338.924'], ['Antonella Rojas', 'TI', '1.097.640.251'],
+    ['Nicolás Zapata', 'CC', '1.039.118.675'], ['Paula Giraldo', 'CC', '1.028.455.390']
+  ];
+  window.getExceptionsAll = function (pid) { return read(K_EXC, {})[pid] || []; };
+  window.getExceptions = function (pid) { return window.getExceptionsAll(pid).filter(function (x) { return !x.quitado; }); };
+  /* Retira a una persona registrada (queda en la auditoría; no se borra) */
+  window.removeException = function (pid, id, motivo, who) {
+    var e = read(K_EXC, {}), n = new Date(), pad = function (v) { return String(v).padStart(2, '0'); };
+    (e[pid] || []).forEach(function (x) { if (x.id === id) x.quitado = { motivo: motivo, usuario: who.name, rol: who.role, fecha: n.getDate() + ' ' + REV_MES[n.getMonth()] + ' ' + n.getFullYear(), hora: pad(n.getHours()) + ':' + pad(n.getMinutes()) }; });
+    write(K_EXC, e);
+  };
+  window.addExceptions = function (pid, list) { var e = read(K_EXC, {}); e[pid] = (e[pid] || []).concat(list); write(K_EXC, e); };
+  window.simulateUpload = function (id) { var u = read(K_UP, {}); u[id] = true; write(K_UP, u); };
+  /* Documentos que le aplican a un tipo de incentivo (un tipo recurrente por sí mismo en un programa no recurrente está exento) */
+  window.docsForType = function (c, idx) {
+    var ci = c.inc[idx] || {};
+    if (!c.rec.on && ci.rec && ci.rec.on) return [];
+    return c.doc.list.filter(function (d) { return (ci.docOff || []).indexOf(d.name) < 0; });
+  };
   window.docReviews = function () {
     var dec = read(K_REV, {}), aud = read(K_AUD, {}), out = [], hoy = isoD(new Date());
     window.scopedPrograms().forEach(function (p) {
       var c; try { c = window.getProgramConfig(p); } catch (e) { return; }
-      if (!window.progDocsOn(c) || !c.doc.list.length || p.status === 'draft') return;
+      if (p.status === 'draft') return;
+      var docsOn = !!(window.progDocsOn(c) && c.doc.list.length);   // sin documentos: solo los registrados a mano / habilitados por excepción
       var cierre = fmtD((c.crono.revision || {}).fin);
-      for (var i = 0; i < REV_PEOPLE.length; i++) {
+      for (var i = 0; docsOn && i < REV_PEOPLE.length; i++) {
         var id = p.id + '-R' + (i + 1), seed = REV_SEED[i], d = (dec[id] || {}).docs || {}, audit = (aud[id] || []).slice();
         if (p.status !== 'active' && seed === 'pend') seed = 'exp';
+        if (p._userCreated) seed = 'porcargar';   // un programa recién creado: las personas identificadas aún no cargan documentos
+        var upl0 = !!read(K_UP, {})[id];
         var sdate = REV_SEED_DATE[i] || '';
         var docs = c.doc.list.map(function (x, k) {
-          var falta = seed === 'porcargar' || (!x.oblig && (i + k) % 3 === 0), est = 'porcargar', nota = '', iso = '';
+          var falta = (seed === 'porcargar' && !upl0) || (seed !== 'porcargar' && !x.oblig && (i + k) % 3 === 0), est = 'porcargar', nota = '', iso = '';
           if (!falta) {
             est = 'revision';
             if (seed === 'apr') { est = 'aprobado'; iso = '2026-10-1' + (i % 8); }
@@ -587,6 +614,34 @@ window.getProgramCategory = function(p){
           ultimaPor: lastA ? lastA.usuario : REV_PEOPLE[i]
         });
       }
+      if (!docsOn && p.status === 'active' && (c.seleccion || []).indexOf('plataforma') > -1) {
+        REV_PEOPLE.forEach(function (name, i) {
+          out.push({ id: p.id + '-P' + (i + 1), prog: p.id, progName: p.name, persona: name, tipo: i % 3 === 2 ? 'TI' : 'CC',
+            cc: String(1020000000 + (i + 1) * 7391 + p.id.length * 13).replace(/\B(?=(\d{3})+(?!\d))/g, '.'), nac: '—', solicitud: 'Identificado por la plataforma',
+            cargado: '—', hora: '', cierre: '', estado: 'apr', total: 0, aprobados: 0, limite: '', docs: [], audit: [], ultima: '—', ultimaPor: 'Plataforma', sinDocs: true, plataforma: true });
+        });
+      }
+      window.getExceptions(p.id).forEach(function (x) {
+        var id = p.id + '-X' + x.id, dd = ((dec[id] || {}).docs) || {}, audit = (aud[id] || []).slice(), upl = !!read(K_UP, {})[id];
+        var docs = (docsOn ? window.docsForType(c, x.tipo || 0) : []).map(function (dc) {
+          var est = upl ? 'revision' : 'porcargar', nota = '', iso = '';
+          if (dd[dc.name]) { est = dd[dc.name].estado; nota = dd[dc.name].nota || ''; iso = dd[dc.name].iso || ''; }
+          return { name: dc.name, oblig: !!dc.oblig, file: (upl || dd[dc.name]) ? slug(dc.name) + '-' + x.id + '.pdf' : '', estado: est, nota: nota, iso: iso, fecha: fmtD(iso) };
+        });
+        var lbl = x.origen === 'manual' ? 'Registrado manualmente' : 'Habilitado por excepción';
+        if (!audit.some(function (a) { return a.dictamen === lbl; })) audit.unshift({ doc: x.origen === 'manual' ? 'Registro manual' : 'Habilitación excepcional', usuario: x.usuario, rol: x.rol, fecha: x.fecha, hora: x.hora, dictamen: lbl, motivo: x.just || '' });
+        var cnt = docs.filter(function (z) { return z.oblig || z.file; });
+        var apr = cnt.filter(function (z) { return z.estado === 'aprobado'; }).length, rej = docs.filter(function (z) { return z.estado === 'rechazado'; });
+        var est = 'pend', limite = '';
+        if (rej.length) { limite = plazoSubsanar(rej.map(function (z) { return z.iso; }).sort().pop(), c); est = limite < hoy ? 'exp' : 'sub'; }
+        else if (apr === cnt.length) est = 'apr';
+        else if (!docs.some(function (z) { return z.file; })) est = 'porcargar';
+        out.push({
+          id: id, prog: p.id, progName: p.name, persona: x.persona, tipo: x.docTipo, cc: x.doc, nac: '—', solicitud: (x.origen === 'manual' ? 'Registro manual • ' : '#SUID 2026 • EXC-') + String(x.id).slice(-3),
+          cargado: x.fecha, hora: x.hora, cierre: cierre, estado: est, total: cnt.length, aprobados: apr, limite: fmtD(limite), docs: docs, audit: audit,
+          ultima: x.fecha + ' ' + x.hora, ultimaPor: x.usuario, excepcion: x, sinDocs: !docsOn
+        });
+      });
     });
     return out;
   };
@@ -606,6 +661,170 @@ window.getProgramCategory = function(p){
     write(K_AUD, aud);
   };
   window.pendingReviewCount = function () {
-    return window.docReviews().filter(function (r) { return r.estado === 'pend'; }).length;
+    return window.docReviews().filter(function (r) { return !r.sinDocs && r.estado === 'pend'; }).length;
   };
+  /* ── Flujo del operador: entrega según la modalidad de cada tipo de incentivo ──
+     Certificado (Diploma) → PDF con firma y QR · Fijo (programa o tipo recurrente) → confirma el ciclo
+     · Código → código del inventario + evidencia · Sin código → solo evidencia. */
+  var K_DEL = 'naowee:op-deliveries';
+  var MESES_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  window.cycleKey = function () { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
+  window.cycleLabel = function () { var d = new Date(); return MESES_L[d.getMonth()] + ' ' + d.getFullYear(); };
+  window.incModalidad = function (c, idx) {
+    var ci = c.inc[idx] || {};
+    if (ci.categoria === 'diploma') return 'certificado';
+    if (c.rec.on || (ci.rec && ci.rec.on)) return 'fijo';
+    return ci.codigos ? 'codigo' : 'sin-codigo';
+  };
+  window.opFlags = function (c, idx) {
+    var m = window.incModalidad(c, idx), ci = c.inc[idx] || {};
+    return { modalidad: m, needsCode: m !== 'certificado' && !!ci.codigos, needsEvidence: m === 'codigo' || m === 'sin-codigo' };
+  };
+  window.getDeliveries = function () { return read(K_DEL, []); };
+  window.addDelivery = function (d) {
+    var l = read(K_DEL, []); l.unshift(d); write(K_DEL, l);
+    if (d.code) { var rv = read(K_RVT, {}), k = d.prog + '|' + d.code; if (rv[k]) { rv[k].reasignado = { persona: d.persona, operador: d.operador, fecha: d.fecha + ' · ' + d.hora }; write(K_RVT, rv); } }
+    return d;
+  };
+  window.nextDeliveryId = function () { return 'ENT-2026-' + String(10000 + read(K_DEL, []).length * 7 + 1).slice(-5).padStart(5, '0'); };
+  function normT(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function digitsOf(t) { return String(t || '').replace(/\D/g, ''); }
+  /* Perfil del beneficiario para el operador: solo recibe con documentación aprobada y programa activo */
+  window.opBuild = function (items) {
+    var h = items[0], prof = { persona: h.persona, tipo: h.tipo, cc: h.cc, entries: [], blocked: [], excepcion: false };
+    var dels = window.getDeliveries();
+    items.forEach(function (r) {
+      var p = window.PROGRAMS_DATA.filter(function (x) { return x.id === r.prog; })[0]; if (!p) return;
+      var c = window.getProgramConfig(p);
+      if (r.excepcion) prof.excepcion = r.excepcion.origen === 'manual' ? 'manual' : 'excepcion';
+      if (r.estado !== 'apr') { prof.blocked.push({ progName: r.progName, estado: r.estado, limite: r.limite, itemId: r.id }); return; }
+      if (p.status !== 'active') { prof.blocked.push({ progName: r.progName, estado: 'inactivo', itemId: r.id }); return; }
+      p.incentives.forEach(function (inc, idx) {
+        var f = window.opFlags(c, idx), cyc = f.modalidad === 'fijo' ? window.cycleKey() : '';
+        var done = dels.filter(function (d) { return d.item === r.id && d.inc === idx && (!cyc || d.cycle === cyc) && !d.reverted; })[0] || null;
+        prof.entries.push({
+          itemId: r.id, progId: p.id, progName: p.name, incIdx: idx, incName: inc.name, cat: inc.category, iconBg: p.iconBg, iconColor: p.iconColor,
+          modalidad: f.modalidad, needsCode: f.needsCode, needsEvidence: f.needsEvidence, cycle: cyc, valor: (c.inc[idx] || {}).unit || inc.value || 0, delivered: done
+        });
+      });
+    });
+    return prof;
+  };
+  window.opSearch = function (q) {
+    var dg = digitsOf(q), nm = normT(q).trim(), all = window.docReviews();
+    var hit = all.filter(function (r) { return (dg.length >= 5 && digitsOf(r.cc) === dg) || (!dg && nm.length >= 3 && normT(r.persona).indexOf(nm) > -1); });
+    if (!hit.length) return null;
+    var key = digitsOf(hit[0].cc);
+    return window.opBuild(all.filter(function (r) { return digitsOf(r.cc) === key; }));
+  };
+  /* Ejemplos para probar en el buscador: uno por estado documental */
+  window.opSamples = function () {
+    var all = window.docReviews(), seen = {}, out = [];
+    [['apr', 2], ['pend', 1], ['sub', 1], ['exp', 1], ['porcargar', 1]].forEach(function (pair) {
+      all.filter(function (r) { return r.estado === pair[0] && !seen[digitsOf(r.cc)]; }).slice(0, pair[1]).forEach(function (r) { seen[digitsOf(r.cc)] = 1; out.push({ cc: r.cc, persona: r.persona, estado: r.estado, excepcion: !!r.excepcion }); });
+    });
+    return out;
+  };
+  /* Códigos del inventario disponibles para un tipo (los primeros del tipo ya figuran como asignados en el programa) */
+  /* ── Códigos canónicos: la misma etiqueta y el mismo reparto por tipo en TODAS las pantallas ── */
+  function pad5(n) { return String(n).padStart(5, '0'); }
+  window.codeLabel = function (p, i) { return p.id.replace('PRG-', '') + '-' + pad5(i); };
+  window.codeIndex = function (p, code) { var m = new RegExp('^' + p.id.replace('PRG-', '') + '-(\\d{5})$').exec(code || ''); return m ? +m[1] : 0; };
+  window.codeTypes = function (c) { return c.inc.map(function (x, k) { return { x: x, k: k }; }).filter(function (t) { return t.x.codigos; }); };
+  /* Rango [desde, hasta] de índices de código de un tipo (por cantidad; el último tipo se lleva el resto del inventario) */
+  window.codeRange = function (p, c, idx) {
+    var ts = window.codeTypes(c), start = 0, total = (window.codesBase(p) || p.codes).total;
+    for (var k = 0; k < ts.length; k++) {
+      var last = k === ts.length - 1, cap = Number(ts[k].x.cantidad) || 0, end = last ? total : Math.min(total, start + (cap || total));
+      if (ts[k].k === idx) return [start + 1, end];
+      start = end;
+    }
+    return [1, 0];
+  };
+  window.codeTypeAt = function (p, c, i) {
+    var ts = window.codeTypes(c); if (!ts.length) return -1;
+    for (var k = 0; k < ts.length; k++) { var r = window.codeRange(p, c, ts[k].k); if (i >= r[0] && i <= r[1]) return ts[k].k; }
+    return ts[ts.length - 1].k;
+  };
+  /* Efecto de las entregas y reversiones sobre los contadores del programa (los contadores base nunca se modifican) */
+  function overlayDelta(pid) {
+    var dels = read(K_DEL, []).filter(function (d) { return d.prog === pid; }), rv = read(K_RVT, {}), keys = Object.keys(rv).filter(function (k) { return k.indexOf(pid + '|') === 0; });
+    var active = dels.filter(function (d) { return !d.reverted; }), exec = 0, sPend = 0, seedCodes = {};
+    active.forEach(function (d) { exec += Number(d.valor) || 0; });
+    keys.forEach(function (k) { var e = rv[k]; exec -= Number(e.valor) || 0; seedCodes[k.slice(pid.length + 1)] = 1; if (!e.reasignado) sPend++; });
+    var lastByCode = {}; dels.slice().reverse().forEach(function (d) { if (d.code) lastByCode[d.code] = d; });
+    var realRevPending = dels.filter(function (d) { return d.reverted && (!d.code || (lastByCode[d.code] === d)); }).length;
+    var distinct = {}; dels.forEach(function (d) { if (d.code && !seedCodes[d.code]) distinct[d.code] = 1; });
+    return { asig: active.length - keys.length, rev: sPend + realRevPending, avail: -Object.keys(distinct).length, exec: exec };
+  }
+  function overlayOn(p, sign) {
+    var d = overlayDelta(p.id); if (!p.codes) return;
+    var hasInv = (p.codes.total || 0) > 0;
+    p.codes = { total: p.codes.total, avail: Math.max(0, (p.codes.avail || 0) + sign * (hasInv ? d.avail : 0)), asig: Math.max(0, (p.codes.asig || 0) + sign * d.asig), rev: Math.max(0, (p.codes.rev || 0) + sign * d.rev) };
+    p.exec = Math.max(0, (p.exec || 0) + sign * d.exec);
+  }
+  /* Copia del programa con los contadores base (para guardar) */
+  function unoverlay(prog) { var c = JSON.parse(JSON.stringify(prog)); if (c.codes) overlayOn(c, -1); return c; }
+  window.codesBase = function (p) { var c = JSON.parse(JSON.stringify(p)); overlayOn(c, -1); return c.codes; };
+  window.opCodes = function (p, c, idx) {
+    var inc = p.incentives[idx], dels = window.getDeliveries(), used = dels.filter(function (d) { return d.prog === p.id && d.code && !d.reverted; }).map(function (d) { return d.code; });
+    var ev = window.codeEvents(p.id), out = [], left = 0, cap = 0, reverted = [];
+    if (Array.isArray(p.codesList) && p.codesList.length) {
+      /* programa con códigos cargados por el gestor: se entregan esos mismos */
+      var mine = p.codesList.filter(function (x) { return !x.tipo || x.tipo === inc.name; });
+      out = mine.map(function (x) { return x.code; }).filter(function (x) { return used.indexOf(x) < 0; }); cap = mine.length; left = out.length; out = out.slice(0, 60);
+    } else if ((c.inc[idx] || {}).codigos) {
+      var base = window.codesBase(p), r = window.codeRange(p, c, idx), first = base.asig + base.rev + 1;
+      cap = Math.max(0, r[1] - r[0] + 1);
+      for (var i = Math.max(r[0], first); i <= r[1]; i++) { var code = window.codeLabel(p, i); if (used.indexOf(code) < 0) { left++; if (out.length < 60) out.push(code); } }
+    }
+    /* códigos liberados por una reversión: salen primero, marcados */
+    ev.seed.filter(function (e) { return !e.reasignado && (e.inc || 0) === idx; }).forEach(function (e) { reverted.push(e.key); });
+    ev.real.filter(function (e) { return e.estado === 'rev' && e.incName === inc.name; }).forEach(function (e) { reverted.push(e.code); });
+    left += reverted.length;
+    out = reverted.concat(out.filter(function (x) { return reverted.indexOf(x) < 0; }));
+    return { list: out, left: left, cap: cap, reverted: reverted };
+  };
+  /* ── Reversión de asignaciones (códigos e incentivos sin código) ──
+     Restaura el cupo (y el código si lo tiene) y el valor al programa; queda en la auditoría. */
+  var K_RVT = 'naowee:asig-reverted';
+  window.isReverted = function (pid, key) { return !!read(K_RVT, {})[pid + '|' + key]; };
+  window.revertedCount = function (pid) { return Object.keys(read(K_RVT, {})).filter(function (k) { return k.indexOf(pid + '|') === 0; }).length; };
+  window.getRevertEntry = function (pid, key) { return read(K_RVT, {})[pid + '|' + key] || null; };
+  /* Forma que usa el popover «Historial de reversión» de Códigos */
+  window.revHist = function (e) {
+    return { beneficiarioPrevio: e.beneficiario, operadorPrevio: e.entregadoPor || '—', fechaAsignacion: e.fechaEntrega || '—', motivo: e.motivo, motivoLabel: e.motivoLabel,
+      solicitante: e.autor, justificacion: e.justificacion, autor: e.autor + (e.rol ? ' · ' + e.rol : ''), fecha: e.fecha + ' · ' + e.hora, valor: e.valor, ip: e.ip };
+  };
+  window.revertAsignacion = function (o) {
+    var d = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
+    var entry = {
+      programaId: o.progId, programa: o.programa, beneficiario: o.persona, incentivo: o.incentivo, code: o.code || null, valor: o.valor || 0, inc: o.inc || 0,
+      motivo: o.motivo, motivoLabel: o.motivoLabel, justificacion: o.just, autor: o.autor, rol: o.rol, entregadoPor: o.entregadoPor || '', fechaEntrega: o.fechaEntrega || '',
+      ip: '190.' + (24 + d.getMinutes() % 60) + '.' + (10 + d.getSeconds()) + '.' + (2 + (d.getHours() * 7) % 250),
+      fecha: pad(d.getDate()) + ' ' + REV_MES[d.getMonth()] + ' ' + d.getFullYear(), hora: pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds())
+    };
+    if (o.deliveryId) {
+      var l = read(K_DEL, []); l.forEach(function (x) { if (x.id === o.deliveryId) x.reverted = entry; }); write(K_DEL, l);
+    } else {
+      var r = read(K_RVT, {}); r[o.progId + '|' + o.key] = entry; write(K_RVT, r);
+    }
+    var h = read('naowee-reversiones', []); h.push(entry); write('naowee-reversiones', h);
+    return entry;
+  };
+  /* Estado de los códigos tras reversiones y reasignaciones: sembrados (por clave) y reales (entregados desde el flujo) */
+  window.codeEvents = function (pid) {
+    var rv = read(K_RVT, {}), seed = [];
+    Object.keys(rv).forEach(function (k) { if (k.indexOf(pid + '|') === 0) seed.push(Object.assign({ key: k.slice(pid.length + 1) }, rv[k])); });
+    var g = {}, order = [];
+    read(K_DEL, []).slice().reverse().forEach(function (d) { if (d.prog === pid && d.code) { if (!g[d.code]) { g[d.code] = []; order.push(d.code); } g[d.code].push(d); } });
+    var real = order.map(function (code) {
+      var arr = g[code], last = arr[arr.length - 1];
+      var hist = arr.filter(function (x) { return x.reverted; }).map(function (x) { return window.revHist(x.reverted); });
+      return { code: code, estado: last.reverted ? 'rev' : (arr.length > 1 ? 'reasig' : 'asig'), benef: last.reverted ? null : last.persona, op: last.reverted ? null : last.operador,
+        fecha: last.fecha + ' · ' + last.hora, tipo: last.cat, incName: last.incName, valor: last.valor, history: hist };
+    });
+    return { seed: seed, real: real };
+  };
+  window.PROGRAMS_DATA.forEach(function (p) { overlayOn(p, +1); });
 })();

@@ -12,6 +12,7 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
+<link rel="stylesheet" href="shared/op-stepper.css"/>
 
 <style>
   .success-wrap{
@@ -150,6 +151,9 @@
     text-align:center;font-size:12px;color:var(--text-secondary);line-height:1.5;
   }
   .help a{color:var(--accent);font-weight:600}
+
+  /* DC-111 · avatares planos, sin efecto 3D */
+  .profile-avatar,.flow-recap__ava,.receipt__ava,.recap__ava{background:#e8590c;border:0;box-shadow:none}
 </style>
 </head>
 <body>
@@ -174,7 +178,7 @@
       </div>
       <div class="nav-row" onclick="fadeAndGo('incentivo-14-mis-asignaciones.html')">
         <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h13M8 12h13M8 17h13"/><circle cx="4" cy="7" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="17" r="1"/></svg></div>
-        <span class="lbl">Asignaciones</span>
+        <span class="lbl">Mis asignaciones</span>
       </div>
     </nav>
     <div class="sidebar-bottom">
@@ -357,6 +361,66 @@ try{
   if(s.evidence) document.getElementById('evidenceLabel').textContent = s.evidence;
 }catch(e){}
 
+
+/* ═════ Modo real: comprobante según la modalidad entregada ═════ */
+(function hydrateReal(){
+  let s = {}; try { s = JSON.parse(sessionStorage.getItem('inc-assignment-complete') || '{}'); } catch(e){}
+  if(!s.real || !s.delivery) return;
+  const d = s.delivery, T = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  const row = lbl => [...document.querySelectorAll('.receipt__details .kv-row')].find(r => r.querySelector('.kv-row__lbl').textContent.trim() === lbl);
+  const hide = lbl => { const r = row(lbl); if(r) r.style.display = 'none'; };
+  const setv = (lbl, v) => { const r = row(lbl); if(r) r.querySelector('.kv-row__val').textContent = v; };
+  T('receiptId', '#' + d.id); T('stamp', 'ID · #' + d.id);
+  T('receiptName', d.persona); T('receiptAva', d.persona.split(' ').filter(w => w.length > 1).slice(0, 2).map(w => w[0]).join('').toUpperCase());
+  document.getElementById('receiptDoc').textContent = d.tipo + ' ' + d.cc;
+  document.querySelector('.receipt__person-meta').innerHTML = `<span id="receiptDoc">${d.tipo} ${d.cc}</span> · ${d.progName}`;
+  T('receiptInc', d.incName); T('receiptDate', d.fecha + ' · ' + d.hora);
+  hide('Valor entregado'); setv('Programa', d.progName); setv('Gestor en campo', d.operador);
+  const foot = document.querySelector('.receipt__footer'); if(foot) foot.style.display = 'none';
+  const h1 = document.querySelector('.success-hero h1'), p = document.querySelector('.success-hero p'), banner = document.querySelector('.status-banner');
+  if(d.code){ T('receiptCode', d.code); } else { hide('Código asignado'); }
+  if(!d.code && banner) banner.style.display = 'none';
+  if(d.modalidad === 'certificado'){
+    h1.textContent = '¡Certificado emitido con éxito!';
+    p.innerHTML = 'El certificado digital quedó en el perfil de <strong>' + d.persona + '</strong>. Se puede descargar o verificar en línea con su código.';
+    certCard(d);
+  } else if(d.modalidad === 'fijo'){
+    h1.textContent = '¡Entrega del ciclo registrada!';
+    p.innerHTML = 'Quedó registrada la entrega del <strong>ciclo ' + cycleName() + '</strong>. No se puede repetir en el mismo ciclo.';
+  } else {
+    p.innerHTML = 'El incentivo quedó registrado en el historial del beneficiario dentro del sistema.' + (d.code ? ' El código quedó marcado como <strong>Asignado</strong>.' : '');
+  }
+  const evTxt = d.evidence ? 'Archivo subido · ' + d.evidence : d.modalidad === 'certificado' ? 'No aplica · certificado digital' : 'No aplica · entrega del ciclo';
+  const prow = row('Programa'), frow = row('Fecha y hora');
+  if(prow && frow){ const c = prow.cloneNode(true); c.querySelector('.kv-row__lbl').textContent = 'Evidencia'; c.querySelector('.kv-row__val').textContent = evTxt; frow.parentNode.insertBefore(c, frow); }
+  function cycleName(){ const n = new Date(); return ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][n.getMonth()] + ' ' + n.getFullYear(); }
+})();
+function certCard(d){
+  const cid = 'SUID-CERT-2026-' + d.id.slice(-5).padStart(6, '0');
+  let seed = 0; for(const ch of cid) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  let cells = ''; for(let y = 0; y < 17; y++) for(let x = 0; x < 17; x++){ seed = (seed * 1664525 + 1013904223) >>> 0; if(seed & 0x10000) cells += `<rect x="${x * 5}" y="${y * 5}" width="5" height="5"/>`; }
+  const el = document.createElement('div');
+  el.className = 'receipt'; el.style.marginBottom = '16px';
+  el.innerHTML = `<div class="receipt__head"><h3>Certificado digital</h3><span class="receipt__id">${cid}</span></div>
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;padding:20px 24px" class="cert-grid">
+      <div style="border:1px solid #e7e9f3;border-radius:14px;background:#fffaf6;padding:22px 26px;position:relative;border-bottom:4px solid #d74009">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:#646587;display:flex;justify-content:space-between"><span>MINISTERIO DEL DEPORTE · SUID</span><span>${cid}</span></div>
+        <div style="text-align:center;margin:22px 0 16px"><div style="font-size:12.5px;color:#646587">Se otorga el reconocimiento a</div><div style="font-size:24px;font-weight:700;color:#282834;margin:6px 0">${d.persona}</div><div style="font-size:13px;color:#646587">${d.incName} · ${d.progName}</div></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end"><div style="font-family:Georgia,serif;font-style:italic;font-size:22px;border-bottom:1px solid #282834;padding:0 28px 2px 0;color:#282834">Firma<div style="font-family:Inter,sans-serif;font-style:normal;font-size:10px;color:#646587;margin-top:2px">Firma (imagen provisional)</div></div>
+          <div style="text-align:center"><svg width="85" height="85" viewBox="0 0 85 85" fill="#282834">${cells}</svg><div style="font-size:10px;color:#646587">Verifica en línea</div></div></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12.5px;color:#646587">Emitido el ${d.fecha} · ${d.hora}</div>
+        <div style="border:1px solid #e7e9f3;border-radius:12px;padding:10px 14px"><small style="color:#646587">Código de verificación</small><div style="font-weight:700">${cid}</div></div>
+        <button class="naowee-btn naowee-btn--loud naowee-btn--large" onclick="dlCert('${cid}','${d.persona.replace(/'/g, '')}')">Descargar PDF</button>
+        <button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="try{navigator.clipboard.writeText('https://suid.mindeporte.gov.co/verificar/${cid}')}catch(e){}">Copiar enlace de verificación</button>
+        <div style="font-size:12.5px;background:#fff3d6;border-radius:12px;padding:10px 14px">La firma digital con validez legal la define el Ministerio.</div></div></div>`;
+  const rc = document.querySelector('.receipt'); rc.parentNode.insertBefore(el, rc);
+}
+function dlCert(cid, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['Certificado digital (demostración)\n' + cid + '\nOtorgado a: ' + name], { type: 'text/plain' }));
+  a.download = cid + '.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 500);
+}
 /* Helpers */
 function fadeAndGo(url){
   if('startViewTransition' in document || CSS.supports('view-transition-name: x')){
@@ -372,7 +436,7 @@ document.addEventListener('click', (e) => { const sw = document.getElementById('
 
 </script>
 
-<script src="shared/profile-switcher.js?v=role-15" defer></script>
+<script src="shared/profile-switcher.js?v=role-17" defer></script>
 
 <script src="shared/footer-scroll.js" defer></script>
 

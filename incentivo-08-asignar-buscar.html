@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
+<link rel="stylesheet" href="shared/op-stepper.css"/>
 
 <style>
   .page-header{
@@ -430,6 +431,9 @@
     background-repeat:no-repeat;background-position:right 12px center;cursor:pointer;
   }
   .fld input:focus,.fld select:focus{outline:none;border-color:var(--naowee-color-text-accent,#d74009);box-shadow:0 0 0 3px rgba(215,64,9,.15)}
+
+  /* DC-111 · avatares planos, sin efecto 3D */
+  .profile-avatar,.flow-recap__ava,.receipt__ava,.recap__ava{background:#e8590c;border:0;box-shadow:none}
 </style>
 </head>
 <body>
@@ -483,21 +487,13 @@
       <div class="page-header">
         <div class="page-header__title-group">
           <h1 class="page-title">Asignar incentivo</h1>
-          <p class="page-sub">Busca al deportista por su documento. El sistema valida automáticamente si cumple las condiciones de los programas activos.</p>
+          <p class="page-sub">Busca al beneficiario por su documento o nombre. Solo puedes entregar a quien tiene la documentación aprobada por el gestor del programa.</p>
         </div>
       </div>
 
       <!-- Stepper sticky con progressive collapse estilo digitación.
            El .stepper ES el sticky element directamente (patrón .sport-section) -->
-      <div class="stepper" id="stepperWrap">
-        <div class="step active"><span class="n">1</span><span class="step-lbl">Buscar deportista</span></div>
-        <span class="step-sep"></span>
-        <div class="step"><span class="n">2</span><span class="step-lbl">Seleccionar incentivo</span></div>
-        <span class="step-sep"></span>
-        <div class="step"><span class="n">3</span><span class="step-lbl">Evidencia de entrega</span></div>
-        <span class="step-sep"></span>
-        <div class="step"><span class="n">4</span><span class="step-lbl">Confirmación</span></div>
-      </div>
+      <div class="op-step-band" id="opStepper"><div class="op-stepper"><div class="op-step op-step--active"><div class="op-step__c"><div class="op-step__b">1</div><span class="op-step__t"><span class="op-step__k">Paso 1</span><span class="op-step__l">Buscar deportista</span></span></div></div><div class="op-step "><div class="op-step__c"><div class="op-step__b">2</div><span class="op-step__t"><span class="op-step__k">Paso 2</span><span class="op-step__l">Seleccionar incentivo</span></span></div></div><div class="op-step "><div class="op-step__c"><div class="op-step__b">3</div><span class="op-step__t"><span class="op-step__k">Paso 3</span><span class="op-step__l">Evidencia de entrega</span></span></div></div><div class="op-step "><div class="op-step__c"><div class="op-step__b">4</div><span class="op-step__t"><span class="op-step__k">Paso 4</span><span class="op-step__l">Confirmación</span></span></div></div></div></div>
 
       <!-- Search card -->
       <div class="search-card">
@@ -524,8 +520,8 @@
             </div>
           </div>
           <div class="fld">
-            <label for="docNumber">Número</label>
-            <input id="docNumber" type="text" inputmode="numeric" placeholder="Ej. 1001234567" autofocus/>
+            <label for="docNumber">Número o nombre</label>
+            <input id="docNumber" type="text" placeholder="Ej. 1.020.022.329 o Camila Ríos" autofocus/>
           </div>
           <button class="naowee-btn naowee-btn--loud naowee-btn--large" id="btnSearch" onclick="doSearch()" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -533,16 +529,7 @@
           </button>
         </div>
 
-        <div class="quick-row">
-          <span class="quick-label">Demo · probar con:</span>
-          <button class="quick-chip" onclick="runDemo('eligible')"><code>1001234567</code> · deportista aplica</button>
-          <button class="quick-chip" onclick="runDemo('partial-assigned')"><code>1011223344</code> · 1 de 2 ya asignado</button>
-          <button class="quick-chip" onclick="runDemo('all-assigned')"><code>1022334455</code> · todos ya asignados</button>
-          <button class="quick-chip" onclick="runDemo('not-eligible')"><code>1003456789</code> · deportista no cumple</button>
-          <button class="quick-chip" onclick="runDemo('eligible-coach')"><code>1050987654</code> · entrenador aplica</button>
-          <button class="quick-chip" onclick="runDemo('not-eligible-coach')"><code>1067543210</code> · entrenador no fue el primero</button>
-          <button class="quick-chip" onclick="runDemo('not-found')"><code>9999999999</code> · sin registro</button>
-        </div>
+        <div class="quick-row" id="quickRow"></div>
       </div>
 
       <!-- Result -->
@@ -560,6 +547,7 @@
   </div>
 </div>
 
+<script src="shared/programs-data.js"></script>
 <script>
 const SAMPLE = {
   eligible: {
@@ -694,7 +682,7 @@ function getSelectedDocType(){
   return document.getElementById('docTypeDd')?.dataset.value || 'CC';
 }
 
-function doSearch(){
+function doSearchLegacy(){
   const n = document.getElementById('docNumber').value.trim();
   if(!n){ document.getElementById('docNumber').focus(); return; }
   if(n === '1001234567') return runDemo('eligible');
@@ -706,7 +694,7 @@ function doSearch(){
   return runDemo('not-found');
 }
 
-function runDemo(kind, skipLoading){
+function runDemoLegacy(kind, skipLoading){
   const wrap = document.getElementById('stateWrap');
   const render = () => {
     if(kind === 'eligible') wrap.innerHTML = renderEligible(SAMPLE.eligible);
@@ -722,13 +710,13 @@ function runDemo(kind, skipLoading){
   setTimeout(render, 500);
 }
 
-function saveProfileAndGo(doc, kind){
+function saveProfileAndGoLegacy(doc, kind){
   sessionStorage.setItem('inc-profile', JSON.stringify({ doc, kind, ts: Date.now() }));
   fadeAndGo('incentivo-10-asignar-tipo.html?doc=' + doc);
 }
 
 /* Rehydratar si venimos del paso 2 con "Volver" */
-function tryRehydrate(){
+function tryRehydrateLegacy(){
   try{
     const saved = JSON.parse(sessionStorage.getItem('inc-profile') || '{}');
     if(!saved.doc) return false;
@@ -1153,6 +1141,146 @@ document.addEventListener('click', (e) => {
   const sw = document.getElementById('profileSwitcher');
   if(sw && !sw.contains(e.target)) sw.classList.remove('open');
 });
+
+/* ═════ Modo real: perfiles construidos con los programas y la revisión documental ═════ */
+const EST_TXT = {
+  pend:      ['En revisión documental', 'El gestor del programa aún no aprueba sus documentos'],
+  porcargar: ['Por cargar', 'Aún no ha subido sus documentos'],
+  sub:       ['Pendiente subsanación', 'Debe corregir un documento rechazado'],
+  exp:       ['Expirada por vencimiento', 'Venció el plazo para subsanar'],
+  inactivo:  ['Programa inactivo', 'El programa no admite asignaciones']
+};
+const MOD_TXT = {
+  codigo:      ['Con código', 'Código del inventario y evidencia de entrega'],
+  'sin-codigo':['Con evidencia', 'Evidencia de entrega, sin código'],
+  fijo:        ['Fijo del ciclo', 'Se confirma una vez por ciclo, sin foto'],
+  certificado: ['Certificado digital', 'PDF con firma y QR, sin código ni foto']
+};
+const ini2 = n => n.split(' ').filter(w => w.length > 1).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+const esc2 = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SVG_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const SVG_NO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+function renderQuick(){
+  const el = document.getElementById('quickRow'); if(!el || !window.opSamples) return;
+  const L = { apr: 'documentación aprobada', pend: 'en revisión', sub: 'pendiente subsanación', exp: 'expirada', porcargar: 'por cargar' };
+  el.innerHTML = '<span class="quick-label">Prueba con:</span>' + window.opSamples().map(x =>
+    `<button class="quick-chip" onclick="runReal('${x.cc}')"><code>${x.cc}</code> · ${esc2(x.persona)} · ${L[x.estado]}</button>`).join('');
+}
+
+function realCard(prof){
+  const pending = prof.entries.filter(e => !e.delivered), done = prof.entries.filter(e => e.delivered);
+  const eligible = pending.length > 0, allDone = prof.entries.length > 0 && !eligible, blocked = prof.entries.length === 0;
+  const programs = {}; prof.entries.forEach(e => programs[e.progId] = e.progName); prof.blocked.forEach(b => programs[b.progName] = b.progName);
+  const progNames = Object.values(programs);
+  let badge = eligible
+    ? `<span class="naowee-badge naowee-badge--positive naowee-badge--quiet naowee-badge--small">${pending.length} para entregar</span>`
+    : allDone ? '<span class="naowee-badge naowee-badge--informative naowee-badge--quiet naowee-badge--small">Sin incentivos pendientes</span>'
+    : '<span class="naowee-badge naowee-badge--negative naowee-badge--quiet naowee-badge--small">No puede recibir aún</span>';
+  const docRows = prof.entries.length || prof.blocked.length
+    ? [...new Set(prof.entries.map(e => e.progName))].map(n => ({ n, ok: true, v: 'Aprobada' }))
+        .concat(prof.blocked.map(b => ({ n: b.progName, ok: false, v: (EST_TXT[b.estado] || [b.estado])[0] }))) : [];
+  const okN = docRows.filter(r => r.ok).length;
+  const cond = `
+    <div class="cond-block-head"><span class="cond-block-head__title">Documentación por programa</span>
+      <span class="cond-count${okN < docRows.length ? ' err' : ''}">${okN} de ${docRows.length} aprobadas</span></div>
+    <div class="cond-progress${okN < docRows.length ? ' err' : ''}"><div class="cond-progress__fill" style="width:${docRows.length ? Math.round(okN / docRows.length * 100) : 0}%"></div></div>
+    <div class="cond-list">${docRows.map(r => `<div class="cond ${r.ok ? '' : 'err'}"><span class="mk">${r.ok ? SVG_OK : SVG_NO}</span><span class="txt">${esc2(r.n)}</span><span class="val">${r.v}</span></div>`).join('')}</div>`;
+  const icon = e => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${(window.CAT_ICONS && window.CAT_ICONS[e.cat]) || (window.CAT_ICONS && window.CAT_ICONS['Beca']) || ''}</svg>`;
+  const rows = prof.entries.map(e => {
+    const m = MOD_TXT[e.modalidad];
+    if(e.delivered){
+      const d = e.delivered;
+      return `<div class="prog prog--assigned"><div class="prog__icon" style="background:${e.iconBg};color:${e.iconColor}">${icon(e)}</div>
+        <div class="prog__body"><div class="prog__name">${esc2(e.incName)}</div><div class="prog__desc">${esc2(e.progName)}</div></div>
+        <div class="prog__value"></div>
+        <div class="prog__assignment"><span class="prog__assignment-tag">${SVG_OK} ${e.cycle ? 'Entregado este ciclo' : 'Asignado'}</span>
+          <div class="prog__assignment-meta"><span class="item">Por <strong>${esc2(d.operador)}</strong></span><span class="dot"></span><span class="item"><strong>${d.fecha}</strong> · ${d.hora}</span>${d.code ? `<span class="dot"></span><span class="item">Código <strong>${d.code}</strong></span>` : ''}</div></div></div>`;
+    }
+    return `<div class="prog" style="cursor:default;pointer-events:none"><div class="prog__icon" style="background:${e.iconBg};color:${e.iconColor}">${icon(e)}</div>
+      <div class="prog__body"><div class="prog__name">${esc2(e.incName)}</div><div class="prog__desc">${esc2(e.progName)} · ${m[1]}${e.cycle ? ' · ciclo ' + window.cycleLabel() : ''}</div></div>
+      <div class="prog__value"><span class="naowee-badge naowee-badge--quiet naowee-badge--small naowee-badge--${e.modalidad === 'certificado' ? 'informative' : e.modalidad === 'fijo' ? 'caution' : 'neutral'}">${m[0]}</span></div><span></span></div>`;
+  }).join('');
+  const why = prof.blocked.map(b => `<li><strong>${esc2(b.progName)}:</strong> ${(EST_TXT[b.estado] || ['', ''])[0]}. ${(EST_TXT[b.estado] || ['', ''])[1]}${b.estado === 'sub' && b.limite ? ' (hasta el ' + b.limite + ')' : ''}.</li>`).join('');
+  const footer = eligible
+    ? `<div class="profile-card__footer"><span></span><button class="naowee-btn naowee-btn--loud naowee-btn--large" onclick="goReal('${prof.cc}')">Continuar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button></div>`
+    : allDone ? `<div class="profile-card__footer"><span style="font-size:12.5px;color:var(--naowee-color-text-secondary,#646587)">Sin incentivos pendientes para entregar.</span>${PROFILE_MODE ? '<button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="location.href=\'incentivo-14-mis-asignaciones.html\'">Volver a mis asignaciones</button>' : '<button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="resetState();document.getElementById(\'docNumber\').focus()">Buscar otro beneficiario</button>'}</div>` : '';
+  return `<div class="result-wrap"><div class="profile-card">
+    <div class="profile-head"><div class="profile-avatar" style="${blocked ? 'background:#9c9ebf' : ''}">${ini2(prof.persona)}</div>
+      <div class="profile-meta">${prof.excepcion ? '<div style="display:inline-flex;margin-bottom:2px"><span class="profile-tag profile-tag--entrenador">' + (prof.excepcion === 'manual' ? 'Registrado manualmente' : 'Habilitado por excepción') + '</span></div>' : ''}
+        <div class="profile-name">${esc2(prof.persona)}</div>
+        <div class="profile-sub"><span><strong>${prof.tipo}</strong> ${prof.cc}</span><span class="dot"></span><span>${progNames.length} programa${progNames.length === 1 ? '' : 's'}</span></div></div>
+      <div class="profile-side">${badge}</div></div>
+    <div class="profile-body"><div class="data-block"><h5>Datos del beneficiario</h5><div class="kv-list">
+        <div class="kv-row"><span class="kv-row__ico">${KV_ICONS.matricula}</span><span class="kv-row__lbl">Documento</span><span class="kv-row__val">${prof.tipo} ${prof.cc}</span></div>
+        <div class="kv-row"><span class="kv-row__ico">${KV_ICONS.category}</span><span class="kv-row__lbl">Programas</span><span class="kv-row__val" style="font-weight:300">${progNames.map(esc2).join(' · ')}</span></div>
+        <div class="kv-row"><span class="kv-row__ico">${KV_ICONS.status}</span><span class="kv-row__lbl">Documentación</span><span class="kv-row__val">${okN} de ${docRows.length} aprobadas</span></div>
+      </div></div><div class="data-block">${cond}</div></div>
+    ${prof.entries.length ? `<hr class="profile-card__divider"/><div class="programs-section"><div class="programs-section__head"><h4>Incentivos aplicables</h4></div>
+      ${allDone ? '<div class="naowee-message naowee-message--positive" style="margin:0 0 14px"><div class="naowee-message__header"><div class="naowee-message__icon">' + SVG_OK + '</div><div class="naowee-message__text">Este beneficiario <strong>ya recibió todos los incentivos aplicables</strong> en este momento.</div></div></div>' : ''}
+      <div class="prog-list">${rows}</div></div>` : ''}
+    ${footer}</div>
+    ${blocked ? `<div class="naowee-message naowee-message--negative" style="margin-top:4px"><div class="naowee-message__header"><div class="naowee-message__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div class="naowee-message__text"><strong>${esc2(prof.persona.split(' ')[0])} aún no puede recibir incentivos.</strong> La documentación debe estar aprobada por el gestor del programa.<ul style="margin:8px 0 0 18px">${why}</ul></div></div></div>` : ''}
+  </div>`;
+}
+
+function runReal(q, skipLoading){
+  const wrap = document.getElementById('stateWrap'), inp = document.getElementById('docNumber');
+  if(inp){ inp.value = q; inp.dispatchEvent(new Event('input')); }
+  const render = () => { const prof = window.opSearch(q); wrap.innerHTML = prof ? realCard(prof) : renderNotFound(); };
+  if(skipLoading){ render(); return; }
+  wrap.innerHTML = '<div class="loading-banner"><div class="spinner"></div> Validando la documentación del beneficiario…</div>';
+  setTimeout(render, 450);
+}
+function doSearch(){
+  const n = document.getElementById('docNumber').value.trim();
+  if(!n){ document.getElementById('docNumber').focus(); return; }
+  runReal(n);
+}
+function goReal(cc){
+  sessionStorage.setItem('inc-profile', JSON.stringify({ real: true, doc: cc, ts: Date.now() }));
+  fadeAndGo('incentivo-10-asignar-tipo.html?doc=' + encodeURIComponent(cc));
+}
+let PROFILE_MODE = false;
+function enterProfileMode(){
+  PROFILE_MODE = true;
+  const sc = document.querySelector('.search-card'); if(sc) sc.style.display = 'none';
+  const st = document.getElementById('opStepper'); if(st) st.style.display = 'none';
+  const h = document.querySelector('.page-title'), sub = document.querySelector('.page-sub');
+  if(h) h.textContent = 'Perfil del beneficiario';
+  if(sub) sub.textContent = 'Sus programas, la documentación y los incentivos que ya recibió.';
+  /* el menú resalta «Mis asignaciones», de donde viene el operador */
+  const rows = document.querySelectorAll('.sidebar-nav .nav-row');
+  if(rows.length > 1){
+    const bar = rows[0].querySelector('.active-bar');
+    rows[0].classList.remove('active'); rows[1].classList.add('active');
+    rows[0].setAttribute('onclick', "sessionStorage.removeItem('inc-profile');location.href='incentivo-08-asignar-buscar.html'");
+    if(bar) rows[1].insertBefore(bar, rows[1].firstChild);
+    const col = (r, c) => r.querySelectorAll('.icon svg, .icon svg *').forEach(e => { if(e.getAttribute('stroke')) e.setAttribute('stroke', c); });
+    col(rows[0], '#646587'); col(rows[1], '#d74009');
+  }
+  if(!document.getElementById('perfilBack')){
+    const a = document.createElement('a');
+    a.id = 'perfilBack'; a.href = 'incentivo-14-mis-asignaciones.html';
+    a.style.cssText = 'display:inline-flex;align-items:center;gap:6px;color:#d74009;font-weight:600;font-size:14px;margin-bottom:14px;text-decoration:none';
+    a.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Volver a mis asignaciones';
+    const ph = document.querySelector('.page-header'); if(ph) ph.parentNode.insertBefore(a, ph);
+  }
+}
+function tryRehydrate(){
+  try{
+    const saved = JSON.parse(sessionStorage.getItem('inc-profile') || '{}');
+    if(!saved.real || !saved.doc) return false;
+    const volver = /[?&]volver=1/.test(location.search);
+    if(!volver && saved.view !== 'perfil'){ sessionStorage.removeItem('inc-profile'); return false; }   // entrada nueva: buscador limpio
+    if(saved.view === 'perfil') enterProfileMode();
+    runReal(saved.doc, true);
+    return true;
+  }catch(e){ return false; }
+}
+renderQuick();
+
 function fadeAndGo(url){
   // Cross-document view transitions manejan la animación en Chrome 126+/Safari 18+.
   // Fallback: fade manual para navegadores sin VT API.
@@ -1320,7 +1448,7 @@ tryRehydrate();
 })();
 </script>
 
-<script src="shared/profile-switcher.js?v=role-15" defer></script>
+<script src="shared/profile-switcher.js?v=role-17" defer></script>
 
 <script src="shared/footer-scroll.js" defer></script>
 

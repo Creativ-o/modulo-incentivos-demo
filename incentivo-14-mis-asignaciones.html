@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
 <script src="shared/programs-data.js"></script>
+<script src="shared/revert-modal.js" defer></script>
 
 <style>
   .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap}
@@ -170,12 +171,13 @@
   .asig-table .code-link:focus-visible{outline:2px solid var(--naowee-color-text-accent,#d74009);outline-offset:2px;border-radius:3px}
 
   /* Column widths */
-  .asig-table th:nth-child(1),.asig-table td:nth-child(1){width:13%}
-  .asig-table th:nth-child(2),.asig-table td:nth-child(2){width:26%}
-  .asig-table th:nth-child(3),.asig-table td:nth-child(3){width:15%}
-  .asig-table th:nth-child(4),.asig-table td:nth-child(4){width:24%}
-  .asig-table th:nth-child(5),.asig-table td:nth-child(5){width:11%;text-align:right}
-  .asig-table th:nth-child(6),.asig-table td:nth-child(6){width:11%;text-align:right;padding-right:18px}
+  .asig-table th:nth-child(1),.asig-table td:nth-child(1){width:12%}
+  .asig-table th:nth-child(2),.asig-table td:nth-child(2){width:22%}
+  .asig-table th:nth-child(3),.asig-table td:nth-child(3){width:14%}
+  .asig-table th:nth-child(4),.asig-table td:nth-child(4){width:22%}
+  .asig-table th:nth-child(5),.asig-table td:nth-child(5){width:10%;text-align:right}
+  .asig-table th:nth-child(6),.asig-table td:nth-child(6){width:11%;text-align:right;padding-right:8px}
+  .asig-table th:nth-child(7),.asig-table td:nth-child(7){width:9%;text-align:right;padding-right:14px}
 
   /* Cells */
   .fecha-cell{font-size:12.5px;color:var(--naowee-color-text-primary,#282834)}
@@ -214,6 +216,9 @@
   .valor-cell.muted{color:#9c9ebf;font-weight:400}
 
   .tablet-foot{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--naowee-color-text-secondary,#646587)}
+
+  .rvt-btn{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:#d74009;font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 8px;border-radius:8px;white-space:nowrap}
+  .rvt-btn:hover{background:#fde9cf}
 </style>
 </head>
 <body>
@@ -389,6 +394,7 @@
               <th>Programa</th>
               <th>Valor</th>
               <th>Estado</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="asigBody"></tbody>
@@ -411,7 +417,8 @@
    ═══════════════════════════════════════════════════════════════ */
 const CURRENT_OPERATOR = 'Jorge Guzman';
 
-const PEOPLE = ['Ana García','Pedro Martínez','Andrés García','María C. Herrera','Laura Meza','Camila Ríos','Santiago López','Valentina Pérez','Juan Rodríguez','Diana Torres','Carlos Guzmán','Natalia Ruiz','Esteban Mora','Isabella Gil','Nicolás Bernal','Jorge Ortiz','Alejandra Vargas','Felipe Cárdenas','Mariana Soto','Tomás Restrepo'];
+const REV_BENEF = {}; (window.docReviews ? window.docReviews() : []).forEach(r => { REV_BENEF[r.persona] = { tipo: r.tipo, cc: r.cc }; });
+const PEOPLE = Object.keys(REV_BENEF).length ? Object.keys(REV_BENEF) : ['Ana García'];
 const OPERATORS = ['Jorge Guzman','Laura Meza','Carla Suárez','Andrés Polo'];
 const REGIONS = ['Atlántico','Cundinamarca','Valle','Antioquia','Santander','Cauca','Bogotá','Nariño'];
 const AV_COLORS = ['purple','orange','green','blue','pink','teal'];
@@ -421,17 +428,18 @@ function buildAsignaciones(){
   const all = [];
   let globalIdx = 0;
   window.PROGRAMS_DATA.forEach(p => {
-    if(p.codes.asig === 0) return;
-    const totalAsig = p.codes.asig + p.codes.rev;
+    const bs = window.codesBase(p), asig0 = bs.asig, hasInv = window.codeTypes(window.getProgramConfig(p)).length > 0;
+    if(asig0 === 0) return;
+    const totalAsig = asig0 + bs.rev;
     const unitValue = p.codes.total > 0 ? Math.round(p.rubro / p.codes.total) : 0;
     for(let i = 1; i <= totalAsig; i++){
       globalIdx++;
       const code = `${p.id.replace('PRG-','')}-${String(i).padStart(5, '0')}`;
-      const estado = i > p.codes.asig ? 'rev' : 'asig';
+      const estado = i > asig0 ? 'rev' : (window.isReverted && window.isReverted(p.id, code) ? 'rev' : 'asig');
       const benefIdx = (globalIdx * 7) % PEOPLE.length;
       const person = PEOPLE[benefIdx];
       const initials = person.split(' ').map(s => s[0]).slice(0, 2).join('');
-      const cc = `CC ${(1000000 + globalIdx * 131).toLocaleString('es-CO').replace(/,/g, '.')}`;
+      const bf = REV_BENEF[person] || { tipo: 'CC', cc: '1.000.000.000' }, cc = `${bf.tipo} ${bf.cc}`, ccRaw = bf.cc;
       const op = OPERATORS[globalIdx % OPERATORS.length];
       const region = p.coverage === 'Nacional' ? REGIONS[globalIdx % REGIONS.length] : p.coverage;
       const monthIdx = (globalIdx * 3) % 12;
@@ -443,12 +451,12 @@ function buildAsignaciones(){
       const hora = `${hour}:${min}`;
       const tipo = p.incentives?.[0]?.category || 'Otro';
       // Solo Bono lleva código asociado al inventario
-      const finalCode = tipo === 'Bono' ? code : null;
+      const finalCode = hasInv ? code : null;
       // ~5% de los incentivos no monetarios sin valor asignado (kit en especie)
       const finalValor = (tipo === 'Kit' && globalIdx % 18 === 0) ? null : unitValue;
       all.push({
-        code: finalCode, prg: p, estado, tipo,
-        person, cc, initials, avClass: AV_COLORS[globalIdx % AV_COLORS.length],
+        code: finalCode, key: code, hasCode: !!finalCode, tipoName: (p.incentives && p.incentives[0] ? p.incentives[0].name : ''), prg: p, estado, tipo,
+        person, cc, ccRaw, initials, avClass: AV_COLORS[globalIdx % AV_COLORS.length],
         op, region, fecha, hora,
         valor: finalValor,
         sortKey: year * 10000 + monthIdx * 100 + day,
@@ -463,6 +471,17 @@ function buildAsignaciones(){
 const ALL_RAW = buildAsignaciones();
 // Aterriza al operador actual
 const ALL = ALL_RAW.filter(a => a.op === CURRENT_OPERATOR);
+/* Entregas registradas desde el flujo de asignación (lo más reciente arriba) */
+(window.getDeliveries ? window.getDeliveries() : []).slice().reverse().forEach(d => {
+  const prg = window.PROGRAMS_DATA.filter(p => p.id === d.prog)[0]; if(!prg || d.operador !== CURRENT_OPERATOR) return;
+  const now = new Date();
+  ALL.unshift({
+    code: d.code, hasCode: !!d.code, deliveryId: d.id, tipoName: d.incName, prg, estado: d.reverted ? 'rev' : 'asig', tipo: d.cat, person: d.persona, cc: d.tipo + ' ' + d.cc, ccRaw: d.cc,
+    initials: d.persona.split(' ').filter(w => w.length > 1).slice(0, 2).map(w => w[0]).join('').toUpperCase(), avClass: AV_COLORS[ALL.length % AV_COLORS.length],
+    op: d.operador, region: '—', fecha: d.fecha, hora: d.hora, valor: d.valor || null,
+    sortKey: 99999999, year: now.getFullYear(), monthIdx: now.getMonth(), day: now.getDate(), real: true
+  });
+});
 
 const state = { estado: 'all', period: 'all', search: '', page: 1, pageSize: 10 };
 
@@ -591,19 +610,19 @@ function render(){
 
   const body = document.getElementById('asigBody');
   if(!slice.length){
-    body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:48px;color:#9c9ebf">Sin asignaciones con estos filtros.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:#9c9ebf">Sin asignaciones con estos filtros.</td></tr>`;
   } else {
     body.innerHTML = slice.map(a => {
       const mutedValor = a.estado === 'rev';
       const codeCell = a.code
-        ? `<a href="incentivo-05-programa-detalle.html?id=${a.prg.id}&from=mis-asignaciones" onclick="event.stopPropagation();fadeAndGo('incentivo-05-programa-detalle.html?id=${a.prg.id}&from=mis-asignaciones');return false" class="code-link" title="Ver detalle del programa ${a.prg.name}"><code>${a.code}</code></a>`
+        ? `<code>${a.code}</code>`
         : `<span style="font-family:'Inter',sans-serif;font-size:12.5px;color:#9c9ebf;font-style:italic">Sin código</span>`;
       const moneyTxt = formatMoney(a.valor);
       const valorCell = moneyTxt
         ? `<span class="valor-cell${mutedValor ? ' muted' : ''}">${moneyTxt}</span>`
         : `<span style="font-family:'Inter',sans-serif;font-size:12.5px;color:#9c9ebf;font-style:italic">Sin valor</span>`;
       return `
-      <tr onclick="fadeAndGo('incentivo-05-programa-detalle.html?id=${a.prg.id}&from=mis-asignaciones')">
+      <tr onclick="openBenef('${a.ccRaw}')" title="Ver el perfil de ${a.person}">
         <td>
           <div class="fecha-cell">${a.fecha}</div>
           <div class="fecha-cell__hour">${a.hora}</div>
@@ -631,6 +650,7 @@ function render(){
         </td>
         <td>${valorCell}</td>
         <td style="text-align:right">${badges[a.estado]}</td>
+        <td style="text-align:right;padding-right:10px">${canRevert(a) ? `<button type="button" class="rvt-btn" onclick="event.stopPropagation();askRevert(${ALL.indexOf(a)})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Revertir</button>` : ''}</td>
       </tr>
     `;}).join('');
   }
@@ -640,6 +660,30 @@ function render(){
   document.getElementById('pagTotal').textContent = totalPages;
   document.getElementById('pagPrev').disabled = state.page <= 1;
   document.getElementById('pagNext').disabled = state.page >= totalPages;
+}
+
+
+/* ══ Revertir una asignación (con o sin código) ══ */
+function canRevert(a){
+  const role = localStorage.getItem('naowee-incentivos-role') || 'admin';
+  if(a.estado !== 'asig' || !a.prg || a.prg.status !== 'active') return false;
+  if(role === 'admin' || role === 'gestor' || role === 'programa') return true;   // globales: cualquiera · gestor de programa: los de sus programas (la lista ya viene filtrada)
+  if(role === 'operador') return a.op === CURRENT_OPERATOR;                  // operador: solo sus entregas
+  return false;
+}
+function askRevert(i){
+  const a = ALL[i]; if(!a || !window.RevertDialog) return;
+  window.RevertDialog.open({
+    persona: a.person, programa: a.prg.name, incentivo: a.tipoName || (a.prg.incentives && a.prg.incentives[0] ? a.prg.incentives[0].name : '—'), code: a.hasCode === false ? null : a.code, fecha: a.fecha + ' · ' + a.hora, por: a.op,
+    onConfirm: r => {
+      const chip = document.querySelector('.user-chip .user-name'), rl = document.querySelector('.user-chip .user-role');
+      window.revertAsignacion({ progId: a.prg.id, key: a.key || a.code, deliveryId: a.deliveryId || null, programa: a.prg.name, persona: a.person, incentivo: a.tipoName || '—', code: a.hasCode === false ? null : a.code,
+        valor: a.valor || a.prg.unit || 0, entregadoPor: a.op, fechaEntrega: a.fecha + ' · ' + a.hora, inc: Math.max(0, window.codeTypeAt(a.prg, window.getProgramConfig(a.prg), window.codeIndex(a.prg, a.key || ''))), motivo: r.motivo, motivoLabel: r.motivoLabel, just: r.just, autor: chip ? chip.textContent.trim() : '', rol: rl ? rl.textContent.trim() : '' });
+      a.estado = 'rev';
+      if(typeof updateKPIs === 'function') updateKPIs();
+      render();
+    }
+  });
 }
 
 function changePage(delta){
@@ -674,9 +718,14 @@ requestAnimationFrame(() => {
   if(active) movePeriodPill(active);
 });
 
+/* Perfil del beneficiario: la misma ficha del paso «Buscar» con sus incentivos y entregas */
+function openBenef(cc){
+  sessionStorage.setItem('inc-profile', JSON.stringify({ real: true, doc: cc, view: 'perfil', ts: Date.now() }));
+  window.location.href = 'incentivo-08-asignar-buscar.html';
+}
 function fadeAndGo(url){window.location.href=url}
 </script>
-<script src="shared/profile-switcher.js?v=role-15" defer></script>
+<script src="shared/profile-switcher.js?v=role-17" defer></script>
 
 <script src="shared/footer-scroll.js" defer></script>
 

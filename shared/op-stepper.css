@@ -1,0 +1,20 @@
+/* Franja de pasos del flujo del operador: misma del formulario de parametrización
+   (círculo + «PASO N» y debajo el nombre; hecho en verde, activo en naranja, pendiente en gris) */
+.op-step-band{position:sticky;top:-28px;z-index:10;display:flex;align-items:center;justify-content:center;height:64px;box-sizing:border-box;margin:0 -32px 24px;padding:0 24px;background:#fafbff;border-top:1px solid #e7e9f3;border-bottom:1px solid #e7e9f3;overflow-x:auto}
+.op-stepper{display:flex;align-items:center;width:100%;max-width:1100px;min-width:640px;margin:0 auto;column-gap:16px}
+.op-step{display:flex;flex:1 1 auto;align-items:center;column-gap:16px}
+.op-step:last-child{flex:0 0 auto}
+.op-step:not(:last-child)::after{content:"";flex:1 1 auto;height:2px;border-radius:1px;background:#d0d4e6}
+.op-step--done:not(:last-child)::after{background:#1f8923}
+.op-step__c{display:flex;align-items:center;column-gap:8px}
+.op-step__b{display:flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:50%;font-size:12px;font-weight:600;line-height:28px;color:#fff;background:#9c9ebf;flex:none}
+.op-step__b svg{width:14px;height:14px}
+.op-step--active .op-step__b{background:#d74009}
+.op-step--done .op-step__b{background:#1f8923}
+.op-step__t{display:flex;flex-direction:column;gap:2px;line-height:1.15;text-align:left}
+.op-step__k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8788ab}
+.op-step--active .op-step__k{color:#b8350a}
+.op-step--done .op-step__k{color:#166a1a}
+.op-step__l{font-size:14px;font-weight:600;white-space:nowrap;color:#9c9ebf}
+.op-step--active .op-step__l,.op-step--done .op-step__l{color:#282834}
+@media(max-width:900px){.op-step-band{margin:0 -16px 20px}}

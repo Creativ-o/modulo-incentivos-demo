@@ -69,7 +69,7 @@
     // y Revisión documental. Se resuelve aquí y no por data-role, porque no todas
     // las páginas traen el atributo. Reportería y creación quedan fuera.
     if(role === 'programa'){
-      const NAV_PROGRAMA = ['Dashboard','Programas','Mis programas','Códigos','Historial','Revisión documental'];
+      const NAV_PROGRAMA = ['Dashboard','Programas','Mis programas','Códigos','Historial de asignaciones','Revisión documental'];
       document.querySelectorAll('.sidebar-nav .nav-row').forEach(row => {
         const lbl = row.querySelector('.lbl');
         const txt = lbl ? lbl.textContent.trim() : '';
@@ -80,6 +80,11 @@
         location.replace(PROGRAMA_HOME);
         return;
       }
+    }
+    // Operador: solo vive en el flujo de asignación; las pantallas de gestión lo devuelven a su inicio
+    if(role === 'operador' && /incentivo-(02|03|04|05|06|07|12|13|15|16)/.test(location.pathname)){
+      location.replace(OPERATOR_HOME);
+      return;
     }
     // Revisión documental: la ve el Gestor de programa (titular) y los roles con alcance global (apoyo).
     if((role === 'programa' || role === 'admin' || role === 'gestor') && !document.querySelector('.sidebar-nav .nav-row[data-nav="revision"]')) injectRevisionNav();

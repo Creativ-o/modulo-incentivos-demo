@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
 <script src="shared/programs-data.js?v=cat-icons-2"></script>
-<script src="shared/profile-switcher.js?v=role-15"></script>
+<script src="shared/profile-switcher.js?v=role-17"></script>
 
 <style>
   .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px;flex-wrap:wrap}
@@ -260,7 +260,7 @@
       </div>
       <div class="nav-row" data-role="admin" onclick="fadeAndGo('incentivo-12-asignaciones.html')">
         <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><line x1="6" y1="7.5" x2="6" y2="10.5"/><line x1="6" y1="13.5" x2="6" y2="16.5"/><line x1="11" y1="6" x2="20" y2="6"/><line x1="11" y1="12" x2="18" y2="12"/><line x1="11" y1="18" x2="16" y2="18"/></svg></div>
-        <span class="lbl">Historial</span>
+        <span class="lbl">Historial de asignaciones</span>
       </div>
       <div class="nav-row active" data-role="admin">
         <div class="active-bar"></div>
@@ -439,7 +439,7 @@ function buildAssignments(){
   const all = [];
   PROGRAMS.forEach(p => {
     const r = seed(p.id);
-    const n = Math.min(60, p.codes?.asig || 30);
+    const n = Math.min(60, (window.codesBase ? window.codesBase(p).asig : p.codes?.asig) || 30);   // las entregas reales se agregan aparte
     const fromY = parseYear(p.from);
     for (let i = 0; i < n; i++) {
       const monthOffset = Math.floor(r() * 12);
@@ -462,6 +462,14 @@ function buildAssignments(){
         categoria: inc.category || p.incentives?.[0]?.category || 'Incentivo'
       });
     }
+  });
+  // entregas registradas por los operadores (las revertidas no cuentan como entregadas)
+  const MS = { ene:0, feb:1, mar:2, abr:3, may:4, jun:5, jul:6, ago:7, sep:8, oct:9, nov:10, dic:11 };
+  (window.getDeliveries ? window.getDeliveries() : []).filter(d => !d.reverted).forEach((d, k) => {
+    const p = PROGRAMS.find(x => x.id === d.prog); if(!p) return;
+    const m = /(\d+) (\w{3}) (\d{4})/.exec(d.fecha || '');
+    all.push({ id: d.id, programId: p.id, programName: p.name, actoAdmin: p.actoAdmin || '—', date: m ? new Date(+m[3], MS[m[2]] || 0, +m[1]) : new Date(),
+      beneficiario: d.persona, cedula: d.cc, depto: p.coverage || 'Nacional', disciplina: '—', logro: '', valor: d.valor || 0, incentivo: d.incName, categoria: d.cat || 'Incentivo' });
   });
   return all;
 }

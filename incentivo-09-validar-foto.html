@@ -12,6 +12,7 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
+<link rel="stylesheet" href="shared/op-stepper.css"/>
 
 <style>
   .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:24px}
@@ -294,6 +295,9 @@
   .summary-note strong{color:var(--accent)}
   .summary-actions{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 
+
+  /* DC-111 · avatares planos, sin efecto 3D */
+  .profile-avatar,.flow-recap__ava,.receipt__ava,.recap__ava{background:#e8590c;border:0;box-shadow:none}
 </style>
 </head>
 <body>
@@ -318,7 +322,7 @@
       </div>
       <div class="nav-row" onclick="fadeAndGo('incentivo-14-mis-asignaciones.html')">
         <div class="icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7h13M8 12h13M8 17h13"/><circle cx="4" cy="7" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="17" r="1"/></svg></div>
-        <span class="lbl">Asignaciones</span>
+        <span class="lbl">Mis asignaciones</span>
       </div>
     </nav>
     <div class="sidebar-bottom">
@@ -350,15 +354,7 @@
       </div>
 
       <!-- Stepper sticky (paridad con paso 1) -->
-      <div class="stepper" id="stepperWrap">
-        <div class="step done"><span class="n"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="step-lbl">Buscar deportista</span></div>
-        <span class="step-sep"></span>
-        <div class="step done"><span class="n"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="step-lbl">Seleccionar incentivo</span></div>
-        <span class="step-sep"></span>
-        <div class="step active"><span class="n">3</span><span class="step-lbl">Evidencia de entrega</span></div>
-        <span class="step-sep"></span>
-        <div class="step"><span class="n">4</span><span class="step-lbl">Confirmación</span></div>
-      </div>
+      <div class="op-step-band" id="opStepper"><div class="op-stepper"><div class="op-step op-step--done"><div class="op-step__c"><div class="op-step__b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="op-step__t"><span class="op-step__k">Paso 1</span><span class="op-step__l">Buscar deportista</span></span></div></div><div class="op-step op-step--done"><div class="op-step__c"><div class="op-step__b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="op-step__t"><span class="op-step__k">Paso 2</span><span class="op-step__l">Seleccionar incentivo</span></span></div></div><div class="op-step op-step--active"><div class="op-step__c"><div class="op-step__b">3</div><span class="op-step__t"><span class="op-step__k">Paso 3</span><span class="op-step__l">Evidencia de entrega</span></span></div></div><div class="op-step "><div class="op-step__c"><div class="op-step__b">4</div><span class="op-step__t"><span class="op-step__k">Paso 4</span><span class="op-step__l">Confirmación</span></span></div></div></div></div>
 
       <div class="layout">
         <div>
@@ -571,6 +567,34 @@ function fadeAndGo(url){
   document.body.style.opacity = '0';
   setTimeout(() => { window.location.href = url; }, 260);
 }
+
+/* ═════ Modo real: la entrega se registra con los datos de la selección del paso anterior ═════ */
+const confirmDeliveryLegacy = confirmDelivery;
+let REAL_ASSIGN = null;
+(function hydrateReal(){
+  let s = {}; try { s = JSON.parse(sessionStorage.getItem('inc-assignment') || '{}'); } catch(e){}
+  if(!s.real) return; REAL_ASSIGN = s;
+  const e = s.entry, ini = s.persona.split(' ').filter(w => w.length > 1).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  const T = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  T('sumName', s.persona.split(' ').slice(0, 2).join(' ')); T('sumDoc', s.tipo + ' ' + s.cc);
+  T('sumInc', e.incName); T('sumCode', s.code || 'No aplica');
+  const sv = document.getElementById('sumValue'); sv.previousElementSibling.textContent = 'Programa'; sv.textContent = e.progName; sv.style.fontSize = '12.5px'; sv.closest('.summary-row').classList.remove('big');
+  T('recapAva', ini); T('recapName', s.persona); document.getElementById('recapDoc').innerHTML = `<strong>${s.tipo}</strong> ${s.cc}`;
+  T('recapInc', e.incName); T('recapCode', s.code || 'No aplica');
+})();
+confirmDelivery = function(){
+  if(!REAL_ASSIGN) return confirmDeliveryLegacy();
+  const e = REAL_ASSIGN.entry, n = new Date(), M = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const chip = document.querySelector('.user-chip .user-name');
+  const d = window.addDelivery({
+    id: window.nextDeliveryId(), item: e.itemId, prog: e.progId, progName: e.progName, inc: e.incIdx, incName: e.incName, cat: e.cat, modalidad: e.modalidad,
+    code: REAL_ASSIGN.code || null, evidence: evidenceFileName || 'evidencia', cycle: e.cycle, persona: REAL_ASSIGN.persona, tipo: REAL_ASSIGN.tipo, cc: REAL_ASSIGN.cc,
+    operador: chip ? chip.textContent.trim() : 'Jorge Guzman', fecha: n.getDate() + ' ' + M[n.getMonth()] + ' ' + n.getFullYear(),
+    hora: String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0'), valor: e.valor, obs: (document.getElementById('obs') || {}).value || ''
+  });
+  sessionStorage.setItem('inc-assignment-complete', JSON.stringify({ real: true, delivery: d, ts: Date.now() }));
+  fadeAndGo('incentivo-11-asignar-exito.html');
+};
 function toggleProfileDD(ev){ ev.stopPropagation(); document.getElementById('profileSwitcher')?.classList.toggle('open'); }
 document.addEventListener('click', (e) => { const sw = document.getElementById('profileSwitcher'); if(sw && !sw.contains(e.target)) sw.classList.remove('open'); });
 
@@ -643,7 +667,8 @@ document.addEventListener('click', (e) => { const sw = document.getElementById('
 })();
 </script>
 
-<script src="shared/profile-switcher.js?v=role-15" defer></script>
+<script src="shared/programs-data.js"></script>
+<script src="shared/profile-switcher.js?v=role-17" defer></script>
 
 <script src="shared/footer-scroll.js" defer></script>
 

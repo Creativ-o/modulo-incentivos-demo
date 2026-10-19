@@ -69,7 +69,7 @@
   var OPS_NUM = ['≥', '≤', '=', '≠'];
   /* Condiciones de mayoría: quien más tiene, los N que más tienen, o más de N */
   var OPS_AGG = [['max', 'es quien más tiene'], ['top', 'está entre los que más tienen'], ['>', 'tiene más de'], ['≥', 'tiene al menos']];
-  var OPS_SEL = [['=', 'es'], ['≠', 'no es'], ['∈', 'es uno de'], ['∉', 'no es ninguno de']];
+  var OPS_SEL = [['∈', 'es'], ['∉', 'no es']];   // el valor siempre es un multiselector: uno o varios
 
 
   /* ── Estado ─────────────────────────────────────────────────── */
@@ -301,7 +301,13 @@
   var MSO = {}; // estado de pantalla: { key, q }
   function norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function muniDepto(m) { return String(m).split(' · ')[1]; }
+  function ruleByKey(k) { var p = k.split('.'); return incById(p[0]).grupos[+p[1]].rows[+p[2]]; }
   function msCfg(key) {
+    if (key.indexOf('rl:') === 0) { // valores de una condición del paso 3 (campos de selección)
+      var rk = key.slice(3), rp = rk.split('.'), rinc = incById(rp[0]), rfirst = +rp[2] === 0 && !(+rp[1] === 0 && popDims(rinc).length);
+      return { id: 'pfRl-' + rk.replace(/\W/g, '_'), label: rfirst ? 'Valores' : '', req: 0, ph: 'Selecciona uno o varios', sp: 'Buscar', box: 'rl.' + rk, hint: '',
+        get: function () { var r = ruleByKey(rk); return Array.isArray(r.v) ? r.v : []; }, options: function () { return optsOf(ruleByKey(rk)); } };
+    }
     if (key.indexOf('fx:') === 0) { // valores de una condición fija (paso 2) de un tipo: solo lo elegido en el paso 2
       var pp = key.split(':'), inc = incById(pp[1]), dim = pp[2], dd = popDims(inc), nm = { roles: 'rol', cobertura: 'departamento', municipios: 'municipio' }[dim];
       return { id: 'pfFx-' + pp[1] + '-' + dim, label: dd.length && dd[0][0] === dim ? 'Valores' : '', req: 0, ph: 'Selecciona ' + nm, sp: 'Buscar ' + nm, box: 'fx.' + pp[1] + '.' + dim, hint: '',
@@ -386,6 +392,11 @@
     var c = msCfg(key), v = c.get().slice(), i = v.indexOf(r);
     if (c.exclusive && r === c.exclusive) v = i > -1 ? [] : [r]; // marcar «Nacional» reemplaza todo; desmarcarla libera los departamentos
     else { if (c.exclusive && v.indexOf(c.exclusive) > -1) return; if (i > -1) v.splice(i, 1); else v.push(r); }
+    if (key.indexOf('rl:') === 0) { // condición del paso 3: lista de valores
+      var rr = ruleByKey(key.slice(3)); rr.v = v; msRedraw(key); updateRules(key.slice(3).split('.')[0]);
+      var rbox = document.querySelector('[data-box="' + c.box + '"]'); if (rbox && v.length) { rbox.classList.remove('nwt-input-box--error'); var rm = rbox.querySelector('.pf-err'); if (rm) rm.remove(); }
+      saveDraft(true); refreshDraftBtn(); return;
+    }
     if (key.indexOf('fx:') === 0) { // se guarda lo que NO aplica a este tipo; debe quedar al menos un valor
       var fp = key.split(':'), fi = incById(fp[1]), fd = fp[2]; normInc(fi); var off = fi.pobOff[fd], oi = off.indexOf(r);
       if (oi > -1) off.splice(oi, 1); else off.push(r);
@@ -504,13 +515,11 @@
         opSel = sel({ label: first ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op || '=', opts: [['=', 'es'], ['≠', 'no es']] });
         val = tf({ label: first ? 'Valor' : '', k: 'rule.' + key + '.v', val: r.v, ph: 'Ej. Cali' });
       } else {
-        opSel = sel({ label: first ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op || '=', opts: OPS_SEL, attrs: ' data-struct="1"' });
-        if (multi) {
-          var arr = Array.isArray(r.v) ? r.v : [];
-          val = '<div>' + (first ? '<span class="pf-label">Valores</span>' : '') + '<div class="pf-rule__chips">' + optsOf(r).map(function (o) { return tag(o, arr.indexOf(o) > -1, 'rule-multi', key, o); }).join('') + '</div></div>';
-        } else {
-          val = sel({ label: first ? 'Valor' : '', k: 'rule.' + key + '.v', val: Array.isArray(r.v) ? '' : r.v, ph: 'Selecciona', opts: optsOf(r) });
-        }
+        // estado de campos de selección: «es» (∈) / «no es» (∉) con una lista de valores; los datos antiguos con «=» / «≠» se pasan a lista
+        if(r.op === '=' || !r.op) r.op = '∈'; else if(r.op === '≠') r.op = '∉';
+        if(!Array.isArray(r.v)) r.v = r.v ? [r.v] : [];
+        opSel = sel({ label: first ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op, opts: OPS_SEL, attrs: ' data-struct="1"' });
+        val = msHost('rl:' + key);
       }
     } else { opSel = '<div></div>'; val = '<div></div>'; }
     return '<div class="pf-rule">' + fieldSel + opSel + val + '<div>' + iconBtn('close', 'rule-del', 'Quitar condición', inc.id, gi + '.' + ri) + '</div></div>';
@@ -529,7 +538,7 @@
       if (v === '' || v == null) return null;
       return r.op === '≥' ? 'Edad de ' + v + ' años o más' : r.op === '≤' ? 'Edad de ' + v + ' años o menos' : r.op === '≠' ? 'Edad distinta de ' + v + ' años' : 'Edad de ' + v + ' años';
     }
-    if (r.op === '∈' || r.op === '∉') { if (!Array.isArray(v) || !v.length) return null; return f.label + (r.op === '∈' ? ' es ' : ' no es ') + (r.op === '∈' ? '' : 'ninguno de: ') + listaO(v); }
+    if (r.op === '∈' || r.op === '∉') { if (!Array.isArray(v) || !v.length) return null; return f.label + (r.op === '∈' ? ' es ' + listaO(v) : ' no es ' + (v.length > 1 ? v.slice(0, -1).join(', ') + ' ni ' + v[v.length - 1] : v[0])); }
     if (v === '' || v == null || Array.isArray(v)) return null;
     return f.label + (r.op === '≠' ? ' no es ' : ' es ') + v;
   }
@@ -549,9 +558,9 @@
   }
   function heredadas(inc) {
     var h = [], p = S.pob, r = aplica(inc, 'roles'), c = aplica(inc, 'cobertura'), mu = aplica(inc, 'municipios');
-    if (p.roles.length) h.push(['Rol', !r.length ? 'sin valores elegidos' : r.length > 1 ? 'es uno de: ' + listaO(r) : 'es ' + r[0]]);
-    if (p.cobertura.length && p.cobertura.indexOf('Nacional') < 0) h.push(['Departamento', !c.length ? 'sin valores elegidos' : c.length > 1 ? 'es uno de: ' + listaO(c) : 'es ' + c[0]]);
-    if (p.municipios.length) { var m = mu.map(function (x) { return x.split(' · ')[0]; }); h.push(['Municipio', !m.length ? 'sin valores elegidos' : m.length > 1 ? 'es uno de: ' + listaO(m) : 'es ' + m[0]]); }
+    if (p.roles.length) h.push(['Rol', !r.length ? 'sin valores elegidos' : 'es ' + listaO(r)]);
+    if (p.cobertura.length && p.cobertura.indexOf('Nacional') < 0) h.push(['Departamento', !c.length ? 'sin valores elegidos' : 'es ' + listaO(c)]);
+    if (p.municipios.length) { var m = mu.map(function (x) { return x.split(' · ')[0]; }); h.push(['Municipio', !m.length ? 'sin valores elegidos' : 'es ' + listaO(m)]); }
     return h;
   }
   function heredadasTxt(inc) { return heredadas(inc).map(function (x) { return esc(x[0] + ' ' + x[1]); }); }
@@ -573,7 +582,7 @@
     return popDims(inc).map(function (d, ri) {
       var first = ri === 0, id = inc.id + '.' + d[0], key = 'fx:' + inc.id + ':' + d[0];
       return '<div class="pf-rule pf-rule--fixed">' + sel({ label: first ? 'Campo' : '', k: 'ui.fx.' + id, val: d[1], opts: [d[1]], attrs: ' disabled' }) +
-        sel({ label: first ? 'Operador' : '', k: 'ui.fxop.' + id, val: 'es uno de', opts: ['es uno de'], attrs: ' disabled' }) +
+        sel({ label: first ? 'Operador' : '', k: 'ui.fxop.' + id, val: 'es', opts: ['es'], attrs: ' disabled' }) +
         msHost(key) + '<div></div></div>';
     }).join('');
   }
@@ -958,7 +967,7 @@
     else if (p[0] === 'crono') { if (p.length === 3) S.crono[p[1]][p[2]] = raw; else S.crono[p[1]] = raw; }
     else if (p[0] === 'rule') {
       var inc = incById(p[1]), r = inc.grupos[+p[2]].rows[+p[3]], f = p[4];
-      if (f === 'f') { r.f = raw; var fd = FIELDS[raw]; r.op = fd.type === 'num' ? '≥' : (fd.type === 'agg' ? 'max' : '='); r.v = ''; }
+      if (f === 'f') { r.f = raw; var fd = FIELDS[raw]; r.op = fd.type === 'num' ? '≥' : (fd.type === 'agg' ? 'max' : (fd.type === 'text' ? '=' : '∈')); r.v = (fd.type === 'num' || fd.type === 'agg' || fd.type === 'text') ? '' : []; }
       else if (f === 'op') { r.op = raw; if (FIELDS[r.f] && FIELDS[r.f].type === 'agg' && raw === 'max') r.v = ''; if (raw === '∈' || raw === '∉') { if (!Array.isArray(r.v)) r.v = []; } else if (Array.isArray(r.v)) r.v = ''; }
       else r.v = raw;
     }

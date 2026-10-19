@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
+<link rel="stylesheet" href="shared/op-stepper.css"/>
 
 <style>
   .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap}
@@ -261,6 +262,9 @@
   .summary-row.pending .val{color:#9c9ebf;font-weight:400;font-style:normal;font-family:'Inter',sans-serif}
   .summary hr{border:none;border-top:1px dashed var(--naowee-color-border-default,#e7e9f3);margin:2px 0}
   .summary-actions{display:flex;flex-direction:column;gap:8px}
+
+  /* DC-111 · avatares planos, sin efecto 3D */
+  .profile-avatar,.flow-recap__ava,.receipt__ava,.recap__ava{background:#e8590c;border:0;box-shadow:none}
 </style>
 </head>
 <body>
@@ -317,15 +321,7 @@
       </div>
 
       <!-- Stepper sticky (paridad con paso 1) -->
-      <div class="stepper" id="stepperWrap">
-        <div class="step done"><span class="n"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="step-lbl">Buscar deportista</span></div>
-        <span class="step-sep"></span>
-        <div class="step active"><span class="n">2</span><span class="step-lbl">Seleccionar incentivo</span></div>
-        <span class="step-sep"></span>
-        <div class="step"><span class="n">3</span><span class="step-lbl">Evidencia de entrega</span></div>
-        <span class="step-sep"></span>
-        <div class="step"><span class="n">4</span><span class="step-lbl">Confirmación</span></div>
-      </div>
+      <div class="op-step-band" id="opStepper"><div class="op-stepper"><div class="op-step op-step--done"><div class="op-step__c"><div class="op-step__b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><span class="op-step__t"><span class="op-step__k">Paso 1</span><span class="op-step__l">Buscar deportista</span></span></div></div><div class="op-step op-step--active"><div class="op-step__c"><div class="op-step__b">2</div><span class="op-step__t"><span class="op-step__k">Paso 2</span><span class="op-step__l">Seleccionar incentivo</span></span></div></div><div class="op-step "><div class="op-step__c"><div class="op-step__b">3</div><span class="op-step__t"><span class="op-step__k">Paso 3</span><span class="op-step__l">Evidencia de entrega</span></span></div></div><div class="op-step "><div class="op-step__c"><div class="op-step__b">4</div><span class="op-step__t"><span class="op-step__k">Paso 4</span><span class="op-step__l">Confirmación</span></span></div></div></div></div>
 
       <div class="layout">
         <!-- Container único: recap + incentivo + código + footer -->
@@ -342,7 +338,7 @@
                 <span style="color:var(--naowee-color-feedback-fill-positive-loud,#1f8923);font-weight:600">Medalla de oro · JN 2025</span>
               </div>
             </div>
-            <button class="naowee-btn naowee-btn--link naowee-btn--small" onclick="fadeAndGo('incentivo-08-asignar-buscar.html')">
+            <button class="naowee-btn naowee-btn--link naowee-btn--small" onclick="fadeAndGo('incentivo-08-asignar-buscar.html?volver=1')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
               Cambiar beneficiario
             </button>
@@ -457,7 +453,7 @@
 
           <!-- Footer nav (consistente) -->
           <div class="flow-footer">
-            <button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="fadeAndGo('incentivo-08-asignar-buscar.html')">
+            <button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="fadeAndGo('incentivo-08-asignar-buscar.html?volver=1')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
               Volver al paso anterior
             </button>
@@ -517,6 +513,7 @@
   </div>
 </div>
 
+<script src="shared/programs-data.js"></script>
 <script>
 // Generación de códigos (cantidades realistas: 60 becas + 60 kits)
 const MONTHS = ['ene','feb','mar','abr','may','jun'];
@@ -793,6 +790,125 @@ function fadeAndGo(url){
   setTimeout(() => { window.location.href = url; }, 260);
 }
 
+/* ═════ Modo real: incentivos del beneficiario según la modalidad de cada tipo ═════ */
+const selectIncLegacy = selectInc, getFilteredCodesLegacy = getFilteredCodes, renderCodesLegacy = renderCodes;
+const REAL = { prof: null, entries: [], sel: null };
+const MOD_TXT = {
+  codigo:      ['Con código', 'Código del inventario y evidencia de entrega'],
+  'sin-codigo':['Con evidencia', 'Evidencia de entrega, sin código'],
+  fijo:        ['Fijo del ciclo', 'Confirmas la entrega del ciclo, sin código ni foto'],
+  certificado: ['Certificado digital', 'Se genera el PDF con firma y QR, sin código ni foto']
+};
+const esc3 = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $id = id => document.getElementById(id);
+(function initReal(){
+  let saved = {}; try { saved = JSON.parse(sessionStorage.getItem('inc-profile') || '{}'); } catch(e){}
+  if(!saved.real || !window.opSearch) return;
+  const prof = window.opSearch(saved.doc); if(!prof) return;
+  REAL.prof = prof; REAL.entries = prof.entries.filter(e => !e.delivered);
+  // recap
+  document.querySelector('.flow-recap__ava').textContent = prof.persona.split(' ').filter(w => w.length > 1).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  document.querySelector('.flow-recap__name').textContent = prof.persona;
+  const progs = [...new Set(prof.entries.map(e => e.progName))];
+  document.querySelector('.flow-recap__meta').innerHTML = `<span><strong>${prof.tipo}</strong> ${prof.cc}</span><span class="dot"></span><span>${progs.length} programa${progs.length === 1 ? '' : 's'} con documentación aprobada</span>` + (prof.excepcion ? '<span class="dot"></span><span style="color:#d74009;font-weight:600">' + (prof.excepcion === 'manual' ? 'Registrado manualmente' : 'Habilitado por excepción') + '</span>' : '');
+  const vals = document.querySelectorAll('.summary .summary-row .val');
+  vals[0].textContent = prof.persona.split(' ').slice(0, 2).join(' '); vals[1].textContent = `${prof.tipo} ${prof.cc}`;
+  const operador = (document.querySelector('.user-chip .user-name') || {}).textContent;
+  // lista de incentivos
+  $id('incList').closest('.flow-section').querySelector('p.desc').textContent = 'Selecciona el incentivo que vas a entregar. Lo que se te pide después depende de su modalidad.';
+  $id('incList').innerHTML = REAL.entries.map((e, i) => {
+    const m = MOD_TXT[e.modalidad];
+    const ico = (window.CAT_ICONS && window.CAT_ICONS[e.cat]) || '';
+    return `<div class="inc" data-idx="${i}" onclick="selectInc(this)">
+      <div class="inc__ico" style="background:${e.iconBg};color:${e.iconColor}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ico}</svg></div>
+      <div class="inc__body"><div class="inc__name">${esc3(e.incName)}</div><div class="inc__desc">${esc3(e.progName)}${e.cycle ? ' · ciclo ' + window.cycleLabel() : ''}</div>
+        <div class="inc__tags"><span class="naowee-badge naowee-badge--${e.modalidad === 'certificado' ? 'informative' : e.modalidad === 'fijo' ? 'caution' : 'neutral'} naowee-badge--quiet naowee-badge--small">${m[0]}</span><span style="font-size:12px;color:#646587">${m[1]}</span></div></div></div>`;
+  }).join('') || '<div class="doc-count">No hay incentivos pendientes para este beneficiario.</div>';
+  // el resumen no muestra valores: se reemplaza por la modalidad
+  const sv = $id('sumValue'); sv.querySelector('.lbl').textContent = 'Modalidad'; sv.classList.remove('big'); sv.querySelector('.val').textContent = '—';
+  document.querySelectorAll('.col-value').forEach(el => el.style.display = 'none');
+  window.__operador = (operador || 'Jorge Guzman').trim();
+})();
+
+function realSelectedFlags(){ return REAL.sel; }
+selectInc = function(el){
+  if(!REAL.prof){ return selectIncLegacy(el); }
+  document.querySelectorAll('.inc').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  REAL.sel = REAL.entries[+el.dataset.idx];
+  selectedInc = { id: 'e' + el.dataset.idx, name: REAL.sel.incName, category: REAL.sel.modalidad, value: 0 };
+  selectedCode = null;
+  const e = REAL.sel, cp = $id('codePanel');
+  if(e.needsCode){
+    const c = window.opCodes(window.PROGRAMS_DATA.filter(p => p.id === e.progId)[0], window.getProgramConfig(window.PROGRAMS_DATA.filter(p => p.id === e.progId)[0]), e.incIdx);
+    REAL.codes = c; codePage = 1; searchQ = ''; $id('codeSearch').value = '';
+    cp.classList.remove('flow-section--hidden'); renderCodes();
+  } else { cp.classList.add('flow-section--hidden'); }
+  paintSteps(); updateSummary();
+};
+function paintSteps(){
+  const e = REAL.sel; if(!e) return;
+  const steps = document.querySelectorAll('#opStepper .op-step'), seps = [];
+  const noEv = !e.needsEvidence;
+  if(steps[2]) steps[2].style.display = noEv ? 'none' : ''; if(seps[2]) seps[2].style.display = noEv ? 'none' : '';
+  if(steps[3]){ steps[3].querySelector('.op-step__b').textContent = noEv ? '3' : '4'; steps[3].querySelector('.op-step__k').textContent = 'Paso ' + (noEv ? '3' : '4'); }
+  const sub = document.querySelector('.layout .summary .naowee-message__text');
+  if(sub) sub.innerHTML = e.needsEvidence ? '<strong>Recuerda:</strong> la asignación se completa al registrar la evidencia de entrega en el siguiente paso.' : e.modalidad === 'certificado' ? '<strong>Certificado digital:</strong> al confirmar se genera el PDF con firma y QR y queda en el perfil del beneficiario.' : '<strong>Entrega del ciclo:</strong> al confirmar queda registrada una sola vez en el ciclo de ' + window.cycleLabel() + '. No requiere foto.';
+  const b = $id('btnNext'); b.firstChild.textContent = e.needsEvidence ? 'Continuar a evidencia ' : (e.modalidad === 'certificado' ? 'Generar certificado ' : 'Confirmar entrega ');
+}
+getFilteredCodes = function(){
+  if(!REAL.prof) return getFilteredCodesLegacy();
+  const list = (REAL.codes && REAL.codes.list) || [];
+  return list.filter(c => !searchQ || c.toLowerCase().includes(searchQ)).map(c => ({ code: c }));
+};
+renderCodes = function(){
+  if(!REAL.prof) return renderCodesLegacy();
+  const tbody = $id('codeTbody'); if(!tbody) return;
+  if(!REAL.prof || !REAL.sel){ tbody.innerHTML = ''; return; }
+  const list = getFilteredCodes(), total = list.length, totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(codePage > totalPages) codePage = totalPages;
+  const st = (codePage - 1) * PAGE_SIZE, en = Math.min(st + PAGE_SIZE, total), slice = list.slice(st, en);
+  $id('codeCount').innerHTML = `<strong>${REAL.codes.left}</strong> de ${REAL.codes.cap} código${REAL.codes.left === 1 ? '' : 's'} disponible${REAL.codes.left === 1 ? '' : 's'}`;
+  tbody.innerHTML = total ? slice.map(c => `<tr class="${selectedCode === c.code ? 'selected' : ''}" onclick="selectCode('${c.code}')"><td class="col-radio"><span class="code-radio"></span></td><td class="col-num"><span class="num-cell">${c.code}</span><div class="meta-cell">${esc3(REAL.sel.incName)}</div></td><td><span class="naowee-badge naowee-badge--quiet naowee-badge--small naowee-badge--neutral">${esc3(REAL.sel.cat)}</span></td><td class="meta-cell">${(REAL.codes.reverted || []).indexOf(c.code) > -1 ? '<span class="naowee-badge naowee-badge--negative naowee-badge--quiet naowee-badge--small">Revertido</span> disponible' : 'Disponible'}</td><td class="col-value" style="display:none"></td></tr>`).join('')
+    : '<tr><td colspan="5"><div class="code-empty">No hay códigos disponibles para este tipo. Pide al gestor que cargue más inventario.</div></td></tr>';
+  $id('codePagerInfo').innerHTML = total ? `Mostrando <strong style="color:var(--naowee-color-text-primary,#282834)">${st + 1}–${en}</strong> de <strong style="color:var(--naowee-color-text-primary,#282834)">${total}</strong>` : 'Sin resultados';
+  $id('codePageInput').value = codePage; $id('codePageTotal').textContent = totalPages;
+  $id('codePrev').disabled = codePage <= 1; $id('codeNext').disabled = codePage >= totalPages;
+};
+const updateSummaryLegacy = updateSummary;
+updateSummary = function(){
+  if(!REAL.prof){ return updateSummaryLegacy(); }
+  const e = REAL.sel, btn = $id('btnNext');
+  if(!e){ btn.disabled = true; return; }
+  const si = $id('sumInc'), sc = $id('sumCode'), sv = $id('sumValue');
+  si.classList.remove('pending'); si.querySelector('.val').textContent = e.incName;
+  if(e.needsCode){ if(selectedCode){ sc.classList.remove('pending'); sc.querySelector('.val').textContent = selectedCode; sc.querySelector('.val').style.fontFamily = "'SF Mono',monospace"; } else { sc.classList.add('pending'); sc.querySelector('.val').textContent = 'Elige un código'; sc.querySelector('.val').style.fontFamily = ''; } }
+  else { sc.classList.add('pending'); sc.querySelector('.val').textContent = 'No aplica'; sc.querySelector('.val').style.fontFamily = ''; }
+  sv.classList.remove('pending'); sv.querySelector('.val').textContent = MOD_TXT[e.modalidad][0];
+  btn.disabled = e.needsCode ? !selectedCode : false;
+};
+/* Continuar: con evidencia → paso 3; fijo o certificado → se registra la entrega aquí */
+function realDelivery(evidence, obs){
+  const e = REAL.sel, n = new Date(), M = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return window.addDelivery({
+    id: window.nextDeliveryId(), item: e.itemId, prog: e.progId, progName: e.progName, inc: e.incIdx, incName: e.incName, cat: e.cat, modalidad: e.modalidad,
+    code: selectedCode || null, evidence: evidence || null, cycle: e.cycle, persona: REAL.prof.persona, tipo: REAL.prof.tipo, cc: REAL.prof.cc,
+    operador: window.__operador || 'Jorge Guzman', fecha: n.getDate() + ' ' + M[n.getMonth()] + ' ' + n.getFullYear(), hora: String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0'), valor: e.valor, obs: obs || ''
+  });
+}
+const fadeAndGoLegacy = fadeAndGo;
+fadeAndGo = function(url){
+  if(!REAL.prof || !REAL.sel || !/incentivo-09/.test(url)) return fadeAndGoLegacy(url);
+  const e = REAL.sel;
+  if(e.needsEvidence){
+    sessionStorage.setItem('inc-assignment', JSON.stringify({ real: true, entry: e, code: selectedCode || null, persona: REAL.prof.persona, tipo: REAL.prof.tipo, cc: REAL.prof.cc, ts: Date.now() }));
+    window.location.href = 'incentivo-09-validar-foto.html'; return;
+  }
+  const d = realDelivery(null, '');
+  sessionStorage.setItem('inc-assignment-complete', JSON.stringify({ real: true, delivery: d, ts: Date.now() }));
+  window.location.href = 'incentivo-11-asignar-exito.html';
+};
+
 /* Progressive sticky collapse — paridad con paso 1.
    Al hacer scroll: full-bleed, colapso de labels, pierde radii top, pegado al header. */
 (function(){
@@ -862,7 +978,7 @@ function fadeAndGo(url){
   onScroll();
 })();
 </script>
-<script src="shared/profile-switcher.js?v=role-15" defer></script>
+<script src="shared/profile-switcher.js?v=role-17" defer></script>
 
 <script src="shared/footer-scroll.js" defer></script>
 

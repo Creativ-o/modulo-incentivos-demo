@@ -171,7 +171,7 @@
       </div>
       <div class="nav-row" onclick="fadeAndGo('incentivo-12-asignaciones.html')">
         <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><line x1="6" y1="7.5" x2="6" y2="10.5"/><line x1="6" y1="13.5" x2="6" y2="16.5"/><line x1="11" y1="6" x2="20" y2="6"/><line x1="11" y1="12" x2="18" y2="12"/><line x1="11" y1="18" x2="16" y2="18"/></svg></div>
-        <span class="lbl">Historial</span>
+        <span class="lbl">Historial de asignaciones</span>
       </div>
       <div class="nav-row" data-role="admin" onclick="fadeAndGo('incentivo-15-reporteria.html')">
         <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-5"/><circle cx="18" cy="9" r="1.5"/></svg></div>
@@ -505,7 +505,7 @@ function fadeAndGo(url){window.location.href=url}
 <script src="shared/programs-data.js"></script>
 <script src="shared/programa-wizard.js" defer></script>
 
-<script src="shared/profile-switcher.js?v=role-15" defer></script>
+<script src="shared/profile-switcher.js?v=role-17" defer></script>
 <script>
 /* KPIs del dashboard del Gestor de incentivos: agregados sobre todos los
    programas a los que tiene acceso (rol admin = todos). El rol programa
@@ -567,6 +567,32 @@ function fadeAndGo(url){window.location.href=url}
   if(rest) rest.style.display='none';
   if(list) list.style.gridColumn='1 / -1';
   document.querySelectorAll('.naowee-card--flush').forEach(function(c){ if(c!==list && c.querySelector('.geo-list')) c.style.display='none'; });
+})();
+
+/* Actividad reciente: entregas y reversiones registradas desde el flujo (lo más nuevo arriba); el resto es de ejemplo */
+(function hydrateActivity(){
+  if(!window.getDeliveries) return;
+  const scoped = window.scopedPrograms ? window.scopedPrograms().map(p => p.id) : null;
+  const ev = [];
+  window.getDeliveries().forEach(d => {
+    if(scoped && scoped.indexOf(d.prog) < 0) return;
+    ev.push({ t: 'asig', d: d, k: 0 });
+    if(d.reverted) ev.push({ t: 'rev', d: d, k: 1 });
+  });
+  if(!ev.length) return;
+  const wrap = document.querySelector('.layout > article:nth-of-type(2) .activity-item') && document.querySelector('.layout > article:nth-of-type(2) .activity-item').parentElement;
+  if(!wrap) return;
+  const ini = n => n.split(' ').filter(w => w.length > 1).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  const money = v => '$' + Number(v || 0).toLocaleString('es-CO');
+  const items = ev.slice().reverse().slice(0, 5).map(e => {
+    const d = e.d, r = e.t === 'rev';
+    return `<div class="activity-item"><span class="naowee-thumbnail naowee-thumbnail--small naowee-thumbnail--${r ? 'neutral' : 'informative'} naowee-thumbnail--quiet">${ini(d.persona)}</span>
+      <div class="activity-item__body"><div class="activity-item__title"><strong>${d.persona}</strong> · ${d.incName} ${r ? 'revertido' : 'entregado'}</div>
+      <div class="activity-item__meta">${r ? (d.reverted.autor + ' · ' + d.reverted.fecha) : (d.operador + ' · ' + d.fecha + ' ' + d.hora)} · ${d.progName}</div></div>
+      ${d.valor ? `<div class="activity-item__value ${r ? 'neg' : 'pos'}">${r ? '-' : '+'}${money(d.valor)}</div>` : ''}</div>`;
+  });
+  const old = [...wrap.querySelectorAll('.activity-item')];
+  wrap.innerHTML = items.join('') + old.slice(0, Math.max(0, 5 - items.length)).map(x => x.outerHTML).join('');
 })();
 </script>
 

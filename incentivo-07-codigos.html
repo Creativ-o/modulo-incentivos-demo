@@ -452,7 +452,7 @@
       </div>
       <div class="nav-row" onclick="fadeAndGo('incentivo-12-asignaciones.html')">
         <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><line x1="6" y1="7.5" x2="6" y2="10.5"/><line x1="6" y1="13.5" x2="6" y2="16.5"/><line x1="11" y1="6" x2="20" y2="6"/><line x1="11" y1="12" x2="18" y2="12"/><line x1="11" y1="18" x2="16" y2="18"/></svg></div>
-        <span class="lbl">Historial</span>
+        <span class="lbl">Historial de asignaciones</span>
       </div>
       <div class="nav-row" data-role="admin" onclick="fadeAndGo('incentivo-15-reporteria.html')">
         <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-5"/><circle cx="18" cy="9" r="1.5"/></svg></div>
@@ -632,7 +632,6 @@
               <th>Operador</th>
               <th>Fecha</th>
               <th>Valor</th>
-              <th style="width:130px">Acciones</th>
             </tr>
           </thead>
           <tbody id="codBody"></tbody>
@@ -656,36 +655,40 @@ function buildCodigos(){
   const all = [];
   window.scopedPrograms().forEach(p => {
     if(!p.codes.total) return;
-    const tipo = p.incentives?.[0]?.category || 'Otro';
-    const isBono = tipo === 'Bono';
+    const cfg = window.getProgramConfig(p), isBono = window.codeTypes(cfg).length > 0;   // lleva inventario de códigos si algún tipo se parametrizó con códigos
 
     // Bono → inventario completo (disp/asig/reasig/rev)
     // Resto → solo registros de asignación (asig/reasig/rev), sin código
-    const limit = isBono ? p.codes.total : (p.codes.asig + p.codes.rev);
+    const bs = window.codesBase(p), asig0 = bs.asig;   // contadores base: las entregas y reversiones reales se aplican como cambios sobre las filas
+    const limit = isBono ? p.codes.total : (asig0 + bs.rev);
     if(!limit) return;
 
     for(let i = 1; i <= limit; i++){
       const code = isBono ? `${p.id.replace('PRG-','')}-${String(i).padStart(5, '0')}` : null;
       let estado;
       if(isBono){
-        if(i <= p.codes.asig){
+        if(i <= asig0){
           estado = (i % 12 === 0) ? 'reasig' : 'asig';
-        } else if(i <= p.codes.asig + p.codes.rev){
+        } else if(i <= asig0 + bs.rev){
           estado = 'rev';
         } else {
           estado = 'disp';
         }
       } else {
         // Sin inventario de códigos: solo asig (con reasignaciones esporádicas) + rev
-        if(i <= p.codes.asig){
+        if(i <= asig0){
           estado = (i % 18 === 0) ? 'reasig' : 'asig';
         } else {
           estado = 'rev';
         }
       }
+      const tIdx = isBono ? window.codeTypeAt(p, cfg, i) : 0, tipo = (p.incentives[tIdx] || p.incentives[0] || {}).category || 'Otro';
+      const code12 = `${p.id.replace('PRG-','')}-${String(i).padStart(5, '0')}`;
+      const rvE = (i <= asig0 && window.isReverted && window.isReverted(p.id, code12)) ? window.getRevertEntry(p.id, code12) : null;
+      if(rvE) estado = rvE.reasignado ? 'reasig' : 'rev';
       const benefIdx = (i * 7) % PEOPLE.length;
-      const benef = estado === 'disp' ? null : PEOPLE[benefIdx];
-      const op = estado === 'disp' ? null : OPERATORS[i % OPERATORS.length];
+      const benef = rvE ? (rvE.reasignado ? rvE.reasignado.persona : null) : (estado === 'disp' ? null : PEOPLE[benefIdx]);
+      const op = rvE ? (rvE.reasignado ? rvE.reasignado.operador : null) : (estado === 'disp' ? null : OPERATORS[i % OPERATORS.length]);
       const day = Math.max(1, 22 - Math.floor(i / Math.max(5, limit/20)));
       const hour = String(8 + (i * 3) % 12).padStart(2, '0');
       const min = String((i * 13) % 60).padStart(2, '0');
@@ -724,6 +727,7 @@ function buildCodigos(){
         });
       }
       // _id sintético para lookup (los no-bono no tienen código real)
+      if(rvE) reversionHistory.push(window.revHist(rvE));
       const _id = code || `${p.id}-NC-${String(i).padStart(5,'0')}`;
       all.push({ _id, code, prg: p, estado, benef, op, fecha, valor: p.unit, tipo, reversionHistory });
     }
@@ -732,12 +736,20 @@ function buildCodigos(){
 }
 
 const ALL = buildCodigos();
+/* Códigos entregados desde el flujo del operador: se reflejan sobre la fila del inventario (asignado → revertido → reasignado) */
+window.scopedPrograms().forEach(p => {
+  window.codeEvents(p.id).real.forEach(e => {
+    const row = ALL.find(r => r.prg.id === p.id && r.code === e.code);
+    if(row){ row.estado = e.estado; row.benef = e.benef; row.op = e.op; row.fecha = e.fecha; row.reversionHistory = e.history; }
+    else ALL.unshift({ _id: p.id + '|' + e.code, code: e.code, prg: p, estado: e.estado, benef: e.benef, op: e.op, fecha: e.fecha, valor: e.valor || p.unit, tipo: e.tipo || (p.incentives[0] && p.incentives[0].category) || 'Otro', reversionHistory: e.history });
+  });
+});
 const state = { estado: 'all', prog: 'all', tipo: 'all', search: '', page: 1, pageSize: 10 };
 
 /* ══ KPI numbers ══ */
 function updateKPIs(){
   const total = ALL.length;
-  const asig = ALL.filter(c => c.estado === 'asig').length;
+  const asig = ALL.filter(c => c.estado === 'asig' || c.estado === 'reasig').length;
   const disp = ALL.filter(c => c.estado === 'disp').length;
   const rev = ALL.filter(c => c.estado === 'rev').length;
   document.getElementById('kpiTotal').textContent = total.toLocaleString('es-CO');
@@ -845,18 +857,11 @@ function renderCodigos(){
 
   const body = document.getElementById('codBody');
   if(!slice.length){
-    body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:#9c9ebf">Sin códigos con estos filtros.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:#9c9ebf">Sin códigos con estos filtros.</td></tr>`;
   } else {
     body.innerHTML = slice.map(c => {
       const mutedBenef = !c.benef;
       const mutedValor = c.estado === 'rev';
-      // Sólo asignados se pueden revertir (cualquier tipo, no solo bono)
-      const actionCell = (c.estado === 'asig' || c.estado === 'reasig')
-        ? `<button type="button" class="naowee-btn naowee-btn--mute naowee-btn--small cod-revert-btn" onclick="event.stopPropagation(); openRevertModal('${c._id}')">
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-             Revertir
-           </button>`
-        : `<span class="cod-noaction">—</span>`;
       const hasHistory = c.reversionHistory && c.reversionHistory.length > 0;
       const histBtn = hasHistory
         ? `<button type="button" class="rev-history-btn" onclick="event.stopPropagation();openRevPopover('${c._id}', this)" aria-label="Historial de reversión" title="Ver historial de reversión">
@@ -885,7 +890,6 @@ function renderCodigos(){
           <td><span class="op-cell">${c.op || '—'}</span></td>
           <td><span class="fecha-cell">${c.fecha || '—'}</span></td>
           <td><span class="valor-cell${mutedValor ? ' muted' : ''}">$${Number(c.valor||0).toLocaleString('es-CO')}</span></td>
-          <td>${actionCell}</td>
         </tr>
       `;
     }).join('');
@@ -1191,6 +1195,7 @@ function openRevPopover(id, btn){
       <div class="rv-row__lbl">Fecha y hora</div>
       <div class="rv-row__val">${entry.fecha}</div>
     </div>
+    ${entry.ip ? `<div class="rv-row"><div class="rv-row__lbl">Dirección IP</div><div class="rv-row__val">${entry.ip}</div></div>` : ''}
     <div class="rv-row rv-row--full">
       <div class="rv-row__lbl">Beneficiario previo</div>
       <div class="rv-row__val">${entry.beneficiarioPrevio} <span style="color:#646587">(asignado por ${entry.operadorPrevio} · ${entry.fechaAsignacion})</span></div>
@@ -1265,7 +1270,7 @@ function showRvToast(opts){
 }
 
 </script>
-<script src="shared/profile-switcher.js?v=role-15" defer></script>
+<script src="shared/profile-switcher.js?v=role-17" defer></script>
 
 
 <script src="shared/footer-scroll.js" defer></script>
