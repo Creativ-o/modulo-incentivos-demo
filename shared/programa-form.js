@@ -565,7 +565,8 @@
   function heredadasHTML(inc) {
     if (!popDims(inc).length) return '';
     var multi = S.inc.length > 1;
-    return alertBox('Hay <b>condiciones fijas</b> que vienen de la población del paso 2 (' + popDims(inc).map(function (d) { return d[1].toLowerCase(); }).join(', ') + '). Ya están agregadas en el Grupo 1 y aplican a todos los grupos' + (multi ? ': elige entre lo que seleccionaste para repartirlas entre tus tipos de incentivo (por ejemplo, un tipo para deportistas y otro para personal de apoyo).' : '.') + ' <a href="#" data-act="goto" data-x="2" class="pf-link-inline">Cambiar en el paso 2</a>', 'informative');
+    return '<div class="pf-alert-row">' + alertBox('Hay <b>condiciones fijas</b> que vienen de la población del paso 2. Ya están agregadas en el Grupo 1 y aplican a todos los grupos' + (multi ? ': elige entre lo que seleccionaste para repartirlas entre tus tipos de incentivo.' : '.'), 'informative') +
+      btn('Cambiar en el paso 2', 'goto', { v: 'quiet', s: 'medium', x: '2', i: 'edit' }) + '</div>';
   }
   function fixedRowsHTML(inc) {
     return popDims(inc).map(function (d, ri) {
@@ -704,7 +705,7 @@
     var badges = '<span class="pf-row" style="gap:6px;flex-shrink:0">' + (issues ? badge('Incompleto', 'caution') : '') + (cat ? badge(cat.l, 'neutral') : '') + badge({ codigo: 'Con código', sincodigo: 'Sin código', certificado: 'Certificado', fijo: 'Fijo ' + incFreqTxt(inc) }[inc.modalidad], inc.modalidad === 'fijo' ? 'caution' : 'neutral') + (inc.modalidad === 'fijo' && hasCodes(inc) ? badge('Con código', 'neutral') : '') + '</span>';
     var body = '<div class="pf-inc"><div ' + (CONDITIONS_LOCKED ? 'inert class="pf-sec pf-readonly"' : 'class="pf-sec"') + '>' +
       '<div class="pf-subsec"><h4 class="pf-sub">Condiciones de elegibilidad</h4><p class="pf-hint">Quién puede recibir este incentivo. Se combinan con Y; si falla una, el sistema <b>bloquea y dice cuál</b>.' + (soloEntidades() ? ' Para entidades (escenarios, instituciones) no aplican los campos de personas, como edad o género.' : '') + '</p>' + heredadasHTML(inc) + groupsHTML(inc) + eventWarn(inc) + '</div>' +
-      '<div class="pf-subsec"><h4 class="pf-sub">Documentación</h4>' + docsAplicaHTML(inc) + '</div>' +
+      (incRecOwn(inc) ? '' : '<div class="pf-subsec"><h4 class="pf-sub">Documentación</h4>' + docsAplicaHTML(inc) + '</div>') +
       '</div></div>';
     var title = esc(inc.nombre || ('Tipo de incentivo #' + (idx + 1)));
     return '<div class="nwt-card pf-type' + (open ? '' : ' pf-type--closed') + '" nwt-variant="quiet" nwt-size="medium"><div class="nwt-card__body">' +

@@ -341,3 +341,9 @@ a.nwt-button{text-decoration:none}
 
 .pf-link-inline{color:var(--naotech-primary-color-700);font-weight:600;white-space:nowrap}
 .pf-rule--fixed .nwt-select__input:disabled{cursor:default;opacity:1;color:var(--naotech-app-color-900)}
+
+/* Aviso con botón de acción a la derecha */
+.pf-alert-row{display:flex;align-items:center;gap:var(--naotech-sizing-12)}
+.pf-alert-row .nwt-alert{flex:1;min-width:0}
+.pf-alert-row .nwt-button{flex:0 0 auto;white-space:nowrap}
+@media (max-width:720px){.pf-alert-row{flex-direction:column;align-items:stretch}}
