@@ -360,3 +360,7 @@ a.nwt-button{text-decoration:none}
 .pf-rule .pf-ms__content{min-height:0}
 /* La celda vacía de las filas fijas no debe alargar la fila */
 .pf-rule--fixed > :last-child{margin-top:0!important;height:0}
+
+/* El botón sigue al texto, debajo, dentro del aviso */
+.pf-alert-cta .pf-alert-body{display:flex;flex-direction:column;align-items:flex-start;gap:var(--naotech-sizing-4);flex:1;min-width:0}
+.pf-alert-cta .pf-alert-body .nwt-button{padding-left:0}

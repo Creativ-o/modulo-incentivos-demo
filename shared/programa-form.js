@@ -567,7 +567,7 @@
     var multi = S.inc.length > 1;
     var msg = 'Hay <b>condiciones fijas</b> que vienen de la población del paso 2. Ya están agregadas en el Grupo 1 y aplican a todos los grupos' + (multi ? ': elige entre lo que seleccionaste para repartirlas entre tus tipos de incentivo.' : '.');
     // El botón va dentro del aviso, a la derecha
-    return '<div class="nwt-alert nwt-alert--visible pf-alert-cta" nwt-theme="informative" nwt-variant="quiet"><div class="nwt-alert__content"><div class="nwt-alert__icon">' + icon('info') + '</div><span class="nwt-alert__label">' + msg + '</span>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', s: 'small', x: '2', i: 'edit' }) + '</div></div>';
+    return '<div class="nwt-alert nwt-alert--visible pf-alert-cta" nwt-theme="informative" nwt-variant="quiet"><div class="nwt-alert__content"><div class="nwt-alert__icon">' + icon('info') + '</div><div class="pf-alert-body"><span class="nwt-alert__label">' + msg + '</span>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', s: 'small', x: '2', i: 'edit' }) + '</div></div></div>';
   }
   function fixedRowsHTML(inc) {
     return popDims(inc).map(function (d, ri) {
@@ -787,7 +787,7 @@
     '</dl></div>', { n: 2 });
     var ch = EDIT ? versionChanges() : [];
     var act = EDIT ? card('Versión resultante', 'Las reglas de versionamiento del programa Activo.', ch.length
-      ? alertBox('Se publicará la <b>versión ' + NEXT_VER + '</b>. Cambios que la generan: <b>' + ch.join(' · ') + '</b>. La ' + CUR_VER + ' y todo lo entregado bajo ella quedan congelados e inmutables; si cambian los documentos, las aprobaciones previas pasan a «Expirada / Histórica por nueva versión» al iniciar el siguiente ciclo.', 'caution', 'attention')
+      ? alertBox('Se publicará la <b>versión ' + NEXT_VER + '</b> por: <b>' + ch.join(' · ') + '</b>. Lo entregado en ' + CUR_VER + ' queda congelado.' + (ch.some(function (x) { return /Documentos/.test(x); }) ? ' Las aprobaciones documentales previas expiran al iniciar el siguiente ciclo.' : ''), 'caution', 'attention')
       : alertBox('Sin cambios de fondo: se conserva la <b>versión ' + CUR_VER + '</b>. Solo se registra la edición en la bitácora de auditoría.', 'positive', 'positive'), { n: 3 })
     : card('Activación', 'El programa solo opera cuando está <b>Activo</b>. Al activarlo queda en <b>versión V1.0</b>.', radios({ act: 'activar', value: S.activar, options: [
       { v: 'config', l: 'Guardar en Configuración', s: 'Queda como borrador operativo. Puedes terminar de parametrizar y activar después.' },
