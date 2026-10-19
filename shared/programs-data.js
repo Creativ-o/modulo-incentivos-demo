@@ -290,6 +290,49 @@ window.PROGRAMS_DATA = [
       summary: '<strong>Programa cerrado.</strong> 180 becas otorgadas. Ejecución 100%.'
     }
   }
+  ,{
+    id: 'PRG-2026-006',
+    version: 'V2.0',
+    versions: [
+      { v: 'V2.0', cambio: 'Tipo nuevo: Certificado de participación · documento nuevo: certificado de estudio', quien: 'Danna Arrieta', rol: 'Gestor de incentivos', fecha: '09 sep 2026 · 10:15', docs: true },
+      { v: 'V1.0', cambio: 'Versión inicial. Kit deportivo y beca de sostenimiento', quien: 'Danna Arrieta', rol: 'Gestor de incentivos', fecha: '15 jul 2026' }
+    ],
+    name: 'Estímulos integrales medallistas 2026',
+    shortDesc: 'Kit, beca y certificado · Antioquia y Valle',
+    longDesc: 'Paquete de estímulos para medallistas de los Juegos Nacionales 2026: kit deportivo con código, beca mensual de sostenimiento y certificado de participación para entrenadores. Sin rubro definido: se registra el costo por entrega.',
+    iconBg: '#eef5ff',
+    iconColor: '#1f78d1',
+    status: 'active',
+    event: 'Juegos Nacionales 2026',
+    coverage: 'Antioquia, Valle del Cauca · 2 municipios',
+    responsible: 'Isa Pabon, Laura Meza',
+    rubro: 0,
+    exec: 0,
+    unit: 0,
+    codes: { total: 175, avail: 75, asig: 100, rev: 4 },
+    from: '15 jul 2026',
+    to: 'Sin fecha de fin',
+    actoAdmin: 'Resolución 2026-171',
+    fuente: 'Ministerio del Deporte · 2026',
+    incentives: [
+      { name: 'Kit deportivo medallista', category: 'Kit',
+        detail: 'Entrega única con código · 120 cupos · sin tope',
+        value: 0, valueLabel: '—', valueFoot: '',
+        badges: [{ text: 'Kit', variant: 'caution' }, { text: 'Con código', variant: 'neutral' }],
+        conditions: { groups: [{ logic: 'AND', rules: [{ field: 'Logro / medallería', op: '∈', value: '{Medalla de oro, Medalla de plata}' }] }], summary: 'Medallistas de oro o plata.' } },
+      { name: 'Beca de sostenimiento mensual', category: 'Beca',
+        detail: 'Incentivo fijo recurrente · mensual desde 15 jul 2026 · 60 cupos · sin tope · exento de documentación',
+        value: 0, valueLabel: '—', valueFoot: '',
+        badges: [{ text: 'Beca', variant: 'informative' }, { text: 'Fijo mensual', variant: 'caution' }, { text: 'Con código', variant: 'neutral' }],
+        conditions: { groups: [{ logic: 'AND', rules: [{ field: 'Medallas ganadas', op: 'tiene más de', value: '3' }] }, { logic: 'AND', rules: [{ field: 'Medallas de oro', op: 'es quien más', value: 'el mayor' }] }], summary: 'Más de 3 medallas, o quien más medallas de oro tenga.' } },
+      { name: 'Certificado de participación', category: 'Pase',
+        detail: 'Certificado digital con firma y QR · sin código ni valor',
+        value: 0, valueLabel: '—', valueFoot: '',
+        badges: [{ text: 'Certificado', variant: 'neutral' }],
+        conditions: { groups: [{ logic: 'AND', rules: [{ field: 'Participaciones', op: 'tiene al menos', value: '1' }] }], summary: 'Al menos una participación.' } }
+    ],
+    conditions: { groups: [], summary: '' }
+  }
 ];
 
 window.getProgramById = function(id){
@@ -369,6 +412,22 @@ window.getProgramCategory = function(p){
       doc: { req: true, list: [DOC_ID, { name: 'Certificado de estudio', oblig: true }] },
       crono: { gracia: '3', carga: { ini: '2026-03-01T08:00', fin: '2026-03-20T18:00' }, revision: { ini: '2026-03-21T08:00', fin: '2026-03-28T18:00' }, asignacion: { ini: '2026-03-29T08:00', fin: '2026-04-15T18:00' } },
       inc: [{ categoria: 'inscripcion', tope: 'bottom', codigos: true, grupos: [{ op: 'AND', rows: [{ f: 'escolaridad', op: '=', v: 'Escolarizado' }] }] }]
+    },
+    'PRG-2026-006': {
+      gestores: ['Isa Pabon', 'Laura Meza'], eventos: ['Juegos Nacionales 2026'], desde: '2026-07-15', hasta: '',
+      roles: ['Deportista', 'Entrenador'], cobertura: ['Antioquia', 'Valle del Cauca'], municipios: ['Medellín · Antioquia', 'Cali · Valle del Cauca'], seleccion: ['plataforma', 'manual'],
+      rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
+      doc: { req: true, list: [DOC_ID, { name: 'Certificado de resultado', oblig: true }, { name: 'Certificado de estudio', oblig: false }] },
+      crono: { gracia: '4', carga: { ini: '2026-07-15T08:00', fin: '2026-11-30T18:00' }, revision: { ini: '2026-07-20T08:00', fin: '2026-12-10T18:00' }, asignacion: { ini: '2026-07-25T08:00', fin: '2026-12-15T18:00' } },
+      activacion: '2026-07-15',
+      inc: [
+        { categoria: 'kit', tope: 'sin', unit: 0, valor: 0, cantidad: 120, codigos: true, rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', desde: '', hasta: '' }, pobOff: { roles: [], cobertura: [], municipios: [] },
+          grupos: [{ op: 'AND', rows: [{ f: 'logro', op: '∈', v: ['Medalla de oro', 'Medalla de plata'] }] }] },
+        { categoria: 'beca', tope: 'sin', unit: 0, valor: 0, cantidad: 60, codigos: true, rec: { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', desde: '2026-07-15', hasta: '' }, pobOff: { roles: ['Entrenador'], cobertura: [], municipios: [] },
+          grupos: [{ op: 'AND', rows: [{ f: 'medallas', op: '>', v: '3' }] }, { op: 'AND', rows: [{ f: 'medallasOro', op: 'max', v: '' }] }] },
+        { categoria: 'diploma', tope: 'sin', unit: 0, valor: 0, cantidad: 0, codigos: false, rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', desde: '', hasta: '' }, pobOff: { roles: ['Deportista'], cobertura: [], municipios: [] },
+          grupos: [{ op: 'AND', rows: [{ f: 'participaciones', op: '≥', v: '1' }] }] }
+      ]
     },
     'PRG-2026-005': {
       gestores: ['Andrés Polo'], eventos: ['Proyección Panamericanos 2027'], desde: '', hasta: '',

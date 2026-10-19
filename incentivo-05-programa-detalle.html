@@ -1430,8 +1430,8 @@ function hydrateProgram(){
   // KPI strip
   const execPct = p.rubro ? Math.round((p.exec/p.rubro)*100) : 0;
   const unitM = '$' + Number(p.unit||0).toLocaleString('es-CO');
-  document.getElementById('kpiRubro').textContent = formatMoneyShort(p.rubro);
-  document.getElementById('kpiRubroSub').textContent = p.codes.total > 0 ? `${p.codes.total} códigos × ${unitM}` : 'Pendiente configurar';
+  document.getElementById('kpiRubro').textContent = p.rubro ? formatMoneyShort(p.rubro) : 'Sin rubro';
+  document.getElementById('kpiRubroSub').textContent = !p.rubro ? 'El programa no tiene rubro definido' : (p.codes.total > 0 ? `${p.codes.total} códigos × ${unitM}` : 'Pendiente configurar');
   document.getElementById('kpiExec').textContent = formatMoneyShort(p.exec);
   document.getElementById('kpiExecFill').style.width = execPct + '%';
   document.getElementById('kpiExecSub').textContent = p.rubro ? `${execPct}% · ${p.codes.asig} asignaciones` : '—';
@@ -1698,6 +1698,23 @@ const REGIONS = [['atl','Atlántico'],['cun','Cundinamarca'],['val','Valle'],['a
 const state = { all: [], filter: 'all', search: '', page: 1, pageSize: 10 };
 const asignState = { all: [], region: 'all', search: '', page: 1, pageSize: 10 };
 
+/* Códigos de demo: con un solo tipo, nombres de siempre; con varios tipos, se reparten por cupo (primero los del primer tipo) y llevan prefijo propio */
+function seedTypeAt(i){
+  const types = ccCodeTypes();
+  if(types.length < 2) return null;
+  const caps = types.map(t => Number(t.x.cantidad) || 0);
+  let start = 0;
+  for(let k = 0; k < types.length; k++){
+    const last = k === types.length - 1, end = start + (caps[k] || Infinity);
+    if(last || i <= end){
+      const pf = (types[k].inc.name.normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'COD');
+      return { name: types[k].inc.name, code: pf + '-' + String(i - start).padStart(5, '0'), unit: types[k].x.unit };
+    }
+    start = end;
+  }
+  return null;
+}
+function seedCodeName(i){ const t = seedTypeAt(i); return t ? t.code : (HAS_CODES ? '2026BEC-' : 'ENT-2026-') + String(i).padStart(5, '0'); }
 function seedCodigos(){
   // El inventario existe solo si algún tipo de incentivo se parametrizó con códigos
   if(!HAS_CODES){
@@ -1722,7 +1739,7 @@ function seedCodigos(){
     { k:'fraude',     label:'Sospecha de fraude',           just:'Caso reportado por la línea de auditoría. Bajo investigación.' }
   ];
   for(let i = 1; i <= total; i++){
-    const code = `2026BEC-${String(i).padStart(5, '0')}`;
+    const ti = seedTypeAt(i), code = ti ? ti.code : `2026BEC-${String(i).padStart(5, '0')}`;
     let estado;
     if(i > total - 3) estado = 'rev';
     else if(i > total - 18) estado = 'disp';
@@ -1759,12 +1776,12 @@ function seedCodigos(){
         valor: CURRENT_PROGRAM.unit
       }];
     }
-    out.push({ code, estado, benef, op, fecha, uploader, reversionHistory });
+    out.push({ code, estado, benef, op, fecha, uploader, reversionHistory, tipo: ti ? ti.name : undefined, valor: ti ? ti.unit : undefined });
   }
   // Códigos agregados después desde «Cargar códigos»
   const extra = (CURRENT_PROGRAM.codesList || []).map(c => ({ code: c.code, tipo: c.tipo, valor: c.valor, estado: 'disp', benef: null, op: null, fecha: 'cargado', uploader: 'Danna Arrieta' }));
   const firstT = (typeof ccCodeTypes === 'function' && ccCodeTypes()[0]) || null;
-  out.forEach(r => { if(firstT) r.tipo = firstT.inc.name; r.valor = firstT && firstT.x.unit ? firstT.x.unit : r.valor; });
+  out.forEach(r => { if(!r.tipo && firstT) r.tipo = firstT.inc.name; if(r.valor == null) r.valor = firstT && firstT.x.unit ? firstT.x.unit : r.valor; });
   state.all = extra.concat(out);
   applyReversions();
 }
@@ -1924,7 +1941,10 @@ function seedAsign(){
   const reverted = new Set(((CURRENT_PROGRAM && CURRENT_PROGRAM.reversions) || []).map(r => r.code));
   const total = ((CURRENT_PROGRAM && CURRENT_PROGRAM.codes && CURRENT_PROGRAM.codes.asig) || 182) + reverted.size;
   for(let i = 1; i <= total; i++){
-    const code = (HAS_CODES ? '2026BEC-' : 'ENT-2026-') + String(i).padStart(5, '0');
+    const nT = ccCodeTypes().length, caps0 = nT > 1 ? Number(ccCodeTypes()[0].x.cantidad) || 0 : 0;
+    // con varios tipos con códigos, un tercio de las entregas son del segundo tipo
+    const idx = nT > 1 ? (i % 3 === 0 ? caps0 + Math.ceil(i / 3) : i - Math.floor(i / 3)) : i;
+    const code = seedCodeName(idx);
     const person = PEOPLE[(i * 7) % PEOPLE.length];
     const cc = `CC ${(1000000 + i * 131).toLocaleString('es-CO').replace(/,/g, '.')}`;
     const op = OPERATORS[i % OPERATORS.length];
