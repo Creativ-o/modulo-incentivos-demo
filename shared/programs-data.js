@@ -470,6 +470,8 @@ window.getProgramCategory = function(p){
 
   /* ── Persistencia de los programas creados / editados desde el formulario ── */
   var K_CREATED = 'naowee:programs-created', K_EDITS = 'naowee:programs-edits';
+  /* Revisión de los datos de demo: una edición guardada contra otra revisión (datos viejos) se descarta, para que los cambios al demo se vean */
+  var BASE_REV = 'demo-2026-10-19b';
   function read(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (_) { return d; } }
   function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} }
   window.persistCreatedProgram = function (prog) {
@@ -480,6 +482,7 @@ window.getProgramCategory = function(p){
   window.persistProgramEdit = function (id, prog) {
     var created = read(K_CREATED, []);
     if (created.some(function (x) { return x.id === id; })) { window.persistCreatedProgram(prog); return; }
+    prog._base = BASE_REV;
     var ed = read(K_EDITS, {}); ed[id] = prog; write(K_EDITS, ed);
     var i = window.PROGRAMS_DATA.findIndex(function (x) { return x.id === id; });
     if (i > -1) window.PROGRAMS_DATA[i] = prog;
@@ -492,7 +495,7 @@ window.getProgramCategory = function(p){
   };
   (function load() {
     var ed = read(K_EDITS, {});
-    window.PROGRAMS_DATA.forEach(function (p, i) { if (ed[p.id]) window.PROGRAMS_DATA[i] = ed[p.id]; });
+    window.PROGRAMS_DATA.forEach(function (p, i) { if (ed[p.id] && ed[p.id]._base === BASE_REV) window.PROGRAMS_DATA[i] = ed[p.id]; });
     read(K_CREATED, []).slice().reverse().forEach(function (p) { if (!window.PROGRAMS_DATA.some(function (x) { return x.id === p.id; })) window.PROGRAMS_DATA.unshift(p); });
   })();
 })();
