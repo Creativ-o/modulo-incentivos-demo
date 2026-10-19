@@ -171,6 +171,13 @@
   .prg-table th:nth-child(4),.prg-table td:nth-child(4){width:12%}
   .prg-table th:nth-child(5),.prg-table td:nth-child(5){width:14%}
   .prg-table th:nth-child(6),.prg-table td:nth-child(6){width:12%;text-align:right;padding-right:32px}
+  /* Gestor de programa: sin columna Acciones, el contenido se reparte en 5 columnas */
+  .prg-table--noact th:nth-child(6),.prg-table--noact td:nth-child(6){display:none}
+  .prg-table--noact th:nth-child(1),.prg-table--noact td:nth-child(1){width:34%}
+  .prg-table--noact th:nth-child(2),.prg-table--noact td:nth-child(2){width:14%}
+  .prg-table--noact th:nth-child(3),.prg-table--noact td:nth-child(3){width:24%}
+  .prg-table--noact th:nth-child(4),.prg-table--noact td:nth-child(4){width:12%}
+  .prg-table--noact th:nth-child(5),.prg-table--noact td:nth-child(5){width:16%}
 
   /* Program cell */
   .prg-cell{display:flex;align-items:center;gap:12px;min-width:0}
@@ -363,46 +370,27 @@
            hydrateProgramHero() en init.
            ═════════════════════════════════════════════════════════════ -->
       <section class="prog-hero" data-role="programa" id="progHero" hidden>
-        <header class="prog-hero__head">
-          <div class="prog-hero__ico" id="progHeroIco" style="background:#fff3e6;color:#d74009"></div>
-          <div class="prog-hero__main">
-            <div class="prog-hero__id-row">
-              <span class="prog-hero__id" id="progHeroId">—</span>
-              <span class="naowee-badge naowee-badge--positive naowee-badge--quiet naowee-badge--small" id="progHeroBadge">
-                <span class="naowee-badge__dot"></span>
-                <span id="progHeroBadgeText">—</span>
-              </span>
-            </div>
-            <h2 class="prog-hero__title" id="progHeroTitle">—</h2>
-            <p class="prog-hero__meta" id="progHeroMeta">—</p>
-          </div>
-          <button class="naowee-btn naowee-btn--loud naowee-btn--large" id="progHeroCTA">
-            Ver detalle completo
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </header>
-        <div class="prog-hero__divider"></div>
-        <div class="prog-hero__kpis">
+        <div class="prog-hero__kpis" style="margin-top:0">
           <div class="prog-hero__kpi">
-            <div class="prog-hero__kpi-lbl">Rubro total</div>
-            <div class="prog-hero__kpi-val" id="progHeroRubro">—</div>
-            <div class="prog-hero__kpi-sub" id="progHeroRubroSub">—</div>
+            <div class="prog-hero__kpi-lbl">Programas asignados</div>
+            <div class="prog-hero__kpi-val" id="sumProgs">—</div>
+            <div class="prog-hero__kpi-sub" id="sumProgsSub">—</div>
           </div>
           <div class="prog-hero__kpi prog-hero__kpi--accent">
             <div class="prog-hero__kpi-lbl">Ejecutado</div>
-            <div class="prog-hero__kpi-val" id="progHeroExec">—</div>
-            <div class="naowee-progress naowee-progress--positive" style="margin-top:6px"><div class="naowee-progress__fill" id="progHeroExecFill" style="width:0%"></div></div>
-            <div class="prog-hero__kpi-sub" style="margin-top:4px" id="progHeroExecSub">—</div>
+            <div class="prog-hero__kpi-val" id="sumExec">—</div>
+            <div class="naowee-progress naowee-progress--positive" style="margin-top:6px"><div class="naowee-progress__fill" id="sumExecFill" style="width:0%"></div></div>
+            <div class="prog-hero__kpi-sub" style="margin-top:4px" id="sumExecSub">—</div>
           </div>
           <div class="prog-hero__kpi">
             <div class="prog-hero__kpi-lbl">Inventario</div>
-            <div class="prog-hero__kpi-val" id="progHeroInv" style="color:var(--naowee-color-text-accent,#d74009)">—</div>
+            <div class="prog-hero__kpi-val" id="sumInv" style="color:var(--naowee-color-text-accent,#d74009)">—</div>
             <div class="prog-hero__kpi-sub">códigos disponibles</div>
           </div>
           <div class="prog-hero__kpi">
             <div class="prog-hero__kpi-lbl">Revertidos</div>
-            <div class="prog-hero__kpi-val" id="progHeroRev">—</div>
-            <div class="prog-hero__kpi-sub" id="progHeroRevSub">—</div>
+            <div class="prog-hero__kpi-val" id="sumRev">—</div>
+            <div class="prog-hero__kpi-sub" id="sumRevSub">—</div>
           </div>
         </div>
       </section>
@@ -466,7 +454,7 @@
       <!-- Tablet: toolbar + table + pagination — sólo para admin (gestor
            de incentivos). Para gestor de programa se reemplaza por el
            prog-hero arriba. -->
-      <section class="tablet" data-role="admin">
+      <section class="tablet">
         <div class="tablet-toolbar">
           <div class="tablet-toolbar__left">
             <div class="naowee-searchbox naowee-searchbox--small naowee-searchbox--pill">
@@ -627,9 +615,9 @@ function applyRoleHeader(){
   const navLbl = document.getElementById('navProgramasLbl');
   const hero   = document.getElementById('progHero');
   if(role === 'programa'){
-    if(title) title.textContent = 'Mi programa';
-    if(sub)   sub.textContent   = 'Programa que tienes asignado. Aquí gestionas su inventario, condiciones y asignaciones.';
-    if(navLbl) navLbl.textContent = 'Mi programa';
+    if(title) title.textContent = 'Mis programas';
+    if(sub)   sub.textContent   = 'Programas que tienes asignados. Aquí gestionas su inventario, condiciones, revisión documental y asignaciones.';
+    if(navLbl) navLbl.textContent = 'Mis programas';
     if(hero){ hero.hidden = false; hydrateProgramHero(); }
   } else {
     if(title) title.textContent = 'Programas de incentivos';
@@ -639,51 +627,30 @@ function applyRoleHeader(){
   }
 }
 
-/* Llena el prog-hero con los datos del primer programa asignado al rol.
-   Usa los mismos formatters/iconos que la lista para mantener consistencia. */
+/* Resumen de los programas asignados al rol (suma de todos). */
 function hydrateProgramHero(){
   const ids = (window.getRoleAssignments && window.getRoleAssignments()) || [];
-  if(!ids.length) return;
-  const p = window.PROGRAMS_DATA.find(x => x.id === ids[0]);
-  if(!p) return;
-  const cat = window.getProgramCategory(p);
-  const ico = (window.CAT_ICONS && window.CAT_ICONS[cat]) || '';
+  const ps = window.PROGRAMS_DATA.filter(x => ids.includes(x.id));
   const set = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
-  const setHTML = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
-  // Icono + colores categóricos del programa
-  const icoEl = document.getElementById('progHeroIco');
-  if(icoEl){
-    icoEl.style.background = p.iconBg || '#fff3e6';
-    icoEl.style.color = p.iconColor || '#d74009';
-    icoEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ico}</svg>`;
-  }
-  set('progHeroId', p.id);
-  set('progHeroTitle', p.name);
-  set('progHeroMeta', `${p.desc} · Vigencia ${p.from} → ${p.to}`);
-  // Status badge — reutilizo el mapa global STATUS_META
-  const meta = STATUS_META[p.status] || STATUS_META.draft;
-  const badge = document.getElementById('progHeroBadge');
-  if(badge) badge.className = `naowee-badge naowee-badge--${meta.variant} naowee-badge--quiet naowee-badge--small`;
-  set('progHeroBadgeText', meta.label);
-  // KPIs financieros / inventario
-  const fmt = (v) => '$' + Number(v||0).toLocaleString('es-CO');
-  set('progHeroRubro', fmt(p.rubro));
-  set('progHeroRubroSub', `${p.codes.total.toLocaleString('es-CO')} códigos × ${fmt(p.rubro / Math.max(p.codes.total,1))}`);
-  const execPct = p.rubro > 0 ? Math.round((p.exec / p.rubro) * 100) : 0;
-  set('progHeroExec', fmt(p.exec));
-  const fill = document.getElementById('progHeroExecFill');
-  if(fill) fill.style.width = execPct + '%';
-  set('progHeroExecSub', `${execPct}% · ${p.codes.asig} asignaciones`);
-  set('progHeroInv', p.codes.avail);
-  set('progHeroRev', p.codes.rev);
-  const totalRevPct = p.codes.total > 0 ? ((p.codes.rev/p.codes.total)*100).toFixed(1) : '0.0';
-  set('progHeroRevSub', `${totalRevPct}% del total`);
-  // CTA → detalle completo
-  const cta = document.getElementById('progHeroCTA');
-  if(cta) cta.onclick = () => fadeAndGo(`incentivo-05-programa-detalle.html?id=${p.id}`);
+  const sum = fn => ps.reduce((t, p) => t + (Number(fn(p)) || 0), 0);
+  const fmt = v => '$' + Number(v||0).toLocaleString('es-CO');
+  const activos = ps.filter(p => p.status === 'active').length;
+  set('sumProgs', ps.length);
+  set('sumProgsSub', activos + (activos === 1 ? ' activo' : ' activos') + ' · ' + (ps.length - activos) + ' en otros estados');
+  const rubro = sum(p => p.rubro), conRubro = sum(p => p.rubro > 0 ? p.exec : 0), exec = sum(p => p.exec);
+  set('sumExec', fmt(exec));
+  const pct = rubro > 0 ? Math.round(conRubro / rubro * 100) : 0;
+  const fill = document.getElementById('sumExecFill'); if(fill) fill.style.width = pct + '%';
+  set('sumExecSub', rubro > 0 ? pct + '% del rubro (' + fmt(rubro) + ')' + (exec > conRubro ? ' · +' + fmt(exec - conRubro) + ' en programas sin rubro' : '') : 'Programas sin rubro · suma del costo de entregas');
+  set('sumInv', sum(p => p.codes.avail).toLocaleString('es-CO'));
+  const asig = sum(p => p.codes.asig), rev = sum(p => p.codes.rev);
+  set('sumRev', rev);
+  set('sumRevSub', (asig > 0 ? (rev / asig * 100).toFixed(1) : '0.0') + '% de ' + asig.toLocaleString('es-CO') + ' asignaciones');
 }
 
 function renderRows(){
+  const noAct = !!(window.currentRole && currentRole() === 'programa');
+  const tbl = document.querySelector('.prg-table'); if(tbl) tbl.classList.toggle('prg-table--noact', noAct);
   const filtered = filteredPrograms();
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
@@ -694,7 +661,7 @@ function renderRows(){
 
   const body = document.getElementById('prgBody');
   if(!slice.length){
-    body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:48px;color:var(--naowee-color-text-secondary,#646587)">Sin programas con estos filtros.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="${noAct ? 5 : 6}" style="text-align:center;padding:48px;color:var(--naowee-color-text-secondary,#646587)">Sin programas con estos filtros.</td></tr>`;
   } else {
     body.innerHTML = slice.map(p => {
       const execPct = p.rubro ? Math.round((p.exec/p.rubro)*100) : 0;
@@ -750,7 +717,7 @@ function renderRows(){
               <div class="vigencia-cell__to">→ ${p.to}</div>
             </div>
           </td>
-          <td>
+          ${noAct ? '' : `<td>
             <div class="acciones-cell">
               <span class="naowee-tooltip">
                 <button class="acciones-cell__btn" onclick="event.stopPropagation();fadeAndGo('incentivo-04-programa-crear.html?edit=1&id=${p.id}')" aria-label="Editar">
@@ -759,7 +726,7 @@ function renderRows(){
                 <span class="naowee-tooltip__content">Editar</span>
               </span>
             </div>
-          </td>
+          </td>`}
         </tr>
       `;
     }).join('');
@@ -820,7 +787,7 @@ setTimeout(() => { applyRoleHeader(); renderRows(); }, 0);
 function fadeAndGo(url){window.location.href=url}
 </script>
 <script src="shared/programa-wizard.js" defer></script>
-<script src="shared/profile-switcher.js?v=role-10" defer></script>
+<script src="shared/profile-switcher.js?v=role-15" defer></script>
 
 <script src="shared/footer-scroll.js" defer></script>
 

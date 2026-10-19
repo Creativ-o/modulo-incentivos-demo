@@ -498,4 +498,114 @@ window.getProgramCategory = function(p){
     window.PROGRAMS_DATA.forEach(function (p, i) { if (ed[p.id] && ed[p.id]._base === BASE_REV) window.PROGRAMS_DATA[i] = ed[p.id]; });
     read(K_CREATED, []).slice().reverse().forEach(function (p) { if (!window.PROGRAMS_DATA.some(function (x) { return x.id === p.id; })) window.PROGRAMS_DATA.unshift(p); });
   })();
+  /* Programas visibles según el rol: el Gestor de programa solo ve los suyos. */
+  window.scopedPrograms = function () {
+    var role = ''; try { role = localStorage.getItem('naowee-incentivos-role') || ''; } catch (e) {}
+    if (role !== 'programa') return window.PROGRAMS_DATA;
+    return window.PROGRAMS_DATA.filter(function (p) {
+      if (p.id === 'PRG-2026-003') return true;
+      try { return window.getProgramConfig(p).gestores.indexOf('Isa Pabon') > -1; } catch (e) { return false; }
+    });
+  };
+  /* ── Revisión documental (demo) ──
+     La revisión es por PERFIL de beneficiario: cada documento se aprueba o rechaza (con nota) y el perfil se resuelve solo:
+     · todos los requeridos aprobados → apr (Aprobados: pasa a asignación, "Pendiente de entrega" para el Operador)
+     · algún documento rechazado → sub (Rechazados · Pendiente subsanación); si vence el plazo → exp
+     · ninguno cargado → porcargar · en otro caso → pend (En revisión). */
+  var K_REV = 'naowee:doc-reviews', K_AUD = 'naowee:doc-reviews-audit';
+  var REV_PEOPLE = ['Ana García', 'Pedro Martínez', 'Andrés García', 'María C. Herrera', 'Camila Ríos', 'Santiago López', 'Valentina Pérez', 'Juan Rodríguez', 'Diana Torres', 'Carlos Guzmán', 'Natalia Ruiz', 'Esteban Mora'];
+  var REV_SEED = ['pend', 'pend', 'apr', 'pend', 'apr', 'sub', 'sub', 'pend', 'exp', 'pend', 'apr', 'porcargar'];
+  var REV_SEED_DATE = { 5: '2026-10-15', 6: '2026-10-08', 8: '2026-09-28' };
+  var REV_MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  /* Festivos de Colombia 2026 (para contar días hábiles del plazo de gracia) */
+  var FESTIVOS = ['2026-01-01', '2026-01-12', '2026-03-23', '2026-04-02', '2026-04-03', '2026-05-01', '2026-05-18', '2026-06-08', '2026-06-15', '2026-06-29', '2026-07-20', '2026-08-07', '2026-08-17', '2026-10-12', '2026-11-02', '2026-11-16', '2026-12-08', '2026-12-25'];
+  function isoD(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function fmtD(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); if (!m) return '';
+    return parseInt(m[3], 10) + ' ' + REV_MES[parseInt(m[2], 10) - 1] + ' ' + m[1];
+  }
+  function habiles(iso, n) {
+    var d = new Date(iso + 'T12:00:00');
+    while (n > 0) { d.setDate(d.getDate() + 1); if (d.getDay() % 6 && FESTIVOS.indexOf(isoD(d)) < 0) n--; }
+    return isoD(d);
+  }
+  /* Plazo para subsanar: la ventana regular de carga si sigue abierta; si no, el plazo de gracia (días hábiles) desde el rechazo. */
+  function plazoSubsanar(decIso, c) {
+    var gr = parseInt(c.crono.gracia, 10); if (!(gr >= 3 && gr <= 5)) gr = 3;
+    var lim = habiles(decIso, gr), fin = ((c.crono.carga || {}).fin || '').slice(0, 10);
+    if (/^\d{4}-/.test(fin) && fin > lim) lim = fin;
+    return lim;
+  }
+  function slug(t) { return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/-+$/, ''); }
+  window.docReviews = function () {
+    var dec = read(K_REV, {}), aud = read(K_AUD, {}), out = [], hoy = isoD(new Date());
+    window.scopedPrograms().forEach(function (p) {
+      var c; try { c = window.getProgramConfig(p); } catch (e) { return; }
+      if (!window.progDocsOn(c) || !c.doc.list.length || p.status === 'draft') return;
+      var cierre = fmtD((c.crono.revision || {}).fin);
+      for (var i = 0; i < REV_PEOPLE.length; i++) {
+        var id = p.id + '-R' + (i + 1), seed = REV_SEED[i], d = (dec[id] || {}).docs || {}, audit = (aud[id] || []).slice();
+        if (p.status !== 'active' && seed === 'pend') seed = 'exp';
+        var sdate = REV_SEED_DATE[i] || '';
+        var docs = c.doc.list.map(function (x, k) {
+          var falta = seed === 'porcargar' || (!x.oblig && (i + k) % 3 === 0), est = 'porcargar', nota = '', iso = '';
+          if (!falta) {
+            est = 'revision';
+            if (seed === 'apr') { est = 'aprobado'; iso = '2026-10-1' + (i % 8); }
+            else if (seed === 'pend' && k === 0 && i % 4 === 1) { est = 'aprobado'; iso = '2026-10-14'; }
+            else if ((seed === 'sub' || seed === 'exp') && sdate) {
+              if (k === 0) { est = 'rechazado'; iso = sdate; nota = 'La imagen no permite validar los datos: baja calidad y poca iluminación.'; }
+              else { est = 'aprobado'; iso = sdate; }
+            }
+          }
+          if (d[x.name]) { est = d[x.name].estado; nota = d[x.name].nota || ''; iso = d[x.name].iso || iso; }
+          return { name: x.name, oblig: !!x.oblig, file: falta ? '' : slug(x.name) + '-' + (i + 1) + '.pdf', estado: est, nota: nota, iso: iso, fecha: fmtD(iso) };
+        });
+        if (!audit.length) {
+          docs.forEach(function (x) {
+            if (x.estado === 'aprobado' || x.estado === 'rechazado') audit.push({ doc: x.name, usuario: 'Isa Pabon', rol: 'Gestor de programa', fecha: fmtD(x.iso), hora: '10:' + String(10 + i).padStart(2, '0'), dictamen: x.estado === 'aprobado' ? 'Aprobado' : 'Rechazado', motivo: x.nota });
+          });
+        }
+        var cnt = docs.filter(function (x) { return x.oblig || x.file; });
+        var apr = cnt.filter(function (x) { return x.estado === 'aprobado'; }).length;
+        var rej = docs.filter(function (x) { return x.estado === 'rechazado'; });
+        var est = 'pend', limite = '';
+        if (rej.length) {
+          var last = rej.map(function (x) { return x.iso; }).sort().pop();
+          limite = plazoSubsanar(last, c); est = limite < hoy ? 'exp' : 'sub';
+        } else if (apr === cnt.length) est = 'apr';
+        else if (!docs.some(function (x) { return x.file; })) est = 'porcargar';
+        var lastA = audit[audit.length - 1];
+        out.push({
+          id: id, prog: p.id, progName: p.name, persona: REV_PEOPLE[i], tipo: i % 3 === 2 ? 'TI' : 'CC',
+          cc: String(1020000000 + (i + 1) * 7391 + p.id.length * 13).replace(/\B(?=(\d{3})+(?!\d))/g, '.'),
+          nac: fmtD((2003 + (i % 5)) + '-0' + (1 + (i % 9)) + '-' + (10 + i)),
+          solicitud: '#SUID 2026 • ' + String(45 + i * 3).padStart(3, '0'),
+          cargado: (3 + i) + ' oct 2026', hora: String(8 + (i * 5) % 11).padStart(2, '0') + ':' + String((i * 17) % 60).padStart(2, '0'), cierre: cierre,
+          estado: est, total: cnt.length, aprobados: apr, limite: fmtD(limite), docs: docs, audit: audit,
+          ultima: lastA ? lastA.fecha + ' ' + lastA.hora : (3 + i) + ' oct 2026 ' + String(8 + (i * 5) % 11).padStart(2, '0') + ':' + String((i * 17) % 60).padStart(2, '0'),
+          ultimaPor: lastA ? lastA.usuario : REV_PEOPLE[i]
+        });
+      }
+    });
+    return out;
+  };
+  /* Guarda el dictamen de UN aprobador (basta uno) por documento y registra la auditoría. */
+  window.saveDocDecision = function (id, docName, estado, nota, who) {
+    var dec = read(K_REV, {}), aud = read(K_AUD, {}), n = new Date();
+    var cur = window.docReviews().filter(function (r) { return r.id === id; })[0];
+    dec[id] = dec[id] || { docs: {} };
+    dec[id].docs[docName] = { estado: estado, nota: nota || '', iso: isoD(n) };
+    write(K_REV, dec);
+    if (!aud[id]) aud[id] = (cur && cur.audit || []).slice();
+    aud[id].push({
+      doc: docName, usuario: (who && who.name) || '', rol: (who && who.role) || '',
+      fecha: fmtD(isoD(n)), hora: String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0'),
+      dictamen: estado === 'aprobado' ? 'Aprobado' : 'Rechazado', motivo: nota || ''
+    });
+    write(K_AUD, aud);
+  };
+  window.pendingReviewCount = function () {
+    return window.docReviews().filter(function (r) { return r.estado === 'pend'; }).length;
+  };
 })();

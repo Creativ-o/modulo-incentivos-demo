@@ -505,14 +505,14 @@ function fadeAndGo(url){window.location.href=url}
 <script src="shared/programs-data.js"></script>
 <script src="shared/programa-wizard.js" defer></script>
 
-<script src="shared/profile-switcher.js?v=role-10" defer></script>
+<script src="shared/profile-switcher.js?v=role-15" defer></script>
 <script>
 /* KPIs del dashboard del Gestor de incentivos: agregados sobre todos los
    programas a los que tiene acceso (rol admin = todos). El rol programa
    no entra aquí porque no ve esta página (su home es /incentivo-03). */
 (function hydrateDashboardKPIs(){
   if(!window.PROGRAMS_DATA) return;
-  const programs = window.PROGRAMS_DATA;
+  const programs = window.scopedPrograms();
   const sum  = (k) => programs.reduce((s, p) => s + (Number((p.codes||{})[k]) || 0), 0);
   const sumF = (fn) => programs.reduce((s, p) => s + (Number(fn(p)) || 0), 0);
   const totalAvail = sum('avail');
@@ -531,11 +531,42 @@ function fadeAndGo(url){window.location.href=url}
   const fill = document.getElementById('kpiExecFill');
   if(fill) fill.style.width = execPct + '%';
   const foot = document.getElementById('kpiExecFoot');
-  if(foot) foot.textContent = `$${(execConRubro/1e9).toFixed(1)}B de $${(totalRubro/1e9).toFixed(1)}B ejecutados` + (execSinRubro > 0 ? ` · +$${(execSinRubro/1e6).toFixed(1)}M en programas sin rubro` : '');
+  const mny = v => v >= 1e9 ? '$' + (v/1e9).toFixed(1) + 'B' : '$' + (v/1e6).toFixed(1) + 'M';
+  if(foot) foot.textContent = `${mny(execConRubro)} de ${mny(totalRubro)} ejecutados` + (execSinRubro > 0 ? ` · +$${(execSinRubro/1e6).toFixed(1)}M en programas sin rubro` : '');
   // Tasa de reversión calculada
   const revPct = totalAsig > 0 ? ((totalRev/totalAsig)*100).toFixed(1) : '0.0';
   const revPctEl = document.getElementById('kpiRevPct');
   if(revPctEl) revPctEl.textContent = `${revPct}%`;
+})();
+
+/* Vista del Gestor de programa: saludo, lista de SUS programas; se ocultan los paneles globales (actividad y geografía de toda la plataforma). */
+(function hydrateProgramaView(){
+  var role=''; try{ role=localStorage.getItem('naowee-incentivos-role')||''; }catch(e){}
+  if(role!=='programa'||!window.scopedPrograms) return;
+  var ps=window.scopedPrograms(), act=ps.filter(function(p){return p.status==='active';});
+  document.querySelectorAll('.kpi-card__foot .naowee-badge').forEach(function(b){ var n=b.nextElementSibling; if(n && /vs\./.test(n.textContent)){ n.remove(); } if(!/tasa|%$/.test(b.textContent) || /↓|↑/.test(b.textContent)) b.remove(); });
+  document.querySelectorAll('.kpi-card__lbl').forEach(function(l){ l.textContent=l.textContent.replace(' (hoy)',''); });
+  var t=document.querySelector('.greeting__title'); if(t) t.textContent='Buenos días, Isa Pabon';
+  var sub=document.querySelector('.greeting__sub'); if(sub) sub.innerHTML='Tienes <strong>'+ps.length+' programas asignados</strong>, '+act.length+' activos. Resumen de tus programas: inventario, ejecución y reversiones.';
+  var cards=document.querySelectorAll('.layout > article');
+  var list=cards[0], rest=cards[1];
+  if(list){
+    list.querySelector('h3').textContent='Mis programas';
+    list.querySelector('.sub').textContent=ps.length+' programas a tu cargo';
+    list.querySelector('.panel-head .naowee-btn').textContent='Ver detalle';
+    var body=list.querySelector('.panel-head').nextElementSibling;
+    body.innerHTML=ps.map(function(p){
+      var pct=p.codes.total>0?Math.round(p.codes.asig/p.codes.total*100):0;
+      var st={active:['positive','Activo'],draft:['caution','Borrador'],closed:['neutral','Cerrado'],finished:['neutral','Finalizado']}[p.status]||['neutral',p.status];
+      return '<div class="prg-mini__row" onclick="fadeAndGo(\'incentivo-05-programa-detalle.html?id='+p.id+'\')"><div><div class="prg-mini__name">'+p.name+'</div><div class="prg-mini__meta">'+p.id+(p.cat||p.category?' · '+(p.cat||p.category):'')+'</div></div>'
+        +'<span class="naowee-badge naowee-badge--'+st[0]+' naowee-badge--quiet naowee-badge--small">'+st[1]+'</span>'
+        +'<div class="prg-mini__progress-wrap"><div class="naowee-progress"><div class="naowee-progress__fill" style="width:'+pct+'%"></div></div><div class="prg-mini__exec-lbl">'+pct+'% · '+p.codes.asig+' / '+p.codes.total+'</div></div>'
+        +'<div class="prg-mini__inv">'+p.codes.avail+' códigos</div></div>';
+    }).join('');
+  }
+  if(rest) rest.style.display='none';
+  if(list) list.style.gridColumn='1 / -1';
+  document.querySelectorAll('.naowee-card--flush').forEach(function(c){ if(c!==list && c.querySelector('.geo-list')) c.style.display='none'; });
 })();
 </script>
 

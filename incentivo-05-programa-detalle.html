@@ -78,6 +78,7 @@
     display:grid;grid-template-columns:repeat(4,1fr);gap:0;
     padding:18px 4px;
   }
+  .kpi-strip--3{grid-template-columns:repeat(3,1fr)}
   @media(max-width:900px){
     .kpi-strip{grid-template-columns:repeat(2,1fr);gap:0}
   }
@@ -866,6 +867,30 @@
   .cond-pob-note{margin:0 0 6px;font-size:13px;color:#646587}
   .cond-inherit{margin-bottom:14px;padding:12px 14px;border:1px dashed #b5b9d4;border-radius:12px;background:#f4f5f9;font-size:13.5px;line-height:1.6}
   @media (max-width:900px){.cyc-stages{grid-template-columns:1fr}}
+
+/* ═══ Modal «Ventana de cargue documental» (Gestor de programa) ═══ */
+.crm-ov{position:fixed;inset:0;background:rgba(40,40,52,.6);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
+.crm-ov.open{display:flex}
+.crm{background:#fff;border-radius:20px;width:720px;max-width:100%;max-height:92vh;overflow:auto;box-shadow:0 24px 60px rgba(40,40,52,.3)}
+.crm__h{padding:26px 32px 6px;display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.crm__h h3{font-size:20px;font-weight:700;color:#282834;margin:0 0 4px}
+.crm__h p{font-size:13.5px;color:#646587;margin:0;line-height:1.5}
+.crm__b{padding:14px 32px 6px}
+.crm__grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:700px){.crm__grid{grid-template-columns:1fr}}
+.crm__f label{display:block;font-size:12.5px;font-weight:600;color:#3d3e55;margin-bottom:6px}
+.crm__f label b{color:#d74009}
+.crm__f input,.crm__f select{width:100%;box-sizing:border-box;height:46px;font:inherit;font-size:14px;color:#282834;border:1px solid #d9dce8;border-radius:12px;padding:0 12px;background:#fff}
+.crm__f input:focus,.crm__f select:focus{outline:2px solid #d74009;outline-offset:-1px;border-color:transparent}
+.crm__f.bad input,.crm__f.bad select{border-color:#b42318}
+.crm__help{font-size:12px;color:#646587;margin-top:6px}
+.crm__hint{font-size:12.5px;color:#646587;margin:14px 0 0;line-height:1.5}
+.crm__err{display:none;margin-top:12px;font-size:13px;color:#b42318;background:#fff0ee;border-radius:12px;padding:10px 14px}
+.crm__err.show{display:block}
+.crm__aud{margin-top:14px;font-size:12.5px;color:#646587;background:#f4f5f9;border-radius:12px;padding:10px 14px}
+.crm__x{border:0;background:transparent;cursor:pointer;width:32px;height:32px;border-radius:8px;color:#646587;font-size:20px;line-height:1}
+.crm__x:hover{background:#f4f5f9}
+.crm__ft{padding:22px 32px 26px;display:flex;justify-content:flex-end;gap:10px}
 </style>
 </head>
 <body>
@@ -979,7 +1004,7 @@
           <div class="detail-head__meta" id="hdMeta"></div>
         </div>
         <div class="detail-head__actions">
-          <button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="editCurrentProgram()">
+          <button class="naowee-btn naowee-btn--mute naowee-btn--large" data-edit-form onclick="editCurrentProgram()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>
             Editar
           </button>
@@ -1055,7 +1080,7 @@
               <div id="cycDocs"></div>
             </div>
             <div class="section">
-              <div class="section-label">Etapas y fechas de cargue</div>
+              <div class="section-label section-label--row"><span>Etapas y fechas de cargue</span><span id="cycEditBtn"></span></div>
               <div id="cycStages"></div>
             </div>
           </div>
@@ -1070,7 +1095,7 @@
             <div class="section">
               <div class="section-label section-label--row">
                 <span>Reglas de elegibilidad</span>
-                <button class="naowee-btn naowee-btn--link naowee-btn--small" onclick="editCurrentProgram(3)" style="text-transform:none;letter-spacing:0">
+                <button class="naowee-btn naowee-btn--link naowee-btn--small" data-edit-form onclick="editCurrentProgram(3)" style="text-transform:none;letter-spacing:0">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>
                   Editar reglas
                 </button>
@@ -1371,6 +1396,12 @@ function renderCiclo(p){
     <div class="info-row-plain"><dt>Departamentos</dt><dd>${c.cobertura.join(', ')}</dd></div>
     <div class="info-row-plain"><dt>Municipios</dt><dd>${c.cobertura.indexOf('Nacional') > -1 ? 'No aplica (cobertura nacional)' : mun}</dd></div>
     <div class="info-row-plain"><dt>Selección de beneficiarios</dt><dd>${c.seleccion.map(s => s === 'manual' ? 'Registro manual' : 'Registrado por plataforma').join(' + ')}</dd></div>`;
+
+  // Gestor de programa: es lo único que puede editar de su programa (fechas de cargue y plazo de gracia)
+  const isPrograma = (localStorage.getItem('naowee-incentivos-role') || 'admin') === 'programa';
+  const eb = document.getElementById('cycEditBtn');
+  if(eb) eb.innerHTML = isPrograma && docsOn && (p.status === 'active' || p.status === 'draft')
+    ? '<button class="naowee-btn naowee-btn--link naowee-btn--small" onclick="openCronoModal()" style="text-transform:none;letter-spacing:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar fechas</button>' : '';
 }
 
 let HAS_CODES = true; // el programa lleva códigos solo si algún tipo de incentivo lo tiene activado
@@ -1452,6 +1483,7 @@ function hydrateProgram(){
   const isBonoProgram = HAS_CODES;
   const codTab = document.querySelector('#wzTabs [data-tab="codigos"]'); if(codTab) codTab.style.display = HAS_CODES ? '' : 'none';
   const kpiInvBox = document.getElementById('kpiInv') && document.getElementById('kpiInv').parentElement; if(kpiInvBox) kpiInvBox.style.display = HAS_CODES ? '' : 'none';
+  const kpiStrip = document.querySelector('.kpi-strip'); if(kpiStrip) kpiStrip.classList.toggle('kpi-strip--3', !HAS_CODES);
   const thCode = document.querySelector('#asignTable thead th:nth-of-type(2)'); if(thCode) thCode.textContent = HAS_CODES ? 'Código' : 'N.º de entrega';
   const cargarBtn = document.getElementById('btnCargarCodigos');
   if(cargarBtn) cargarBtn.style.display = isBonoProgram ? '' : 'none';
@@ -1574,6 +1606,77 @@ function editCurrentProgram(step){
 }
 window.editCurrentProgram = editCurrentProgram;
 
+/* ═══ Gestor de programa: edita solo las fechas de cargue documental y el plazo de gracia ═══ */
+const $ = id => document.getElementById(id);
+const K_CRONO_AUD = 'naowee:crono-audit';
+function cronoAudit(){ try { return JSON.parse(localStorage.getItem(K_CRONO_AUD)) || {}; } catch(_) { return {}; } }
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fmtCr(v, rec){
+  if(!v) return 'sin definir';
+  if(rec) return 'día ' + v;
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}:\d{2}))?/.exec(v); if(!m) return v;
+  return parseInt(m[3], 10) + ' ' + MESES[parseInt(m[2], 10) - 1] + ' ' + m[1] + (m[4] ? ' ' + m[4] : '');
+}
+function openCronoModal(){
+  const p = CURRENT_PROGRAM; if(!p) return;
+  const c = window.getProgramConfig(p), rec = c.rec.on, cr = c.crono;
+  const a = $('crmA'), b = $('crmB');
+  a.type = b.type = rec ? 'number' : 'datetime-local';
+  if(rec){ a.min = b.min = 1; a.max = b.max = 31; a.placeholder = 'Día (1–31)'; b.placeholder = 'Día (1–31)'; }
+  $('crmLA').innerHTML = (rec ? 'Día de apertura del ciclo' : 'Apertura') + ' <b>*</b>';
+  $('crmLB').innerHTML = (rec ? 'Día de cierre del ciclo' : 'Cierre') + ' <b>*</b>';
+  $('crmSub').textContent = rec ? 'Estas fechas se repiten en cada ciclo.' : 'Mientras esté abierta, los deportistas pueden postular y cargar soportes.';
+  a.value = rec ? (cr.carga.ini || '') : (/^\d{4}-/.test(cr.carga.ini) ? cr.carga.ini.slice(0, 16) : '');
+  b.value = rec ? (cr.carga.fin || '') : (/^\d{4}-/.test(cr.carga.fin) ? cr.carga.fin.slice(0, 16) : '');
+  const g = parseInt(cr.gracia, 10); $('crmG').value = g >= 3 && g <= 5 ? String(g) : '3';
+  $('crmErr').classList.remove('show'); $('crmFA').classList.remove('bad'); $('crmFB').classList.remove('bad');
+  $('crmOv').classList.add('open'); setTimeout(() => a.focus(), 100);
+}
+function closeCronoModal(){ $('crmOv').classList.remove('open'); }
+function saveCrono(){
+  const p = CURRENT_PROGRAM, c = window.getProgramConfig(p), rec = c.rec.on;
+  const ini = $('crmA').value.trim(), fin = $('crmB').value.trim(), gr = $('crmG').value;
+  $('crmErr').classList.remove('show');
+  const err = m => { $('crmErr').textContent = m; $('crmErr').classList.add('show'); };
+  $('crmFA').classList.toggle('bad', !ini); $('crmFB').classList.toggle('bad', !fin);
+  if(!ini || !fin) return err('Define la apertura y el cierre del cargue documental.');
+  const revFin = c.crono.revision.fin;
+  if(rec){
+    const A = +ini, B = +fin;
+    if(!(A >= 1 && A <= 31 && B >= 1 && B <= 31)) return err('Los días deben estar entre 1 y 31.');
+    if(B < A) return err('El cierre no puede ser antes que la apertura.');
+    if(revFin && B > +revFin) return err('El cierre de cargue no puede ser posterior al cierre de la revisión (día ' + revFin + ').');
+  } else {
+    if(fin <= ini) return err('El cierre debe ser posterior a la apertura.');
+    if(/^\d{4}-/.test(revFin || '') && fin > revFin.slice(0, 16)) return err('El cierre de cargue no puede ser posterior al cierre de la revisión (' + fmtCr(revFin) + ').');
+  }
+  const antes = { ini: c.crono.carga.ini, fin: c.crono.carga.fin, gracia: String(parseInt(c.crono.gracia, 10) || '') };
+  const despues = { ini: ini, fin: fin, gracia: gr };
+  if(antes.ini === despues.ini && antes.fin === despues.fin && antes.gracia === despues.gracia){ closeCronoModal(); return; }
+  const np = JSON.parse(JSON.stringify(p));
+  np.config = JSON.parse(JSON.stringify(c));
+  np.config.crono.carga = { ini: ini, fin: fin }; np.config.crono.gracia = gr;
+  window.persistProgramEdit(np.id, np);
+  const aud = cronoAudit(), n = new Date(), chip = document.querySelector('.user-chip .user-name'), rl = document.querySelector('.user-chip .user-role');
+  (aud[np.id] = aud[np.id] || []).unshift({
+    usuario: chip ? chip.textContent.trim() : 'Gestor de programa', rol: rl ? rl.textContent.trim() : '',
+    fecha: n.getDate() + ' ' + MESES[n.getMonth()] + ' ' + n.getFullYear(), hora: String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0'),
+    rec: rec, antes: antes, despues: despues
+  });
+  try { localStorage.setItem(K_CRONO_AUD, JSON.stringify(aud)); } catch(_) {}
+  CURRENT_PROGRAM = window.getProgramById(np.id);
+  closeCronoModal(); renderCiclo(CURRENT_PROGRAM); renderHistorial();
+  showRvToast({ variant: 'positive', title: 'Cronograma actualizado', text: 'Las nuevas fechas de cargue y el plazo de gracia ya aplican y quedaron en la auditoría.' });
+}
+/* Qué ve cada rol: el Gestor de programa no edita el formulario global */
+function applyRoleEdit(){
+  const prog = (localStorage.getItem('naowee-incentivos-role') || 'admin') === 'programa';
+  document.querySelectorAll('[data-edit-form]').forEach(el => { el.style.display = prog ? 'none' : ''; });
+  if(CURRENT_PROGRAM) renderCiclo(CURRENT_PROGRAM);
+}
+const prevRoleHook = window.onRoleApplied;
+window.onRoleApplied = function(role){ try { prevRoleHook && prevRoleHook(role); } catch(_) {} applyRoleEdit(); };
+
 /* Si el detalle se abrió tras activar un programa (?activated=1), mostrar
    un toast positive bottom-right confirmando la creación. Limpia el query
    param para que un refresh no lo dispare de nuevo. */
@@ -1648,6 +1751,14 @@ function renderHistorial(){
     );
   }
 
+  // Auditoría del cronograma de cargue (lo más reciente arriba)
+  ((cronoAudit()[p.id]) || []).slice().reverse().forEach(a => {
+    const ch = [];
+    if(a.antes.ini !== a.despues.ini) ch.push(`${a.rec ? 'Apertura' : 'Apertura'}: ${fmtCr(a.antes.ini, a.rec)} → ${fmtCr(a.despues.ini, a.rec)}`);
+    if(a.antes.fin !== a.despues.fin) ch.push(`Cierre: ${fmtCr(a.antes.fin, a.rec)} → ${fmtCr(a.despues.fin, a.rec)}`);
+    if(a.antes.gracia !== a.despues.gracia) ch.push(`Plazo de gracia: ${a.antes.gracia || 'sin definir'} → ${a.despues.gracia} días hábiles`);
+    items.unshift({ dot:'blue', ico: ICONS.edit, title:'Cronograma de cargue modificado', desc: ch.join(' · '), date:`${a.usuario}${a.rol ? ' (' + a.rol + ')' : ''} · ${a.fecha} ${a.hora}` });
+  });
   tl.innerHTML = items.map(it => `
     <div class="timeline-item">
       <div class="timeline-dot ${it.dot}">${it.ico}</div>
@@ -2261,6 +2372,22 @@ document.addEventListener('keydown', e => {
 </div>
 
 <!-- Modal: revertir código (el mismo de la pantalla Códigos) -->
+<div class="crm-ov" id="crmOv" onclick="if(event.target===this)closeCronoModal()">
+  <div class="crm" role="dialog" aria-modal="true" aria-labelledby="crmT">
+    <div class="crm__h"><div><h3 id="crmT">Ventana de cargue documental</h3><p id="crmSub">Mientras esté abierta, los deportistas pueden postular y cargar soportes.</p></div><button class="crm__x" onclick="closeCronoModal()" aria-label="Cerrar">×</button></div>
+    <div class="crm__b">
+      <div class="crm__grid">
+        <div class="crm__f" id="crmFA"><label for="crmA" id="crmLA">Apertura <b>*</b></label><input id="crmA" type="datetime-local"/></div>
+        <div class="crm__f" id="crmFB"><label for="crmB" id="crmLB">Cierre <b>*</b></label><input id="crmB" type="datetime-local"/></div>
+        <div class="crm__f"><label for="crmG">Plazo de gracia</label><select id="crmG"><option value="3">3 días hábiles</option><option value="4">4 días hábiles</option><option value="5">5 días hábiles</option></select><div class="crm__help">Sin fines de semana ni festivos</div></div>
+      </div>
+      <div class="crm__err" id="crmErr"></div>
+      <div class="crm__aud">Queda registrado en la auditoría quién modificó el cronograma, cuándo y qué cambió.</div>
+    </div>
+    <div class="crm__ft"><button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="closeCronoModal()">Cancelar</button><button class="naowee-btn naowee-btn--loud naowee-btn--large" onclick="saveCrono()">Guardar cronograma</button></div>
+  </div>
+</div>
+
 <div class="rv-overlay" id="rvOverlay" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
   <div class="rv-modal">
     <header class="rv-header">
@@ -2763,7 +2890,7 @@ function clearSearch(inputId){
 
 <script src="shared/programa-wizard.js" defer></script>
 
-<script src="shared/profile-switcher.js?v=role-10" defer></script>
+<script src="shared/profile-switcher.js?v=role-15" defer></script>
 
 <script src="shared/footer-scroll.js" defer></script>
 

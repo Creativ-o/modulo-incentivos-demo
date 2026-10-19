@@ -65,6 +65,24 @@
       const dr = el.dataset.role;
       el.style.display = (dr === 'all' || dr === role) ? '' : 'none';
     });
+    // Gestor de programa: Dashboard, Mis programas, Códigos, Historial (de SUS programas)
+    // y Revisión documental. Se resuelve aquí y no por data-role, porque no todas
+    // las páginas traen el atributo. Reportería y creación quedan fuera.
+    if(role === 'programa'){
+      const NAV_PROGRAMA = ['Dashboard','Programas','Mis programas','Códigos','Historial','Revisión documental'];
+      document.querySelectorAll('.sidebar-nav .nav-row').forEach(row => {
+        const lbl = row.querySelector('.lbl');
+        const txt = lbl ? lbl.textContent.trim() : '';
+        row.style.display = NAV_PROGRAMA.indexOf(txt) > -1 ? '' : 'none';
+        if(lbl && txt === 'Programas') lbl.textContent = 'Mis programas';
+      });
+      if(/incentivo-(04|06|13|15)/.test(location.pathname)){
+        location.replace(PROGRAMA_HOME);
+        return;
+      }
+    }
+    // Revisión documental: la ve el Gestor de programa (titular) y los roles con alcance global (apoyo).
+    if((role === 'programa' || role === 'admin' || role === 'gestor') && !document.querySelector('.sidebar-nav .nav-row[data-nav="revision"]')) injectRevisionNav();
     // Hook opcional por página: si la página define onRoleApplied(role),
     // se llama después del filtrado base. Permite a cada vista reaccionar
     // (ej: cambiar título, hidratar un hero card, etc) sin depender del
@@ -76,12 +94,29 @@
   // Si el rol seleccionado no corresponde al tipo de página actual,
   // se redirige al "home" del perfil para que la UX refleje el cambio.
   const OPERATOR_PAGES = /incentivo-(08|09|10|11|14)/;
-  const ADMIN_PAGES    = /incentivo-(02|03|04|05|06|07|12|13)/;
+  const ADMIN_PAGES    = /incentivo-(02|03|04|05|06|07|12|13|16)/;
   // Gestor de programa sólo vive en la lista (filtrada) y el detalle.
-  const PROGRAMA_PAGES = /incentivo-(03|05)/;
+  const PROGRAMA_PAGES = /incentivo-(02|03|05|07|12|16)/;
   const OPERATOR_HOME  = 'incentivo-08-asignar-buscar.html';
   const ADMIN_HOME     = 'incentivo-02-dashboard.html';
   const PROGRAMA_HOME  = 'incentivo-03-programas.html';
+
+  /* Entrada "Revisión documental" (solo Gestor de programa): se inyecta tras Historial. */
+  function injectRevisionNav(){
+    const nav = document.querySelector('.sidebar-nav'); if(!nav) return;
+    const rows = nav.querySelectorAll('.nav-row'); const last = rows[rows.length - 1]; if(!last) return;
+    const active = /incentivo-16/.test(location.pathname);
+    const row = document.createElement('div');
+    row.className = 'nav-row' + (active ? ' active' : '');
+    row.setAttribute('data-nav', 'revision');
+    if(!active) row.setAttribute('onclick', "fadeAndGo('incentivo-16-revision-documental.html')");
+    const st = active ? '#d74009' : '#646587';
+    row.innerHTML = (active ? '<div class="active-bar"></div>' : '') +
+      '<div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="' + st + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 9"/></svg></div>' +
+      '<span class="lbl">Revisión documental</span><span class="nav-count" id="navRevCount" style="position:absolute;left:44px;top:4px;background:#d74009;border:2px solid #fff;box-sizing:content-box;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:0 5px;line-height:15px;min-width:6px;text-align:center"></span>';
+    last.insertAdjacentElement('afterend', row);
+    try { const n = window.pendingReviewCount ? window.pendingReviewCount() : 0; const c = row.querySelector('#navRevCount'); if(n > 0) c.textContent = n; else c.remove(); } catch(_){}
+  }
 
   function switchRole(role){
     localStorage.setItem(STORAGE_KEY, role);
