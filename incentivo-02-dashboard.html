@@ -520,7 +520,9 @@ function fadeAndGo(url){window.location.href=url}
   const totalRev   = sum('rev');
   const totalRubro = sumF(p => p.rubro);
   const totalExec  = sumF(p => p.exec);
-  const execPct    = totalRubro > 0 ? Math.round((totalExec / totalRubro) * 100) : 0;
+  // El % compara solo programas con rubro; lo que cuestan las entregas de programas sin rubro se muestra aparte
+  const execConRubro = sumF(p => p.rubro > 0 ? p.exec : 0), execSinRubro = totalExec - execConRubro;
+  const execPct    = totalRubro > 0 ? Math.round((execConRubro / totalRubro) * 100) : 0;
   const set = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
   set('kpiInvVal',  `${totalAvail.toLocaleString('es-CO')} <small>códigos</small>`);
   set('kpiAsigVal', `${totalAsig.toLocaleString('es-CO')} <small>entregas</small>`);
@@ -529,7 +531,7 @@ function fadeAndGo(url){window.location.href=url}
   const fill = document.getElementById('kpiExecFill');
   if(fill) fill.style.width = execPct + '%';
   const foot = document.getElementById('kpiExecFoot');
-  if(foot) foot.textContent = `$${(totalExec/1e9).toFixed(1)}B de $${(totalRubro/1e9).toFixed(1)}B ejecutados`;
+  if(foot) foot.textContent = `$${(execConRubro/1e9).toFixed(1)}B de $${(totalRubro/1e9).toFixed(1)}B ejecutados` + (execSinRubro > 0 ? ` · +$${(execSinRubro/1e6).toFixed(1)}M en programas sin rubro` : '');
   // Tasa de reversión calculada
   const revPct = totalAsig > 0 ? ((totalRev/totalAsig)*100).toFixed(1) : '0.0';
   const revPctEl = document.getElementById('kpiRevPct');

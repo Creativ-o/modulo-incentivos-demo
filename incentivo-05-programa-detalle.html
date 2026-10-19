@@ -647,6 +647,7 @@
   .ver-note{margin-top:12px;padding:12px 16px;border-radius:14px;font-size:13.5px;line-height:1.5}
   .ver-note--warn{background:#fdecc8;color:#282834}
   .ver-note--info{background:#d3f1fd;color:#282834}
+  .mini-kpi__val--muted{font-size:15px;font-weight:600;color:#646587;line-height:1.6}
   /* Cupo de códigos y reversión desde el perfil */
   .cod-revert-icon{padding:0 8px}
   .cupo-wrap{display:inline-flex}
@@ -1427,19 +1428,20 @@ function hydrateProgram(){
   // KPI strip
   const execPct = p.rubro ? Math.round((p.exec/p.rubro)*100) : 0;
   const unitM = '$' + Number(p.unit||0).toLocaleString('es-CO');
-  document.getElementById('kpiRubro').textContent = p.rubro ? formatMoneyShort(p.rubro) : 'Sin rubro';
-  document.getElementById('kpiRubroSub').textContent = !p.rubro ? 'El programa no tiene rubro definido' : (p.codes.total > 0 ? `${p.codes.total} códigos × ${unitM}` : 'Pendiente configurar');
+  const kr = document.getElementById('kpiRubro');
+  kr.textContent = p.rubro ? formatMoney(p.rubro) : 'Sin rubro'; kr.classList.toggle('mini-kpi__val--muted', !p.rubro);
+  document.getElementById('kpiRubroSub').textContent = !p.rubro ? 'Se suma lo que cuesta cada entrega' : (p.codes.total > 0 ? `${p.codes.total} códigos × ${unitM}` : 'Pendiente configurar');
   if(p.rubro){
-    document.getElementById('kpiExec').textContent = formatMoneyShort(p.exec);
+    document.getElementById('kpiExec').textContent = formatMoney(p.exec);
     document.getElementById('kpiExecFill').style.width = execPct + '%';
     document.getElementById('kpiExecSub').textContent = `${execPct}% · ${p.codes.asig} asignaciones`;
   } else {
-    // Sin rubro no hay monto que ejecutar: la ejecución se mide en entregas frente a los cupos de los tipos de incentivo
+    // Sin rubro no hay presupuesto contra el cual medir, pero sí se suma lo que cuesta cada entrega; la barra mide los cupos entregados
     const cupos = window.getProgramConfig(p).inc.reduce((a, x) => a + (Number(x.cantidad) || 0), 0), ent = (p.codes && p.codes.asig) || 0;
     const pctC = cupos ? Math.min(100, Math.round(ent / cupos * 100)) : 0;
-    document.getElementById('kpiExec').textContent = cupos ? pctC + '%' : ent + ' entregas';
+    document.getElementById('kpiExec').textContent = formatMoney(p.exec);
     document.getElementById('kpiExecFill').style.width = pctC + '%';
-    document.getElementById('kpiExecSub').textContent = cupos ? `${ent} de ${cupos} cupos entregados` : `${ent} entregas registradas · sin cupo definido`;
+    document.getElementById('kpiExecSub').textContent = cupos ? `${ent} entregas · ${pctC}% de los ${cupos} cupos` : `${ent} entregas registradas`;
   }
   document.getElementById('kpiInv').textContent = p.codes.avail;
   document.getElementById('kpiRev').textContent = p.codes.rev;
@@ -1458,7 +1460,7 @@ function hydrateProgram(){
   document.querySelector('.tab-pane[data-pane="codigos"]')?.classList.toggle('codigos-pane--no-codes', !isBonoProgram);
 
   // Tab counts
-  const totalConds = p.conditions.groups.reduce((acc, g) => acc + g.rules.length, 0);
+  const totalConds = p.conditions.groups.reduce((acc, g) => acc + g.rules.length, 0) + (p.incentives || []).reduce((acc, i) => acc + ((i.conditions && i.conditions.groups) || []).reduce((a2, g) => a2 + g.rules.length, 0), 0);
   document.getElementById('tabCondCount').textContent = totalConds;
   document.getElementById('tabCodCount').textContent = p.codes.total;
   document.getElementById('tabAsigCount').textContent = p.codes.asig;

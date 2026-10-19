@@ -187,6 +187,7 @@
   /* Rubro cell */
   .rubro-cell{display:flex;flex-direction:column;gap:6px}
   .rubro-cell__val{font-family:'Inter',sans-serif;font-size:13.5px;font-weight:700;color:var(--naowee-color-text-primary,#282834)}
+  .rubro-cell__val--muted{font-size:11px;font-weight:600;color:#9c9ebf}
   .rubro-cell__exec{font-size:11px;color:var(--naowee-color-text-secondary,#646587)}
   .rubro-cell .naowee-progress{width:100%;max-width:160px;height:4px}
 
@@ -726,14 +727,14 @@ function renderRows(){
           </td>
           <td>
             <div class="rubro-cell">
-              <span class="rubro-cell__val">${p.rubro ? '$' + Number(p.rubro).toLocaleString('es-CO') : (p.codes.asig ? 'Sin rubro' : '—')}</span>
+              <span class="rubro-cell__val${p.rubro ? '' : ' rubro-cell__val--muted'}">${p.rubro ? '$' + Number(p.rubro).toLocaleString('es-CO') : (p.codes.asig || p.exec ? 'Sin rubro' : '—')}</span>
               ${p.rubro ? `<div class="naowee-progress naowee-progress--positive"><div class="naowee-progress__fill" style="width:${execPct}%"></div></div>
                 <span class="rubro-cell__exec">${execPct}% · $${Number(p.exec||0).toLocaleString('es-CO')}</span>` : (() => {
-                  /* Sin rubro la ejecución se mide en entregas frente a los cupos de los tipos de incentivo */
+                  /* Sin rubro: se suma lo que cuesta cada entrega; la barra mide los cupos entregados */
                   const cupos = p.cfg.inc.reduce((a, x) => a + (Number(x.cantidad) || 0), 0), ent = p.codes.asig || 0;
-                  if(!ent) return '<span class="rubro-cell__exec">Sin configurar</span>';
+                  if(!ent && !p.exec) return '<span class="rubro-cell__exec">Sin configurar</span>';
                   const pc = cupos ? Math.min(100, Math.round(ent / cupos * 100)) : 0;
-                  return (cupos ? `<div class="naowee-progress naowee-progress--positive"><div class="naowee-progress__fill" style="width:${pc}%"></div></div>` : '') + `<span class="rubro-cell__exec">${cupos ? pc + '% · ' : ''}${ent} entregas</span>`;
+                  return (cupos ? `<div class="naowee-progress naowee-progress--positive"><div class="naowee-progress__fill" style="width:${pc}%"></div></div>` : '') + `<span class="rubro-cell__exec"><strong style="color:#282834">$${Number(p.exec||0).toLocaleString('es-CO')}</strong> ejecutado · ${ent} entregas</span>`;
                 })()}
             </div>
           </td>
