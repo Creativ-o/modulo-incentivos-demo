@@ -355,7 +355,8 @@ a.nwt-button{text-decoration:none}
 .pf-alert-cta .nwt-alert__label{flex:1;min-width:0}
 .pf-alert-cta .nwt-button{flex:0 0 auto;white-space:nowrap}
 /* El dropdown de valores de una condición mide lo mismo que los demás campos de la fila */
-.pf-rule .pf-ms__chips{padding:0}
+.pf-ms__chips{padding-left:var(--naotech-sizing-4);padding-right:var(--naotech-sizing-4)} /* deja ver el aro de las etiquetas activas, que sobresale 4px */
+.pf-rule .pf-ms__chips{padding:var(--naotech-sizing-4);margin:calc(-1 * var(--naotech-sizing-4))}
 .pf-rule .pf-ms__content{min-height:0}
 /* La celda vacía de las filas fijas no debe alargar la fila */
 .pf-rule--fixed > :last-child{margin-top:0!important;height:0}
