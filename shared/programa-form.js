@@ -291,6 +291,11 @@
   function norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
   function muniDepto(m) { return String(m).split(' · ')[1]; }
   function msCfg(key) {
+    if (key.indexOf('fx:') === 0) { // valores de una condición fija (paso 2) de un tipo: solo lo elegido en el paso 2
+      var pp = key.split(':'), inc = incById(pp[1]), dim = pp[2], dd = popDims(inc), nm = { roles: 'rol', cobertura: 'departamento', municipios: 'municipio' }[dim];
+      return { id: 'pfFx-' + pp[1] + '-' + dim, label: dd.length && dd[0][0] === dim ? 'Valores' : '', req: 0, ph: 'Selecciona ' + nm, sp: 'Buscar ' + nm, box: 'fx.' + pp[1] + '.' + dim, hint: '',
+        get: function () { return aplica(inc, dim); }, options: function () { return dim === 'roles' ? S.pob.roles : dim === 'cobertura' ? S.pob.cobertura : S.pob.municipios; } };
+    }
     return {
       cob: { id: 'pfCob', label: 'Cobertura territorial', req: 0, ph: 'Nacional o departamentos', sp: 'Buscar departamento', box: 'pob.cobertura', get: function () { return S.pob.cobertura; }, options: function () { return REGIONES; }, exclusive: 'Nacional', hint: '' },
       mun: { id: 'pfMun', label: 'Municipios (opcional)', req: 0, ph: 'Todos los municipios', sp: 'Buscar municipio', box: 'pob.municipios', get: function () { return S.pob.municipios; }, options: function () { var o = []; S.pob.cobertura.forEach(function (d) { (MUNI[d] || []).forEach(function (m) { o.push(m + ' · ' + d); }); }); return o; },
@@ -370,6 +375,11 @@
     var c = msCfg(key), v = c.get().slice(), i = v.indexOf(r);
     if (c.exclusive && r === c.exclusive) v = i > -1 ? [] : [r]; // marcar «Nacional» reemplaza todo; desmarcarla libera los departamentos
     else { if (c.exclusive && v.indexOf(c.exclusive) > -1) return; if (i > -1) v.splice(i, 1); else v.push(r); }
+    if (key.indexOf('fx:') === 0) { // se guarda lo que NO aplica a este tipo; debe quedar al menos un valor
+      var fp = key.split(':'), fi = incById(fp[1]), fd = fp[2], off = fi.pobOff[fd], oi = off.indexOf(r);
+      if (oi > -1) off.splice(oi, 1); else { if (aplica(fi, fd).length <= 1) { toast('Debe quedar al menos uno: si no, nadie podría recibir este incentivo.', 'caution'); return; } off.push(r); }
+      msRedraw(key); updateRules(fp[1]); saveDraft(true); refreshDraftBtn(); return;
+    }
     if (key === 'cob') { S.pob.cobertura = v; S.pob.municipios = S.pob.municipios.filter(function (m) { return v.indexOf(muniDepto(m)) > -1; }); }
     else if (key === 'mun') S.pob.municipios = v;
     else if (key === 'gestor') S.datos.gestores = v;
@@ -544,16 +554,11 @@
     return alertBox('Hay <b>condiciones fijas</b> que vienen de la población del paso 2 (' + popDims(inc).map(function (d) { return d[1].toLowerCase(); }).join(', ') + '). Ya están agregadas en el Grupo 1 y aplican a todos los grupos' + (multi ? ': elige entre lo que seleccionaste para repartirlas entre tus tipos de incentivo (por ejemplo, un tipo para deportistas y otro para personal de apoyo).' : '.') + ' <a href="#" data-act="goto" data-x="2" class="pf-link-inline">Cambiar en el paso 2</a>', 'informative');
   }
   function fixedRowsHTML(inc) {
-    var multi = S.inc.length > 1;
     return popDims(inc).map(function (d, ri) {
-      var on = aplica(inc, d[0]), first = ri === 0, id = inc.id + '.' + d[0];
-      var chips = d[2].map(function (v) {
-        var lab = d[0] === 'municipios' ? v.split(' · ')[0] : v;
-        return multi ? tag(lab, on.indexOf(v) > -1, 'pob-t', inc.id, d[0] + '|' + v) : '<span class="nwt-tag nwt-tag--active" nwt-size="medium">' + esc(lab) + '</span>';
-      }).join('');
+      var first = ri === 0, id = inc.id + '.' + d[0], key = 'fx:' + inc.id + ':' + d[0];
       return '<div class="pf-rule pf-rule--fixed">' + sel({ label: first ? 'Campo' : '', k: 'ui.fx.' + id, val: d[1], opts: [d[1]], attrs: ' disabled' }) +
         sel({ label: first ? 'Operador' : '', k: 'ui.fxop.' + id, val: 'es uno de', opts: ['es uno de'], attrs: ' disabled' }) +
-        '<div>' + (first ? '<span class="pf-label">Valores</span>' : '') + '<div class="pf-rule__chips">' + chips + '</div></div><div></div></div>';
+        msHost(key) + '<div></div></div>';
     }).join('');
   }
   function previewHTML(inc) {
