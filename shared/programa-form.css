@@ -338,3 +338,6 @@ a.nwt-button{text-decoration:none}
 
 /* Opciones de selección de beneficiarios: tarjeta blanca con borde suave */
 .pf-opt-box{background:var(--naotech-color-gray-100);border:1px solid var(--naotech-app-color-200)}
+
+.pf-link-inline{color:var(--naotech-primary-color-700);font-weight:600;white-space:nowrap}
+.pf-rule--fixed .nwt-select__input:disabled{cursor:default;opacity:1;color:var(--naotech-app-color-900)}

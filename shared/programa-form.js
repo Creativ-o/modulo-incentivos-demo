@@ -464,28 +464,28 @@
     return base;
   }
   function ruleRow(inc, gi, ri, r) {
-    var f = FIELDS[r.f], key = inc.id + '.' + gi + '.' + ri, multi = r.op === '∈' || r.op === '∉';
-    var fieldSel = sel({ label: ri === 0 ? 'Campo' : '', k: 'rule.' + key + '.f', val: r.f, ph: 'Campo', groups: '<option value="" disabled' + (r.f ? '' : ' selected') + '>Campo</option>' + fieldGroups(r.f), attrs: ' data-struct="1"' });
+    var first = ri === 0 && !(gi === 0 && popDims(inc).length), f = FIELDS[r.f], key = inc.id + '.' + gi + '.' + ri, multi = r.op === '∈' || r.op === '∉';
+    var fieldSel = sel({ label: first ? 'Campo' : '', k: 'rule.' + key + '.f', val: r.f, ph: 'Campo', groups: '<option value="" disabled' + (r.f ? '' : ' selected') + '>Campo</option>' + fieldGroups(r.f), attrs: ' data-struct="1"' });
     var opSel = '', val = '';
     if (f) {
       if (f.type === 'num') {
-        opSel = sel({ label: ri === 0 ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op, opts: OPS_NUM });
-        val = tf({ label: ri === 0 ? 'Valor' : '', type: 'number', k: 'rule.' + key + '.v', val: r.v, ph: '18' });
+        opSel = sel({ label: first ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op, opts: OPS_NUM });
+        val = tf({ label: first ? 'Valor' : '', type: 'number', k: 'rule.' + key + '.v', val: r.v, ph: '18' });
       } else if (f.type === 'agg') {
         var aop = r.op && OPS_AGG.some(function (o) { return o[0] === r.op; }) ? r.op : 'max';
-        opSel = sel({ label: ri === 0 ? 'Operador' : '', k: 'rule.' + key + '.op', val: aop, opts: OPS_AGG, attrs: ' data-struct="1"' });
-        val = aop === 'max' ? '<div>' + (ri === 0 ? '<span class="pf-label">Valor</span>' : '') + '<p class="pf-hint" style="margin:0;padding-top:10px">Quien tenga la mayor cantidad.</p></div>'
-          : tf({ label: ri === 0 ? (aop === 'top' ? 'Cuántos (los N primeros)' : 'Cantidad') : '', type: 'number', k: 'rule.' + key + '.v', val: r.v, ph: aop === 'top' ? '3' : '5', attrs: ' min="1"' });
+        opSel = sel({ label: first ? 'Operador' : '', k: 'rule.' + key + '.op', val: aop, opts: OPS_AGG, attrs: ' data-struct="1"' });
+        val = aop === 'max' ? '<div>' + (first ? '<span class="pf-label">Valor</span>' : '') + '<p class="pf-hint" style="margin:0;padding-top:10px">Quien tenga la mayor cantidad.</p></div>'
+          : tf({ label: first ? (aop === 'top' ? 'Cuántos (los N primeros)' : 'Cantidad') : '', type: 'number', k: 'rule.' + key + '.v', val: r.v, ph: aop === 'top' ? '3' : '5', attrs: ' min="1"' });
       } else if (f.type === 'text') {
-        opSel = sel({ label: ri === 0 ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op || '=', opts: [['=', 'es'], ['≠', 'no es']] });
-        val = tf({ label: ri === 0 ? 'Valor' : '', k: 'rule.' + key + '.v', val: r.v, ph: 'Ej. Cali' });
+        opSel = sel({ label: first ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op || '=', opts: [['=', 'es'], ['≠', 'no es']] });
+        val = tf({ label: first ? 'Valor' : '', k: 'rule.' + key + '.v', val: r.v, ph: 'Ej. Cali' });
       } else {
-        opSel = sel({ label: ri === 0 ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op || '=', opts: OPS_SEL, attrs: ' data-struct="1"' });
+        opSel = sel({ label: first ? 'Operador' : '', k: 'rule.' + key + '.op', val: r.op || '=', opts: OPS_SEL, attrs: ' data-struct="1"' });
         if (multi) {
           var arr = Array.isArray(r.v) ? r.v : [];
-          val = '<div>' + (ri === 0 ? '<span class="pf-label">Valores</span>' : '') + '<div class="pf-rule__chips">' + optsOf(r).map(function (o) { return tag(o, arr.indexOf(o) > -1, 'rule-multi', key, o); }).join('') + '</div></div>';
+          val = '<div>' + (first ? '<span class="pf-label">Valores</span>' : '') + '<div class="pf-rule__chips">' + optsOf(r).map(function (o) { return tag(o, arr.indexOf(o) > -1, 'rule-multi', key, o); }).join('') + '</div></div>';
         } else {
-          val = sel({ label: ri === 0 ? 'Valor' : '', k: 'rule.' + key + '.v', val: Array.isArray(r.v) ? '' : r.v, ph: 'Selecciona', opts: optsOf(r) });
+          val = sel({ label: first ? 'Valor' : '', k: 'rule.' + key + '.v', val: Array.isArray(r.v) ? '' : r.v, ph: 'Selecciona', opts: optsOf(r) });
         }
       }
     } else { opSel = '<div></div>'; val = '<div></div>'; }
@@ -531,25 +531,30 @@
     return h;
   }
   function heredadasTxt(inc) { return heredadas(inc).map(function (x) { return esc(x[0] + ' ' + x[1]); }); }
-  /* Condiciones fijas que vienen de la población (paso 2): se muestran como condiciones ya agregadas, con las mismas filas del constructor.
-     Las opciones son solo las que se eligieron en el paso 2; con varios tipos se pueden repartir (a uno deportistas, a otro personal de apoyo). */
+  /* Condiciones fijas que vienen de la población (paso 2): aparecen ya agregadas como las primeras filas del Grupo 1, con el mismo aspecto
+     que cualquier condición. El campo es fijo (Rol, Departamento, Municipio) y los valores son solo los que se eligieron en el paso 2;
+     con varios tipos se reparten (a uno deportistas, a otro personal de apoyo). Aplican a todos los grupos del tipo. */
+  function popDims(inc) {
+    var p = S.pob;
+    return [['roles', 'Rol', p.roles], ['cobertura', 'Departamento', p.cobertura.indexOf('Nacional') < 0 ? p.cobertura : []], ['municipios', 'Municipio', p.municipios]].filter(function (d) { return d[2].length; });
+  }
   function heredadasHTML(inc) {
-    var h = heredadas(inc);
-    if (!h.length) return '';
-    var multi = S.inc.length > 1, p = S.pob;
-    var dims = [['roles', 'Rol', p.roles], ['cobertura', 'Departamento', p.cobertura.indexOf('Nacional') < 0 ? p.cobertura : []], ['municipios', 'Municipio', p.municipios]].filter(function (d) { return d[2].length; });
-    var rows = dims.map(function (d, ri) {
-      var on = aplica(inc, d[0]), first = ri === 0;
+    if (!popDims(inc).length) return '';
+    var multi = S.inc.length > 1;
+    return alertBox('Hay <b>condiciones fijas</b> que vienen de la población del paso 2 (' + popDims(inc).map(function (d) { return d[1].toLowerCase(); }).join(', ') + '). Ya están agregadas en el Grupo 1 y aplican a todos los grupos' + (multi ? ': elige entre lo que seleccionaste para repartirlas entre tus tipos de incentivo (por ejemplo, un tipo para deportistas y otro para personal de apoyo).' : '.') + ' <a href="#" data-act="goto" data-x="2" class="pf-link-inline">Cambiar en el paso 2</a>', 'informative');
+  }
+  function fixedRowsHTML(inc) {
+    var multi = S.inc.length > 1;
+    return popDims(inc).map(function (d, ri) {
+      var on = aplica(inc, d[0]), first = ri === 0, id = inc.id + '.' + d[0];
       var chips = d[2].map(function (v) {
         var lab = d[0] === 'municipios' ? v.split(' · ')[0] : v;
         return multi ? tag(lab, on.indexOf(v) > -1, 'pob-t', inc.id, d[0] + '|' + v) : '<span class="nwt-tag nwt-tag--active" nwt-size="medium">' + esc(lab) + '</span>';
       }).join('');
-      return '<div class="pf-rule">' + tf({ label: first ? 'Campo' : '', k: 'ui.fx.' + inc.id + '.' + d[0], val: d[1], ro: 1 }) +
-        tf({ label: first ? 'Operador' : '', k: 'ui.fxop.' + inc.id + '.' + d[0], val: 'es uno de', ro: 1 }) +
+      return '<div class="pf-rule pf-rule--fixed">' + sel({ label: first ? 'Campo' : '', k: 'ui.fx.' + id, val: d[1], opts: [d[1]], attrs: ' disabled' }) +
+        sel({ label: first ? 'Operador' : '', k: 'ui.fxop.' + id, val: 'es uno de', opts: ['es uno de'], attrs: ' disabled' }) +
         '<div>' + (first ? '<span class="pf-label">Valores</span>' : '') + '<div class="pf-rule__chips">' + chips + '</div></div><div></div></div>';
     }).join('');
-    return alertBox('Hay <b>condiciones fijas</b> que vienen de la población del paso 2' + (multi ? '. Ya están agregadas: elige entre lo que seleccionaste para repartirlas entre tus tipos de incentivo (por ejemplo, un tipo para deportistas y otro para personal de apoyo).' : ' y aplican a este incentivo.'), 'informative') +
-      '<div class="pf-group"><div class="pf-group__head"><span class="pf-group__label">Condiciones fijas · paso 2</span><span style="flex:1"></span>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', x: '2', i: 'edit' }) + '</div>' + rows + '</div>';
   }
   function previewHTML(inc) {
     var t = previewText(inc), h = heredadasTxt(inc);
@@ -561,7 +566,7 @@
     return inc.grupos.map(function (g, gi) {
         return (gi > 0 ? '<div class="pf-or"><span>O</span></div>' : '') + '<div class="pf-group"><div class="pf-group__head"><span class="pf-group__label">Grupo ' + (gi + 1) + '</span>' +
           '<span style="flex:1"></span>' + (inc.grupos.length > 1 ? btn('Quitar grupo', 'grp-del', { v: 'mute', d: id, x: gi, i: 'delete' }) : '') + '</div>' +
-          g.rows.map(function (r, ri) { return ruleRow(inc, gi, ri, r); }).join('') +
+          (gi === 0 ? fixedRowsHTML(inc) : '') + g.rows.map(function (r, ri) { return ruleRow(inc, gi, ri, r); }).join('') +
           btn('Añadir condición', 'rule-add', { d: id, x: gi, i: 'add' }) + '</div>';
       }).join('') +
       '<div>' + btn('Agregar grupo alternativo (O)', 'grp-add', { d: id, i: 'add' }) + '</div>' +
@@ -1012,7 +1017,7 @@
     var t = e.target.closest('[data-act]'); if (!t) return;
     if (t.closest('[inert]')) return;
     var fn = ACT[t.dataset.act]; if (!fn) return;
-    if (t.tagName === 'LABEL') e.preventDefault();
+    if (t.tagName === 'LABEL' || t.tagName === 'A') e.preventDefault();
     fn(t.dataset.x, t.dataset.i);
     refreshDraftBtn();
   }
