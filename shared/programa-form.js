@@ -565,8 +565,9 @@
   function heredadasHTML(inc) {
     if (!popDims(inc).length) return '';
     var multi = S.inc.length > 1;
-    return '<div class="pf-alert-row">' + alertBox('Hay <b>condiciones fijas</b> que vienen de la población del paso 2. Ya están agregadas en el Grupo 1 y aplican a todos los grupos' + (multi ? ': elige entre lo que seleccionaste para repartirlas entre tus tipos de incentivo.' : '.'), 'informative') +
-      btn('Cambiar en el paso 2', 'goto', { v: 'quiet', s: 'medium', x: '2', i: 'edit' }) + '</div>';
+    var msg = 'Hay <b>condiciones fijas</b> que vienen de la población del paso 2. Ya están agregadas en el Grupo 1 y aplican a todos los grupos' + (multi ? ': elige entre lo que seleccionaste para repartirlas entre tus tipos de incentivo.' : '.');
+    // El botón va dentro del aviso, a la derecha
+    return '<div class="nwt-alert nwt-alert--visible pf-alert-cta" nwt-theme="informative" nwt-variant="quiet"><div class="nwt-alert__content"><div class="nwt-alert__icon">' + icon('info') + '</div><span class="nwt-alert__label">' + msg + '</span>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', s: 'small', x: '2', i: 'edit' }) + '</div></div>';
   }
   function fixedRowsHTML(inc) {
     return popDims(inc).map(function (d, ri) {
