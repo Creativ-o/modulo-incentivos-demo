@@ -1148,6 +1148,7 @@
               <thead>
                 <tr>
                   <th>Código</th>
+                  <th id="thTipo" hidden>Tipo de incentivo</th>
                   <th>Estado</th>
                   <th>Subido por</th>
                   <th>Última actualización</th>
@@ -1801,10 +1802,12 @@ function renderCodigos(){
   const primaryCat = CURRENT_PROGRAM?.incentives?.[0]?.category;
   const isBonoProg = HAS_CODES;
   const codeTypes = HAS_CODES ? ccCodeTypes().map(t => t.inc.name) : [];
+  const multiT = codeTypes.length > 1; // con varios tipos con códigos, se muestra a cuál incentivo pertenece cada código
+  const thT = document.getElementById('thTipo'); if(thT) thT.hidden = !multiT;
 
   updateCupoUI();
   if(isBonoProg && state.all.length === 0){
-    tbody.innerHTML = `<tr><td colspan="6" style="padding:0">
+    tbody.innerHTML = `<tr><td colspan="${multiT ? 7 : 6}" style="padding:0">
       <div class="naowee-message naowee-message--informative" style="margin:18px;border-radius:12px">
         <div class="naowee-message__header">
           <div class="naowee-message__text">
@@ -1823,7 +1826,7 @@ function renderCodigos(){
   }
 
   if(!isBonoProg){
-    tbody.innerHTML = `<tr><td colspan="6" style="padding:0">
+    tbody.innerHTML = `<tr><td colspan="${multiT ? 7 : 6}" style="padding:0">
       <div class="naowee-message naowee-message--informative" style="margin:18px;border-radius:12px">
         <div class="naowee-message__header">
           <div class="naowee-message__icon">
@@ -1857,14 +1860,15 @@ function renderCodigos(){
          </button>`
       : '';
     return `<tr>
-      <td><span class="cod-cell"><code>${r.code}</code>${histBtn}</span>${r.tipo && codeTypes.length > 1 ? `<div style="font-size:11px;color:#646587;margin-top:2px">${r.tipo}</div>` : ''}</td>
+      <td><span class="cod-cell"><code>${r.code}</code>${histBtn}</span></td>
+      ${multiT ? `<td>${r.tipo || '—'}</td>` : ''}
       <td>${badges[r.estado] || badges.disp}</td>
       <td>${r.uploader || '—'}</td>
       <td${mutedStyle}>${r.fecha || '—'}</td>
       <td style="${valStyle}">${(r.valor != null ? r.valor : CURRENT_PROGRAM.unit) ? '$' + Number(r.valor != null ? r.valor : CURRENT_PROGRAM.unit).toLocaleString('es-CO') : '—'}</td>
       <td style="text-align:right">${canRevertRow(r) ? `<span class="naowee-tooltip"><button type="button" class="naowee-btn naowee-btn--mute naowee-btn--small cod-revert-icon" onclick="openRevertModal('${r.code}')" aria-label="Revertir código"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button><span class="naowee-tooltip__content">Revertir</span></span>` : ''}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--naowee-color-text-secondary,#646587)">Sin resultados para los filtros actuales.</td></tr>`;
+  }).join('') : `<tr><td colspan="${multiT ? 7 : 6}" style="text-align:center;padding:32px;color:var(--naowee-color-text-secondary,#646587)">Sin resultados para los filtros actuales.</td></tr>`;
 
   document.getElementById('pagInfo').textContent = total === 0 ? 'Sin resultados' : `Mostrando ${start + 1}–${end} de ${total}`;
   document.getElementById('pagInput').value = state.page;
