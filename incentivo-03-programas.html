@@ -726,9 +726,15 @@ function renderRows(){
           </td>
           <td>
             <div class="rubro-cell">
-              <span class="rubro-cell__val">${p.rubro ? '$' + Number(p.rubro).toLocaleString('es-CO') : '—'}</span>
+              <span class="rubro-cell__val">${p.rubro ? '$' + Number(p.rubro).toLocaleString('es-CO') : (p.codes.asig ? 'Sin rubro' : '—')}</span>
               ${p.rubro ? `<div class="naowee-progress naowee-progress--positive"><div class="naowee-progress__fill" style="width:${execPct}%"></div></div>
-                <span class="rubro-cell__exec">${execPct}% · $${Number(p.exec||0).toLocaleString('es-CO')}</span>` : '<span class="rubro-cell__exec">Sin configurar</span>'}
+                <span class="rubro-cell__exec">${execPct}% · $${Number(p.exec||0).toLocaleString('es-CO')}</span>` : (() => {
+                  /* Sin rubro la ejecución se mide en entregas frente a los cupos de los tipos de incentivo */
+                  const cupos = p.cfg.inc.reduce((a, x) => a + (Number(x.cantidad) || 0), 0), ent = p.codes.asig || 0;
+                  if(!ent) return '<span class="rubro-cell__exec">Sin configurar</span>';
+                  const pc = cupos ? Math.min(100, Math.round(ent / cupos * 100)) : 0;
+                  return (cupos ? `<div class="naowee-progress naowee-progress--positive"><div class="naowee-progress__fill" style="width:${pc}%"></div></div>` : '') + `<span class="rubro-cell__exec">${cupos ? pc + '% · ' : ''}${ent} entregas</span>`;
+                })()}
             </div>
           </td>
           <td>
