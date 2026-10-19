@@ -531,21 +531,25 @@
     return h;
   }
   function heredadasTxt(inc) { return heredadas(inc).map(function (x) { return esc(x[0] + ' ' + x[1]); }); }
+  /* Condiciones fijas que vienen de la población (paso 2): se muestran como condiciones ya agregadas, con las mismas filas del constructor.
+     Las opciones son solo las que se eligieron en el paso 2; con varios tipos se pueden repartir (a uno deportistas, a otro personal de apoyo). */
   function heredadasHTML(inc) {
     var h = heredadas(inc);
     if (!h.length) return '';
-    if (S.inc.length < 2) { // un solo tipo: toda la población aplica
-      return '<div class="pf-inherit"><div class="pf-inherit__head"><b>Condiciones del programa</b>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', x: '2', i: 'edit' }) + '</div>' +
-        '<p class="pf-hint">Vienen de la población (paso 2) y se suman con Y a las de este tipo.</p>' +
-        h.map(function (x) { return '<div class="pf-inherit__row">' + icon('padlock-close') + '<span><b>' + esc(x[0]) + '</b> ' + esc(x[1]) + '</span></div>'; }).join('') + '</div>';
-    }
-    var p = S.pob, dims = [['roles', 'Roles', p.roles], ['cobertura', 'Departamentos', p.cobertura.indexOf('Nacional') < 0 ? p.cobertura : []], ['municipios', 'Municipios', p.municipios]];
-    return '<div class="pf-inherit"><div class="pf-inherit__head"><b>Población de este tipo</b>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', x: '2', i: 'edit' }) + '</div>' +
-      '<p class="pf-hint">De lo que elegiste en el paso 2, marca a quiénes aplica este tipo de incentivo. Por defecto aplica a todos; se suma con Y a las condiciones de abajo.</p>' +
-      dims.filter(function (d) { return d[2].length; }).map(function (d) {
-        var on = aplica(inc, d[0]);
-        return '<div><span class="pf-label">' + d[1] + '</span><div class="pf-row">' + d[2].map(function (v) { return tag(d[0] === 'municipios' ? v.split(' · ')[0] : v, on.indexOf(v) > -1, 'pob-t', inc.id, d[0] + '|' + v); }).join('') + '</div></div>';
-      }).join('') + '</div>';
+    var multi = S.inc.length > 1, p = S.pob;
+    var dims = [['roles', 'Rol', p.roles], ['cobertura', 'Departamento', p.cobertura.indexOf('Nacional') < 0 ? p.cobertura : []], ['municipios', 'Municipio', p.municipios]].filter(function (d) { return d[2].length; });
+    var rows = dims.map(function (d, ri) {
+      var on = aplica(inc, d[0]), first = ri === 0;
+      var chips = d[2].map(function (v) {
+        var lab = d[0] === 'municipios' ? v.split(' · ')[0] : v;
+        return multi ? tag(lab, on.indexOf(v) > -1, 'pob-t', inc.id, d[0] + '|' + v) : '<span class="nwt-tag nwt-tag--active" nwt-size="medium">' + esc(lab) + '</span>';
+      }).join('');
+      return '<div class="pf-rule">' + tf({ label: first ? 'Campo' : '', k: 'ui.fx.' + inc.id + '.' + d[0], val: d[1], ro: 1 }) +
+        tf({ label: first ? 'Operador' : '', k: 'ui.fxop.' + inc.id + '.' + d[0], val: 'es uno de', ro: 1 }) +
+        '<div>' + (first ? '<span class="pf-label">Valores</span>' : '') + '<div class="pf-rule__chips">' + chips + '</div></div><div></div></div>';
+    }).join('');
+    return alertBox('Hay <b>condiciones fijas</b> que vienen de la población del paso 2' + (multi ? '. Ya están agregadas: elige entre lo que seleccionaste para repartirlas entre tus tipos de incentivo (por ejemplo, un tipo para deportistas y otro para personal de apoyo).' : ' y aplican a este incentivo.'), 'informative') +
+      '<div class="pf-group"><div class="pf-group__head"><span class="pf-group__label">Condiciones fijas · paso 2</span><span style="flex:1"></span>' + btn('Cambiar en el paso 2', 'goto', { v: 'mute', x: '2', i: 'edit' }) + '</div>' + rows + '</div>';
   }
   function previewHTML(inc) {
     var t = previewText(inc), h = heredadasTxt(inc);
