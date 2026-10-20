@@ -15,7 +15,7 @@
   var CUR_VER = 'V1.0', NEXT_VER = 'V2.0'; // versión vigente del programa que se edita y la que se publicaría
   var EDIT_ID = params.get('id') || ''; // programa que se edita (si falta, se usa el ejemplo)
   var role = (function () { try { return localStorage.getItem('naowee-incentivos-role') || 'admin'; } catch (_) { return 'admin'; } })();
-  var CAN_EDIT_PROGRAM = role === 'admin' || role === 'gestor';
+  var CAN_EDIT_PROGRAM = role === 'admin';
   var CONDITIONS_LOCKED = EDIT && role === 'programa'; // el Gestor de programa solo lee condicionales (HU-03)
 
   /* ── Catálogos ─────────────────────────────────────────────── */

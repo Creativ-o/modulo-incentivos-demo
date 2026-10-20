@@ -299,6 +299,9 @@
   /* DC-111 · avatares planos, sin efecto 3D */
   .profile-avatar,.flow-recap__ava,.receipt__ava,.recap__ava{background:#e8590c;border:0;box-shadow:none}
 </style>
+<style>html[data-gest-pending] .sidebar-nav,html[data-gest-pending] .user-chip{visibility:hidden}</style>
+<script>try{var r=localStorage.getItem('naowee-incentivos-role')||'admin';if(r!=='operador'){document.documentElement.setAttribute('data-gest-pending','')}}catch(e){}setTimeout(function(){document.documentElement.removeAttribute('data-gest-pending')},1500)</script>
+<script src="shared/profile-switcher.js?v=role-28" defer blocking="render"></script>
 </head>
 <body>
 
@@ -667,8 +670,8 @@ document.addEventListener('click', (e) => { const sw = document.getElementById('
 })();
 </script>
 
-<script src="shared/programs-data.js"></script>
-<script src="shared/profile-switcher.js?v=role-17" defer></script>
+<script src="shared/programs-data.js?v=21b"></script>
+
 
 <script src="shared/footer-scroll.js" defer></script>
 

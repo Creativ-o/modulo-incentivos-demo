@@ -217,6 +217,7 @@
   .code-table th.col-value,.code-table td.col-value{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
   .code-table .num-cell{font-family:'SF Mono','JetBrains Mono',monospace;font-size:12.5px;font-weight:700;letter-spacing:.3px;color:var(--naowee-color-text-primary,#282834)}
   .code-table .meta-cell{font-size:11.5px;color:var(--naowee-color-text-secondary,#646587)}
+  .code-table .st-cell{display:flex;align-items:center;gap:8px}
 
   /* Radio mini DS */
   .code-radio{
@@ -266,6 +267,9 @@
   /* DC-111 · avatares planos, sin efecto 3D */
   .profile-avatar,.flow-recap__ava,.receipt__ava,.recap__ava{background:#e8590c;border:0;box-shadow:none}
 </style>
+<style>html[data-gest-pending] .sidebar-nav,html[data-gest-pending] .user-chip{visibility:hidden}</style>
+<script>try{var r=localStorage.getItem('naowee-incentivos-role')||'admin';if(r!=='operador'){document.documentElement.setAttribute('data-gest-pending','')}}catch(e){}setTimeout(function(){document.documentElement.removeAttribute('data-gest-pending')},1500)</script>
+<script src="shared/profile-switcher.js?v=role-28" defer blocking="render"></script>
 </head>
 <body>
 
@@ -423,7 +427,7 @@
                       <th class="col-radio" aria-label="Selección"></th>
                       <th class="col-num">Código</th>
                       <th>Tipo</th>
-                      <th>Cargado</th>
+                      <th>Estado</th>
                       <th class="col-value">Valor</th>
                     </tr>
                   </thead>
@@ -513,7 +517,7 @@
   </div>
 </div>
 
-<script src="shared/programs-data.js"></script>
+<script src="shared/programs-data.js?v=21b"></script>
 <script>
 // Generación de códigos (cantidades realistas: 60 becas + 60 kits)
 const MONTHS = ['ene','feb','mar','abr','may','jun'];
@@ -869,7 +873,7 @@ renderCodes = function(){
   if(codePage > totalPages) codePage = totalPages;
   const st = (codePage - 1) * PAGE_SIZE, en = Math.min(st + PAGE_SIZE, total), slice = list.slice(st, en);
   $id('codeCount').innerHTML = `<strong>${REAL.codes.left}</strong> de ${REAL.codes.cap} código${REAL.codes.left === 1 ? '' : 's'} disponible${REAL.codes.left === 1 ? '' : 's'}`;
-  tbody.innerHTML = total ? slice.map(c => `<tr class="${selectedCode === c.code ? 'selected' : ''}" onclick="selectCode('${c.code}')"><td class="col-radio"><span class="code-radio"></span></td><td class="col-num"><span class="num-cell">${c.code}</span><div class="meta-cell">${esc3(REAL.sel.incName)}</div></td><td><span class="naowee-badge naowee-badge--quiet naowee-badge--small naowee-badge--neutral">${esc3(REAL.sel.cat)}</span></td><td class="meta-cell">${(REAL.codes.reverted || []).indexOf(c.code) > -1 ? '<span class="naowee-badge naowee-badge--negative naowee-badge--quiet naowee-badge--small">Revertido</span> disponible' : 'Disponible'}</td><td class="col-value" style="display:none"></td></tr>`).join('')
+  tbody.innerHTML = total ? slice.map(c => `<tr class="${selectedCode === c.code ? 'selected' : ''}" onclick="selectCode('${c.code}')"><td class="col-radio"><span class="code-radio"></span></td><td class="col-num"><span class="num-cell">${c.code}</span><div class="meta-cell">${esc3(REAL.sel.incName)}</div></td><td><span class="naowee-badge naowee-badge--quiet naowee-badge--small naowee-badge--neutral">${esc3(REAL.sel.cat)}</span></td><td><div class="st-cell"><span class="naowee-badge naowee-badge--positive naowee-badge--quiet naowee-badge--small">Disponible</span>${(REAL.codes.reverted || []).indexOf(c.code) > -1 ? '<span class="meta-cell">Revertido</span>' : ''}</div></td><td class="col-value" style="display:none"></td></tr>`).join('')
     : '<tr><td colspan="5"><div class="code-empty">No hay códigos disponibles para este tipo. Pide al gestor que cargue más inventario.</div></td></tr>';
   $id('codePagerInfo').innerHTML = total ? `Mostrando <strong style="color:var(--naowee-color-text-primary,#282834)">${st + 1}–${en}</strong> de <strong style="color:var(--naowee-color-text-primary,#282834)">${total}</strong>` : 'Sin resultados';
   $id('codePageInput').value = codePage; $id('codePageTotal').textContent = totalPages;
@@ -978,7 +982,7 @@ fadeAndGo = function(url){
   onScroll();
 })();
 </script>
-<script src="shared/profile-switcher.js?v=role-17" defer></script>
+
 
 <script src="shared/footer-scroll.js" defer></script>
 

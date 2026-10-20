@@ -155,6 +155,48 @@ window.PROGRAMS_DATA = [
     }
   },
   {
+    id: 'PRG-2026-007',
+    name: 'Estímulos mensuales medallistas Atlántico',
+    shortDesc: 'Medallistas · Atlántico',
+    longDesc: 'Beca y bono de transporte mensuales (recurrentes, sin documentos) y kit de entrenamiento de entrega única con cargue documental por ventanas, para medallistas de la Liga Departamental del Atlántico.',
+    iconBg: '#eef5ff',
+    iconColor: '#1f78d1',
+    status: 'active',
+    event: 'Liga Departamental Atlántico 2026',
+    coverage: 'Atlántico',
+    responsible: 'Isa Pabon, Laura Meza',
+    rubro: 90000000,
+    exec: 41500000,
+    unit: 600000,
+    codes: { total: 120, avail: 66, asig: 49, rev: 5 },
+    from: '04 may 2026',
+    to: '30 sep 2026',
+    actoAdmin: 'Resolución 2026-ATL-012',
+    fuente: 'Gobernación del Atlántico + Mindeporte · 2026',
+    incentives: [
+      { name: 'Beca mensual · Medallistas', category: 'Beca',
+        detail: 'Entrega mensual durante la vigencia · 60 cupos',
+        value: 600000, valueLabel: '$600.000', valueFoot: 'por mes',
+        badges: [{ text: 'Beca', variant: 'informative' }, { text: 'Recurrente', variant: 'caution' }] },
+      { name: 'Bono de transporte · Medallistas', category: 'Transporte',
+        detail: 'Entrega mensual para desplazamientos a entrenamientos',
+        value: 150000, valueLabel: '$150.000', valueFoot: 'por mes',
+        badges: [{ text: 'Transporte', variant: 'neutral' }, { text: 'Recurrente', variant: 'caution' }] },
+      { name: 'Kit de entrenamiento · Medallistas', category: 'Kit',
+        detail: 'Entrega única de implementos, con documentos · 60 cupos',
+        value: 350000, valueLabel: '$350.000', valueFoot: 'por kit',
+        badges: [{ text: 'Kit', variant: 'caution' }, { text: 'Entrega única', variant: 'neutral' }] }
+    ],
+    conditions: {
+      groups: [
+        { logic: 'AND', rules: [
+          { field: 'Logro', op: '∈', value: 'Medalla de oro, Medalla de plata' }
+        ]}
+      ],
+      summary: 'Aplica para <strong>medallistas de oro y plata</strong> de la Liga Departamental del Atlántico.'
+    }
+  },
+  {
     id: 'PRG-2026-005',
     name: 'Beca integral alto rendimiento',
     shortDesc: 'Élite · Nacional',
@@ -413,6 +455,21 @@ window.getProgramCategory = function(p){
       crono: { gracia: '3', carga: { ini: '2026-03-01T08:00', fin: '2026-03-20T18:00' }, revision: { ini: '2026-03-21T08:00', fin: '2026-03-28T18:00' }, asignacion: { ini: '2026-03-29T08:00', fin: '2026-04-15T18:00' } },
       inc: [{ categoria: 'inscripcion', tope: 'bottom', codigos: true, grupos: [{ op: 'AND', rows: [{ f: 'escolaridad', op: '=', v: 'Escolarizado' }] }] }]
     },
+    'PRG-2026-007': {
+      gestores: ['Isa Pabon', 'Laura Meza'], eventos: ['Liga Departamental Atlántico 2026'], desde: '2026-05-04', hasta: '2026-09-30',
+      roles: ['Deportista'], cobertura: ['Atlántico'], municipios: [], seleccion: ['plataforma'],
+      rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses' },
+      doc: { req: true, list: [DOC_ID, { name: 'Certificado de resultado', oblig: true }] },
+      crono: { gracia: '3', carga: { ini: '2026-05-04T08:00', fin: '2026-05-29T18:00' }, revision: { ini: '2026-05-30T08:00', fin: '2026-06-12T18:00' }, asignacion: { ini: '2026-06-13T08:00', fin: '2026-09-15T18:00' } },
+      inc: [
+        { categoria: 'beca', tope: 'sin', unit: 600000, valor: 0, cantidad: 60, codigos: true, rec: { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', desde: '2026-05-18', hasta: '2026-08-31' }, pobOff: { roles: [], cobertura: [], municipios: [] },
+          grupos: [{ op: 'AND', rows: [{ f: 'logro', op: '∈', v: ['Medalla de oro', 'Medalla de plata'] }] }] },
+        { categoria: 'transporte', tope: 'sin', unit: 150000, valor: 0, cantidad: 0, codigos: false, rec: { on: true, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', desde: '2026-06-01', hasta: '2026-09-15' }, pobOff: { roles: [], cobertura: [], municipios: [] },
+          grupos: [{ op: 'AND', rows: [{ f: 'logro', op: '∈', v: ['Medalla de oro', 'Medalla de plata'] }] }] },
+        { categoria: 'kit', tope: 'sin', unit: 350000, valor: 0, cantidad: 60, codigos: true, rec: { on: false, frecuencia: 'mensual', frecuenciaN: '', frecuenciaU: 'meses', desde: '', hasta: '' }, pobOff: { roles: [], cobertura: [], municipios: [] },
+          grupos: [{ op: 'AND', rows: [{ f: 'logro', op: '∈', v: ['Medalla de oro', 'Medalla de plata'] }] }] }
+      ]
+    },
     'PRG-2026-006': {
       gestores: ['Isa Pabon', 'Laura Meza'], eventos: ['Juegos Nacionales 2026'], desde: '2026-07-15', hasta: '',
       roles: ['Deportista', 'Entrenador'], cobertura: ['Antioquia', 'Valle del Cauca'], municipios: ['Medellín · Antioquia', 'Cali · Valle del Cauca'], seleccion: ['plataforma', 'manual'],
@@ -471,7 +528,7 @@ window.getProgramCategory = function(p){
   /* ── Persistencia de los programas creados / editados desde el formulario ── */
   var K_CREATED = 'naowee:programs-created', K_EDITS = 'naowee:programs-edits';
   /* Revisión de los datos de demo: una edición guardada contra otra revisión (datos viejos) se descarta, para que los cambios al demo se vean */
-  var BASE_REV = 'demo-2026-10-19d';
+  var BASE_REV = 'demo-2026-10-20d';
   function read(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (_) { return d; } }
   function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} }
   window.persistCreatedProgram = function (prog) {
@@ -509,12 +566,12 @@ window.getProgramCategory = function(p){
   };
   /* ── Revisión documental (demo) ──
      La revisión es por PERFIL de beneficiario: cada documento se aprueba o rechaza (con nota) y el perfil se resuelve solo:
-     · todos los requeridos aprobados → apr (Aprobados: pasa a asignación, "Pendiente de entrega" para el Operador)
-     · algún documento rechazado → sub (Rechazados · Pendiente subsanación); si vence el plazo → exp
+     · todos los requeridos aprobados → apr (Aprobados: pasa a asignación, "Por asignar" para el Operador)
+     · algún documento rechazado → sub (Rechazados · Pendiente de subsanación); si vence el plazo → exp
      · ninguno cargado → porcargar · en otro caso → pend (En revisión). */
   var K_REV = 'naowee:doc-reviews', K_AUD = 'naowee:doc-reviews-audit';
   var REV_PEOPLE = ['Ana García', 'Pedro Martínez', 'Andrés García', 'María C. Herrera', 'Camila Ríos', 'Santiago López', 'Valentina Pérez', 'Juan Rodríguez', 'Diana Torres', 'Carlos Guzmán', 'Natalia Ruiz', 'Esteban Mora'];
-  var REV_SEED = ['pend', 'pend', 'apr', 'pend', 'apr', 'sub', 'sub', 'pend', 'exp', 'pend', 'apr', 'porcargar'];
+  var REV_SEED = ['pend', 'pend', 'apr', 'pend', 'apr', 'sub', 'sub', 'pend', 'exp', 'porcargar', 'apr', 'porcargar'];
   var REV_SEED_DATE = { 5: '2026-10-15', 6: '2026-10-08', 8: '2026-09-28' };
   var REV_MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   /* Festivos de Colombia 2026 (para contar días hábiles del plazo de gracia) */
@@ -561,6 +618,22 @@ window.getProgramCategory = function(p){
     if (!c.rec.on && ci.rec && ci.rec.on) return [];
     return c.doc.list.filter(function (d) { return (ci.docOff || []).indexOf(d.name) < 0; });
   };
+  /* Ventana de cargue del programa hoy: abierta o cerrada, con el texto largo y uno corto. Una excepción que exime fechas la mantiene abierta. */
+  window.ventanaCargue = function (c, exencionFechas) {
+    var f = c.crono.carga || {}, now = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
+    if (exencionFechas) return { abierta: true, txt: 'Tienes una habilitación excepcional: tus fechas de cargue están habilitadas.', corto: 'Habilitada por excepción' };
+    if (!f.ini && !f.fin) return { abierta: true, txt: 'Puedes cargar tus documentos mientras el programa esté activo.', corto: '' };
+    if (c.rec.on || /^\d{1,2}$/.test(f.ini || f.fin || '')) {
+      var A = +f.ini || 1, B = +f.fin || 31, d = now.getDate();
+      if (d >= A && d <= B) return { abierta: true, txt: 'Ventana de cargue abierta: del día ' + A + ' al ' + B + ' de cada mes.', corto: 'Abierta del día ' + A + ' al ' + B };
+      return { abierta: false, txt: d < A ? 'La ventana de cargue abre el día ' + A + ' (hasta el ' + B + ').' : 'La ventana de este mes cerró el día ' + B + '. Vuelve a abrir el día ' + A + ' del próximo mes.',
+        corto: d < A ? 'Abre el día ' + A : 'Cerró el día ' + B + ' · abre el día ' + A };
+    }
+    var t = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+    if (f.ini && t < f.ini) return { abierta: false, txt: 'La ventana de cargue abre el ' + fmtD(f.ini) + '.', corto: 'Abre el ' + fmtD(f.ini) };
+    if (f.fin && t > f.fin) return { abierta: false, txt: 'La ventana de cargue cerró el ' + fmtD(f.fin) + '.', corto: 'Cerró el ' + fmtD(f.fin) };
+    return { abierta: true, txt: f.fin ? 'Ventana de cargue abierta hasta el ' + fmtD(f.fin) + '.' : 'Ventana de cargue abierta.', corto: f.fin ? 'Abierta hasta el ' + fmtD(f.fin) : 'Abierta' };
+  };
   window.docReviews = function () {
     var dec = read(K_REV, {}), aud = read(K_AUD, {}), out = [], hoy = isoD(new Date());
     window.scopedPrograms().forEach(function (p) {
@@ -586,13 +659,18 @@ window.getProgramCategory = function(p){
             }
           }
           if (d[x.name]) { est = d[x.name].estado; nota = d[x.name].nota || ''; iso = d[x.name].iso || iso; }
-          return { name: x.name, oblig: !!x.oblig, file: falta ? '' : slug(x.name) + '-' + (i + 1) + '.pdf', estado: est, nota: nota, iso: iso, fecha: fmtD(iso) };
+          var subido = d[x.name] && d[x.name].file;   // archivo cargado por el deportista
+          return { name: x.name, oblig: !!x.oblig, file: subido ? subido : (falta ? '' : slug(x.name) + '-' + (i + 1) + '.pdf'), estado: est, nota: nota, iso: iso, fecha: fmtD(iso) };
         });
         if (!audit.length) {
           docs.forEach(function (x) {
             if (x.estado === 'aprobado' || x.estado === 'rechazado') audit.push({ doc: x.name, usuario: 'Isa Pabon', rol: 'Gestor de programa', fecha: fmtD(x.iso), hora: '10:' + String(10 + i).padStart(2, '0'), dictamen: x.estado === 'aprobado' ? 'Aprobado' : 'Rechazado', motivo: x.nota });
           });
         }
+        var lc = audit.filter(function (a) { return a.dictamen === 'Cargue'; }).pop();   // último cargue real del deportista
+        var ccS = String(1020000000 + (i + 1) * 7391 + p.id.length * 13).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        if (window.getExceptions(p.id).some(function (x) { return x.doc === ccS; })) continue;   // cargada como excepcional: su expediente de excepción reemplaza a este
+        if (!docs.some(function (x) { return x.file; }) && (p.status !== 'active' || !window.checkEligibility(p, REV_PEOPLE[i], ccS).ok)) continue;   // sin archivos: solo si el programa está activo y le aplica
         var cnt = docs.filter(function (x) { return x.oblig || x.file; });
         var apr = cnt.filter(function (x) { return x.estado === 'aprobado'; }).length;
         var rej = docs.filter(function (x) { return x.estado === 'rechazado'; });
@@ -601,14 +679,14 @@ window.getProgramCategory = function(p){
           var last = rej.map(function (x) { return x.iso; }).sort().pop();
           limite = plazoSubsanar(last, c); est = limite < hoy ? 'exp' : 'sub';
         } else if (apr === cnt.length) est = 'apr';
-        else if (!docs.some(function (x) { return x.file; })) est = 'porcargar';
+        else if (!docs.some(function (x) { return x.file; }) || docs.some(function (x) { return x.oblig && !x.file; })) est = window.ventanaCargue(c, false).abierta ? 'porcargar' : 'exp';
         var lastA = audit[audit.length - 1];
         out.push({
           id: id, prog: p.id, progName: p.name, persona: REV_PEOPLE[i], tipo: i % 3 === 2 ? 'TI' : 'CC',
           cc: String(1020000000 + (i + 1) * 7391 + p.id.length * 13).replace(/\B(?=(\d{3})+(?!\d))/g, '.'),
           nac: fmtD((2003 + (i % 5)) + '-0' + (1 + (i % 9)) + '-' + (10 + i)),
           solicitud: '#SUID 2026 • ' + String(45 + i * 3).padStart(3, '0'),
-          cargado: (3 + i) + ' oct 2026', hora: String(8 + (i * 5) % 11).padStart(2, '0') + ':' + String((i * 17) % 60).padStart(2, '0'), cierre: cierre,
+          cargado: (lc ? lc.fecha : (3 + i) + ' oct 2026'), hora: (lc ? lc.hora : String(8 + (i * 5) % 11).padStart(2, '0') + ':' + String((i * 17) % 60).padStart(2, '0')), cierre: cierre,
           estado: est, total: cnt.length, aprobados: apr, limite: fmtD(limite), docs: docs, audit: audit,
           ultima: lastA ? lastA.fecha + ' ' + lastA.hora : (3 + i) + ' oct 2026 ' + String(8 + (i * 5) % 11).padStart(2, '0') + ':' + String((i * 17) % 60).padStart(2, '0'),
           ultimaPor: lastA ? lastA.usuario : REV_PEOPLE[i]
@@ -626,7 +704,7 @@ window.getProgramCategory = function(p){
         var docs = (docsOn ? window.docsForType(c, x.tipo || 0) : []).map(function (dc) {
           var est = upl ? 'revision' : 'porcargar', nota = '', iso = '';
           if (dd[dc.name]) { est = dd[dc.name].estado; nota = dd[dc.name].nota || ''; iso = dd[dc.name].iso || ''; }
-          return { name: dc.name, oblig: !!dc.oblig, file: (upl || dd[dc.name]) ? slug(dc.name) + '-' + x.id + '.pdf' : '', estado: est, nota: nota, iso: iso, fecha: fmtD(iso) };
+          return { name: dc.name, oblig: !!dc.oblig, file: (dd[dc.name] && dd[dc.name].file) || ((upl || dd[dc.name]) ? slug(dc.name) + '-' + x.id + '.pdf' : ''), estado: est, nota: nota, iso: iso, fecha: fmtD(iso) };
         });
         var lbl = x.origen === 'manual' ? 'Registrado manualmente' : 'Habilitado por excepción';
         if (!audit.some(function (a) { return a.dictamen === lbl; })) audit.unshift({ doc: x.origen === 'manual' ? 'Registro manual' : 'Habilitación excepcional', usuario: x.usuario, rol: x.rol, fecha: x.fecha, hora: x.hora, dictamen: lbl, motivo: x.just || '' });
@@ -635,7 +713,7 @@ window.getProgramCategory = function(p){
         var est = 'pend', limite = '';
         if (rej.length) { limite = plazoSubsanar(rej.map(function (z) { return z.iso; }).sort().pop(), c); est = limite < hoy ? 'exp' : 'sub'; }
         else if (apr === cnt.length) est = 'apr';
-        else if (!docs.some(function (z) { return z.file; })) est = 'porcargar';
+        else if (!docs.some(function (z) { return z.file; }) || docs.some(function (z) { return z.oblig && !z.file; })) est = window.ventanaCargue(c, !!x.fechas).abierta ? 'porcargar' : 'exp';
         out.push({
           id: id, prog: p.id, progName: p.name, persona: x.persona, tipo: x.docTipo, cc: x.doc, nac: '—', solicitud: (x.origen === 'manual' ? 'Registro manual • ' : '#SUID 2026 • EXC-') + String(x.id).slice(-3),
           cargado: x.fecha, hora: x.hora, cierre: cierre, estado: est, total: cnt.length, aprobados: apr, limite: fmtD(limite), docs: docs, audit: audit,
@@ -659,6 +737,94 @@ window.getProgramCategory = function(p){
       dictamen: estado === 'aprobado' ? 'Aprobado' : 'Rechazado', motivo: nota || ''
     });
     write(K_AUD, aud);
+  };
+  /* ── Cargue del deportista ──
+     El deportista deja sus archivos como borrador y los envía cuando está seguro. Al enviar, cada archivo queda en la auditoría (archivo, usuario, fecha y hora)
+     y, si con eso completa TODOS los documentos obligatorios (o recarga los rechazados), la postulación pasa a «En revisión» y se avisa al Gestor de programa. */
+  var K_NOT = 'naowee:notificaciones';
+  function hhmm(n) { return String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0'); }
+  window.uploadAthleteDoc = function (id, docName, file, who) {
+    var before = window.docReviews().filter(function (r) { return r.id === id; })[0];
+    var dec = read(K_REV, {}), aud = read(K_AUD, {}), n = new Date(), hoy = isoD(n);
+    dec[id] = dec[id] || { docs: {} }; dec[id].docs = dec[id].docs || {};
+    dec[id].docs[docName] = { estado: 'revision', nota: '', iso: hoy, file: file };
+    write(K_REV, dec);
+    if (!aud[id]) aud[id] = (before && before.audit || []).slice();
+    aud[id].push({ doc: docName, usuario: (who && who.name) || '', rol: 'Deportista', fecha: fmtD(hoy), hora: hhmm(n), dictamen: 'Cargue', archivo: file, motivo: '' });
+    write(K_AUD, aud);
+    var after = window.docReviews().filter(function (r) { return r.id === id; })[0];
+    var entra = !!(after && after.estado === 'pend' && (!before || before.estado !== 'pend'));
+    if (entra) {
+      var nt = read(K_NOT, []);
+      nt.unshift({ id: 'n' + n.getTime() + Math.random().toString(36).slice(2, 6), progId: after.prog, itemId: id, progName: after.progName, persona: after.persona,
+        fecha: fmtD(hoy), hora: hhmm(n), leida: false, texto: 'Hay soportes pendientes de revisión' });
+      write(K_NOT, nt.slice(0, 60));
+    }
+    return { estado: after && after.estado, enRevision: entra };
+  };
+  /* Envío del deportista: los archivos que dejó como borrador se registran juntos (auditoría y notificación incluidas). */
+  window.submitAthleteDocs = function (id, docs, who) {
+    var res = { estado: '', enRevision: false };
+    docs.forEach(function (d) {
+      var r = window.uploadAthleteDoc(id, d.name, d.file, who);
+      res.estado = r.estado; res.enRevision = res.enRevision || r.enRevision;
+    });
+    return res;
+  };
+  /* Bandeja del Gestor de programa (y de los roles con alcance global): solo ve las de sus programas */
+  window.getNotifications = function () {
+    var ids = window.scopedPrograms().map(function (p) { return p.id; });
+    return read(K_NOT, []).filter(function (x) { return ids.indexOf(x.progId) > -1; });
+  };
+  window.markNotificationsRead = function () { var l = read(K_NOT, []); l.forEach(function (x) { x.leida = true; }); write(K_NOT, l); };
+
+  /* ── Motor de reglas (demo): ¿puede postularse esta persona a este programa? ──
+     Primero mira si la persona fue cargada como excepcional (o registrada a mano) en el programa: se le asignó, así que le aparece sin validar nada más;
+     si no, valida la población del programa
+     y los condicionales: basta cumplir los de UN tipo de incentivo (dentro de cada tipo, basta uno de sus grupos). */
+  var PERFIL_BASE = { edad: 19, genero: 'Femenino', depto: 'Antioquia', municipio: 'Medellín · Antioquia', zona: 'Urbana', rol: 'Deportista', disciplina: 'Atletismo', logro: 'Medalla de oro',
+    etapa: 'Nacional', categoria: 'Prejuvenil', medallas: 6, medallasOro: 3, participaciones: 8, escolaridad: 'Escolarizado', grado: 'Once' };
+  var PERFILES = {
+    'Esteban Mora':   { edad: 17, genero: 'Masculino', logro: 'Medalla de bronce', categoria: 'Juvenil', medallas: 5, medallasOro: 0, participaciones: 6 },
+    'Carlos Guzmán':  { edad: 16, genero: 'Masculino', depto: 'Atlántico', municipio: 'Barranquilla · Atlántico', logro: 'Participación', categoria: 'Juvenil', medallas: 1, medallasOro: 0, participaciones: 2 },
+    'Santiago López': { depto: 'Valle del Cauca', municipio: 'Cali · Valle del Cauca', logro: 'Medalla de plata' }
+  };
+  var ETIQ = { edad: 'Edad', genero: 'Género', depto: 'Departamento', municipio: 'Municipio', zona: 'Zona', disciplina: 'Disciplina', logro: 'Logro', etapa: 'Etapa', categoria: 'Categoría', rol: 'Rol',
+    medallas: 'Medallas ganadas', medallasOro: 'Medallas de oro', participaciones: 'Participaciones', escolaridad: 'Escolaridad', grado: 'Grado' };
+  function evalFila(r, pf) {
+    var val = pf[r.f], lbl = ETIQ[r.f] || r.f, v = r.v, num = Number(v), tiene = (r.f === 'edad') ? ' años' : '';
+    function res(ok, msg) { return { ok: ok, msg: msg }; }
+    switch (r.op) {
+      case '≥': return res(Number(val) >= num, lbl + ': tienes ' + val + tiene + ' y se pide al menos ' + v + '.');
+      case '≤': return res(Number(val) <= num, lbl + ': tienes ' + val + tiene + ' y se pide como máximo ' + v + '.');
+      case '>': return res(Number(val) > num, lbl + ': tienes ' + val + tiene + ' y se piden más de ' + v + '.');
+      case '≠': return res(String(val) !== String(v), lbl + ': no puede ser ' + v + '.');
+      case '=': return res(String(val) === String(v), lbl + ': es ' + val + ' y se pide ' + v + '.');
+      case '∈': return res((v || []).indexOf(val) > -1, lbl + ': es ' + val + ' y se pide ' + (v || []).join(' o ') + '.');
+      case '∉': return res((v || []).indexOf(val) < 0, lbl + ': no puede ser ' + val + '.');
+      case 'max': case 'top': return res(Number(val) >= 1, lbl + ': es una condición de mayoría y no tienes ninguna.');
+      default: return res(true, '');
+    }
+  }
+  window.checkEligibility = function (p, persona, cc) {
+    var c = window.getProgramConfig(p);
+    if (window.getExceptions(p.id).some(function (x) { return x.doc === cc; })) return { ok: true, excepcion: true };
+    var pf = Object.assign({}, PERFIL_BASE, PERFILES[persona] || {}), pobl = [];
+    if (c.roles.length && c.roles.indexOf(pf.rol) < 0) pobl.push('Tu rol es ' + pf.rol + ' y el programa es para: ' + c.roles.join(', ') + '.');
+    if (c.cobertura.length && c.cobertura.indexOf('Nacional') < 0 && c.cobertura.indexOf(pf.depto) < 0) pobl.push('El programa cubre ' + c.cobertura.join(', ') + ' y tu departamento es ' + pf.depto + '.');
+    if (pobl.length) return { ok: false, reasons: [{ t: 'Población del programa', items: pobl }] };
+    var tipos = [], ok = false;
+    c.inc.forEach(function (ci, i) {
+      if ((((ci.pobOff || {}).roles) || []).indexOf(pf.rol) > -1) return;   // este tipo no aplica a su rol
+      var name = (p.incentives[i] || {}).name || 'Incentivo ' + (i + 1), grupos = ci.grupos || [], fallas = [], okTipo = !grupos.length;
+      grupos.forEach(function (g) {
+        var malas = (g.rows || []).map(function (r) { return evalFila(r, pf); }).filter(function (r) { return !r.ok; });
+        if (!malas.length) okTipo = true; else fallas.push(malas.map(function (r) { return r.msg; }));
+      });
+      if (okTipo) ok = true;
+      else tipos.push({ t: name, items: fallas.length > 1 ? fallas.map(function (g, k) { return 'Opción ' + (k + 1) + ': ' + g.join(' ') ; }) : fallas[0] });
+    });
+    return ok ? { ok: true } : { ok: false, reasons: tipos };
   };
   window.pendingReviewCount = function () {
     return window.docReviews().filter(function (r) { return !r.sinDocs && r.estado === 'pend'; }).length;
@@ -697,6 +863,7 @@ window.getProgramCategory = function(p){
       var p = window.PROGRAMS_DATA.filter(function (x) { return x.id === r.prog; })[0]; if (!p) return;
       var c = window.getProgramConfig(p);
       if (r.excepcion) prof.excepcion = r.excepcion.origen === 'manual' ? 'manual' : 'excepcion';
+      if (p.status === 'closed') { prof.blocked.push({ progName: r.progName, estado: 'cerrado', itemId: r.id }); return; }
       if (r.estado !== 'apr') { prof.blocked.push({ progName: r.progName, estado: r.estado, limite: r.limite, itemId: r.id }); return; }
       if (p.status !== 'active') { prof.blocked.push({ progName: r.progName, estado: 'inactivo', itemId: r.id }); return; }
       p.incentives.forEach(function (inc, idx) {
@@ -825,6 +992,30 @@ window.getProgramCategory = function(p){
         fecha: last.fecha + ' · ' + last.hora, tipo: last.cat, incName: last.incName, valor: last.valor, history: hist };
     });
     return { seed: seed, real: real };
+  };
+  /* Vigencia: al cumplirse la fecha de fin el programa se cierra solo. Las personas sin asignar quedan bloqueadas (el operador ve «Programa cerrado»)
+     y todo vuelve al reabrirlo con nuevas fechas. Un programa sin fecha de fin nunca se cierra por este camino. */
+  /* Fecha de fin de la vigencia: la de la configuración; si no la tiene, la que muestra el programa («15 sep 2025»). Vacía si no tiene fecha de fin. */
+  window.vigenciaFin = function (p) {
+    var h = window.getProgramConfig(p).hasta; if (h) return h;
+    var m = /^(\d{1,2}) (\w{3}) (\d{4})$/.exec(String(p.to || '').trim()), i = m ? REV_MES.indexOf(m[2].toLowerCase()) : -1;
+    return i > -1 ? m[3] + '-' + String(i + 1).padStart(2, '0') + '-' + String(parseInt(m[1], 10)).padStart(2, '0') : '';
+  };
+  window.vigenciaVencida = function (p) { var h = window.vigenciaFin(p); return !!h && h < isoD(new Date()); };
+  window.PROGRAMS_DATA.forEach(function (p) {
+    if (p.status !== 'active' || !window.vigenciaVencida(p)) return;
+    var h = window.vigenciaFin(p), cl = (p.closures || []).slice(), last = cl[cl.length - 1];
+    p.status = 'closed';
+    if (!(last && last.tipo === 'cierre' && last.auto && last.hasta === h)) {
+      cl.push({ tipo: 'cierre', auto: true, hasta: h, motivoLabel: 'Terminó la vigencia', autor: 'Sistema', rol: '', fecha: fmtD(h), hora: '23:59',
+        just: 'Se cumplió la fecha de fin (' + fmtD(h) + '). Las personas sin asignar quedan bloqueadas hasta que se reabra el programa con nuevas fechas.' });
+    }
+    p.closures = cl;
+  });
+  /* Estado que se muestra: un programa activo que ya se cerró y se reabrió se ve «Reactivado» hasta que se cierre otra vez. */
+  window.estadoVisible = function (p) {
+    var cl = p.closures || [], last = cl[cl.length - 1];
+    return p.status === 'active' && last && last.tipo === 'reapertura' ? 'reactivated' : p.status;
   };
   window.PROGRAMS_DATA.forEach(function (p) { overlayOn(p, +1); });
 })();

@@ -22,7 +22,7 @@
     }
   } catch (_) {}
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var ROLE_LABEL = { admin: 'Gestor de incentivos', gestor: 'Gestor de incentivos', programa: 'Gestor de programa', operador: 'Operador' };
+  var ROLE_LABEL = { admin: 'Gestor de incentivos', gestor: 'Gestor de incentivos', programa: 'Gestor de programa', operador: 'Operador', deportista: 'Deportista' };
 
   function get(k) { try { var v = JSON.parse(sessionStorage.getItem(k)); sessionStorage.removeItem(k); return v && Date.now() - v.t < 6000 ? v : null; } catch (_) { return null; } }
   function set(k, o) { try { o.t = Date.now(); sessionStorage.setItem(k, JSON.stringify(o)); } catch (_) {} }
@@ -81,7 +81,7 @@
   /* ── API: ir a la portada con transición ────────────────────── */
   window.incGoLanding = function (from) {
     var role = currentRole(), label = ROLE_LABEL[role] || '';
-    set(KEY_BACK, { role: role === 'gestor' ? 'admin' : role, label: label });
+    set(KEY_BACK, { role: role, label: label });
     var url = 'index.html';
     if (reduced || !from || !from.getBoundingClientRect) { location.href = url; return; }
     var r = from.getBoundingClientRect();

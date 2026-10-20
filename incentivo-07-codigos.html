@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
-<script src="shared/programs-data.js"></script>
+<script src="shared/programs-data.js?v=21b"></script>
 
 <style>
   .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap}
@@ -420,6 +420,7 @@
     to  { opacity:1; transform: translateY(0); }
   }
 </style>
+<script src="shared/profile-switcher.js?v=role-28" defer blocking="render"></script>
 </head>
 <body>
 
@@ -574,7 +575,7 @@
                 <div class="toolbar-dd-item" role="option" aria-selected="true" data-val="all" onclick="setEstado('all','Estado: Todos')">Todos los estados</div>
                 <div class="toolbar-dd-item" role="option" data-val="disp" onclick="setEstado('disp','Disponibles')"><span class="dd-dot" style="background:#9c9ebf"></span>Disponibles</div>
                 <div class="toolbar-dd-item" role="option" data-val="asig" onclick="setEstado('asig','Asignados')"><span class="dd-dot" style="background:#15803d"></span>Asignados</div>
-                <div class="toolbar-dd-item" role="option" data-val="reasig" onclick="setEstado('reasig','Reasignados')"><span class="dd-dot" style="background:#7c3aed"></span>Reasignados</div>
+                <div class="toolbar-dd-item" role="option" data-val="reasig" onclick="setEstado('reasig','Reasignados')"><span class="dd-dot" style="background:#1f78d1"></span>Reasignados</div>
                 <div class="toolbar-dd-item" role="option" data-val="rev" onclick="setEstado('rev','Revertidos')"><span class="dd-dot" style="background:#9e0015"></span>Revertidos</div>
               </div>
             </div>
@@ -656,6 +657,7 @@ function buildCodigos(){
   window.scopedPrograms().forEach(p => {
     if(!p.codes.total) return;
     const cfg = window.getProgramConfig(p), isBono = window.codeTypes(cfg).length > 0;   // lleva inventario de códigos si algún tipo se parametrizó con códigos
+    if(!isBono) return;   // sin códigos no hay nada que mostrar aquí: sus asignaciones y reversiones viven en Historial de asignaciones
 
     // Bono → inventario completo (disp/asig/reasig/rev)
     // Resto → solo registros de asignación (asig/reasig/rev), sin código
@@ -740,7 +742,7 @@ const ALL = buildCodigos();
 window.scopedPrograms().forEach(p => {
   window.codeEvents(p.id).real.forEach(e => {
     const row = ALL.find(r => r.prg.id === p.id && r.code === e.code);
-    if(row){ row.estado = e.estado; row.benef = e.benef; row.op = e.op; row.fecha = e.fecha; row.reversionHistory = e.history; }
+    if(row){ row.estado = (row.estado === 'reasig' && e.estado === 'asig') ? 'reasig' : e.estado; row.benef = e.benef; row.op = e.op; row.fecha = e.fecha; row.reversionHistory = e.history; }
     else ALL.unshift({ _id: p.id + '|' + e.code, code: e.code, prg: p, estado: e.estado, benef: e.benef, op: e.op, fecha: e.fecha, valor: e.valor || p.unit, tipo: e.tipo || (p.incentives[0] && p.incentives[0].category) || 'Otro', reversionHistory: e.history });
   });
 });
@@ -764,7 +766,7 @@ function updateKPIs(){
 /* ══ Programa dropdown options ══ */
 function populateProgramDD(){
   const menu = document.getElementById('ddProgMenu');
-  const opts = window.scopedPrograms().filter(p => p.codes.total > 0).map(p =>
+  const opts = window.scopedPrograms().filter(p => p.codes.total > 0 && window.codeTypes(window.getProgramConfig(p)).length > 0).map(p =>
     `<div class="toolbar-dd-item" role="option" data-val="${p.id}" onclick="setProg('${p.id}','Programa: ${p.name.length > 24 ? p.name.slice(0,22)+'…' : p.name}')"><span class="dd-dot" style="background:${p.iconColor}"></span>${p.name}</div>`
   );
   menu.insertAdjacentHTML('beforeend', opts.join(''));
@@ -835,7 +837,7 @@ function filteredCodigos(){
 const badges = {
   disp:   '<span class="naowee-badge naowee-badge--neutral naowee-badge--quiet naowee-badge--small">Disponible</span>',
   asig:   '<span class="naowee-badge naowee-badge--positive naowee-badge--quiet naowee-badge--small">Asignado</span>',
-  reasig: '<span class="naowee-badge naowee-badge--informative naowee-badge--quiet naowee-badge--small" style="background:#f3e8ff;color:#7c3aed">Reasignado</span>',
+  reasig: '<span class="naowee-badge naowee-badge--informative naowee-badge--quiet naowee-badge--small">Reasignado</span>',
   rev:    '<span class="naowee-badge naowee-badge--negative naowee-badge--quiet naowee-badge--small">Revertido</span>'
 };
 
@@ -932,229 +934,7 @@ renderCodigos();
 
 function fadeAndGo(url){window.location.href=url}
 
-/* ═══════════════════════════════════════════════════════════════
-   REVERTIR CÓDIGO — modal + lógica
-   Flujo: click Revertir → abre modal con detalles → valida campos →
-   cambia estado del código a 'rev' + ajusta contadores del programa
-   + registra en trazabilidad (historial via localStorage) + toast.
-   ═══════════════════════════════════════════════════════════════ */
-let rvTargetCode = null;
-
 function findCod(id){ return ALL.find(c => c._id === id || c.code === id); }
-
-const RV_MOTIVOS = {
-  'devolucion': 'Devolución del beneficiario',
-  'error': 'Error en la asignación',
-  'no-elegible': 'Beneficiario no elegible',
-  'fraude': 'Sospecha de fraude',
-  'cambio-categoria': 'Cambio de categoría / programa',
-  'cancelacion': 'Cancelación del programa',
-  'otro': 'Otro motivo'
-};
-
-function openRevertModal(id){
-  const c = findCod(id);
-  if(!c) return;
-  rvTargetCode = c._id;
-  // Wire listeners on first open (el script se ejecuta antes del HTML del modal)
-  wireRevertModalListeners();
-  // Llenar summary — para non-bono (sin código) mostramos un placeholder
-  document.getElementById('rvCode').textContent = c.code || `${c.tipo} · ${c.prg.id}`;
-  document.getElementById('rvProg').textContent = c.prg.name;
-  document.getElementById('rvBenef').textContent = c.benef || '—';
-  document.getElementById('rvValor').textContent = '$' + Number(c.valor||0).toLocaleString('es-CO');
-  // Reset form
-  resetRevertForm();
-  // Abrir overlay
-  document.getElementById('rvOverlay').classList.add('open');
-  setTimeout(() => document.getElementById('rvSolicitante')?.focus(), 180);
-}
-
-function closeRevertModal(){
-  document.getElementById('rvOverlay').classList.remove('open');
-  rvTargetCode = null;
-}
-
-function resetRevertForm(){
-  // Dropdown motivo
-  const dd = document.getElementById('rvCatDD');
-  dd.classList.remove('naowee-dropdown--open', 'naowee-dropdown--error');
-  delete dd.dataset.val;
-  dd.querySelectorAll('.naowee-dropdown__option').forEach(o => o.classList.remove('naowee-dropdown__option--selected'));
-  const valEl = dd.querySelector('.naowee-dropdown__value, .naowee-dropdown__placeholder');
-  if(valEl){
-    valEl.className = 'naowee-dropdown__placeholder';
-    valEl.textContent = 'Selecciona un motivo';
-  }
-  // Textfields
-  document.getElementById('rvSolicitante').value = '';
-  document.getElementById('rvJust').value = '';
-  ['rvSolicitanteField','rvJustField'].forEach(id => {
-    document.getElementById(id)?.classList.remove('naowee-textfield--error');
-  });
-}
-
-/* Wire lazy — se ejecuta en el primer openRevertModal ya que el modal
-   HTML vive al final del body, después de este script. */
-let rvListenersWired = false;
-function wireRevertModalListeners(){
-  if(rvListenersWired) return;
-  const dd = document.getElementById('rvCatDD');
-  if(!dd) return;
-  rvListenersWired = true;
-
-  // Trigger del dropdown
-  const trigger = dd.querySelector('.naowee-dropdown__trigger');
-  trigger.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const open = dd.classList.contains('naowee-dropdown--open');
-    if(open) dd.classList.remove('naowee-dropdown--open');
-    else dd.classList.add('naowee-dropdown--open');
-  });
-
-  // Options
-  dd.querySelectorAll('.naowee-dropdown__option').forEach(opt => {
-    opt.addEventListener('click', () => {
-      dd.querySelectorAll('.naowee-dropdown__option').forEach(o => o.classList.remove('naowee-dropdown__option--selected'));
-      opt.classList.add('naowee-dropdown__option--selected');
-      dd.dataset.val = opt.dataset.val;
-      const ph = dd.querySelector('.naowee-dropdown__placeholder, .naowee-dropdown__value');
-      if(ph){
-        ph.className = 'naowee-dropdown__value';
-        ph.textContent = opt.textContent;
-      }
-      dd.classList.remove('naowee-dropdown--open', 'naowee-dropdown--error');
-    });
-  });
-
-  // Cerrar dropdown al clickear fuera
-  document.addEventListener('click', (e) => {
-    if(!e.target.closest('#rvCatDD')) dd.classList.remove('naowee-dropdown--open');
-  });
-
-  // Cerrar modal con click en overlay o Escape
-  document.getElementById('rvOverlay').addEventListener('click', (e) => {
-    if(e.target.id === 'rvOverlay') closeRevertModal();
-  });
-  document.addEventListener('keydown', (e) => {
-    if(e.key === 'Escape' && document.getElementById('rvOverlay')?.classList.contains('open')) closeRevertModal();
-  });
-
-  // Limpia error al escribir
-  ['rvSolicitante','rvJust'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', function(){
-      this.closest('.naowee-textfield')?.classList.remove('naowee-textfield--error');
-    });
-  });
-}
-
-function doRevert(){
-  if(!rvTargetCode) return;
-  const c = findCod(rvTargetCode);
-  if(!c) return;
-  // Validaciones: motivo, solicitante y justificación son obligatorios.
-  const motivo = document.getElementById('rvCatDD').dataset.val;
-  const solicitante = document.getElementById('rvSolicitante').value.trim();
-  const just = document.getElementById('rvJust').value.trim();
-  const invalid = [];
-  if(!motivo){
-    document.getElementById('rvCatDD').classList.add('naowee-dropdown--error');
-    invalid.push(document.getElementById('rvCatDD'));
-  }
-  if(!solicitante){
-    const f = document.getElementById('rvSolicitanteField');
-    f.classList.add('naowee-textfield--error');
-    invalid.push(f);
-  }
-  if(!just){
-    const f = document.getElementById('rvJustField');
-    f.classList.add('naowee-textfield--error');
-    invalid.push(f);
-  }
-  if(invalid.length){
-    // Wiggle a todos los campos inválidos + scroll al primero
-    invalid.forEach(el => {
-      el.classList.remove('rv-shake');
-      void el.offsetWidth; // force reflow para reiniciar animación
-      el.classList.add('rv-shake');
-      setTimeout(() => el.classList.remove('rv-shake'), 500);
-    });
-    const body = document.querySelector('.rv-body');
-    const first = invalid[0];
-    if(body && first){
-      const bodyRect = body.getBoundingClientRect();
-      const fieldRect = first.getBoundingClientRect();
-      const targetTop = body.scrollTop + (fieldRect.top - bodyRect.top) - 16;
-      body.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
-    } else {
-      first?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    return;
-  }
-
-  // 1) Snapshot de quién lo tenía antes — se conserva sólo en el
-  //    historial. El código vuelve a estar disponible.
-  const prevBenef = c.benef || '—';
-  const prevOp = c.op || '—';
-  const prevFecha = c.fecha || '—';
-
-  // 2) Actualiza el código in-memory: vuelve a "disponible"
-  c.estado = 'disp';
-  c.benef = null;
-  c.op = null;
-  c.fecha = null;
-
-  // 3) Ajusta contadores del programa: -1 asignado, +1 disponible.
-  //    NO se incrementa rev (la reversión ya no es un estado del código,
-  //    es una entrada en el historial).
-  if(c.prg && c.prg.codes){
-    c.prg.codes.asig  = Math.max(0, (c.prg.codes.asig  || 1) - 1);
-    c.prg.codes.avail = (c.prg.codes.avail || 0) + 1;
-  }
-
-  // 4) Registra en historial — ATADO al código (in-memory) Y en localStorage
-  const entry = {
-    code: c.code,
-    programa: c.prg.name,
-    programaId: c.prg.id,
-    beneficiarioPrevio: prevBenef,
-    operadorPrevio: prevOp,
-    fechaAsignacion: prevFecha,
-    valor: c.valor,
-    motivo,
-    motivoLabel: RV_MOTIVOS[motivo] || motivo,
-    solicitante,
-    justificacion: just,
-    autor: 'Danna Arrieta · Gestor de incentivos',
-    fecha: (() => {
-      const d = new Date();
-      const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-      return `${String(d.getDate()).padStart(2,'0')} ${months[d.getMonth()]} ${d.getFullYear()} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-    })()
-  };
-  if(!Array.isArray(c.reversionHistory)) c.reversionHistory = [];
-  c.reversionHistory.push(entry);
-  try {
-    const hist = JSON.parse(localStorage.getItem('naowee-reversiones') || '[]');
-    hist.push({ ...entry, codeId: c._id });
-    localStorage.setItem('naowee-reversiones', JSON.stringify(hist));
-  } catch(_) {}
-
-  // 4) Feedback + cierre
-  closeRevertModal();
-  updateKPIs();
-  renderCodigos();
-  const valM = '$' + Number(c.valor||0).toLocaleString('es-CO');
-  showRvToast({
-    variant: 'positive',
-    title: `Código ${c.code} de nuevo disponible`,
-    text: `${valM} volvió al rubro de ${c.prg.name} y el código queda disponible para una nueva asignación. La reversión queda registrada en el historial.`,
-    cta: {
-      label: 'Ver programa',
-      url: `incentivo-05-programa-detalle.html?id=${c.prg.id}&from=codigos`
-    }
-  });
-}
 
 /* Toast estilo naowee-message del DS — estructura: header (icon + title +
    dismiss) + content (text + action). Mantenemos las clases del DS para
@@ -1270,7 +1050,7 @@ function showRvToast(opts){
 }
 
 </script>
-<script src="shared/profile-switcher.js?v=role-17" defer></script>
+
 
 
 <script src="shared/footer-scroll.js" defer></script>
@@ -1280,107 +1060,6 @@ function showRvToast(opts){
   <img src="shared/logos/naowee.svg" alt="Naowee" class="naowee-floating-footer__logo"/>
   <div class="naowee-floating-footer__sep"></div>
   <span class="naowee-floating-footer__text">Todos los derechos reservados <strong>&copy; 2026</strong></span>
-</div>
-
-<!-- ═══ MODAL: Revertir código ═══ -->
-<div class="rv-overlay" id="rvOverlay" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
-  <div class="rv-modal">
-    <header class="rv-header">
-      <div>
-        <h2 class="rv-header__title" id="rvTitle">Revertir código</h2>
-        <p class="rv-header__sub">El código volverá a estar disponible y el valor se devolverá al rubro del programa. La acción queda registrada en el historial.</p>
-      </div>
-      <button type="button" class="rv-close" onclick="closeRevertModal()" aria-label="Cerrar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </header>
-
-    <div class="rv-body">
-      <!-- Resumen del código a revertir -->
-      <div class="rv-summary" id="rvSummary">
-        <div class="rv-summary__top">
-          <div class="rv-summary__ico">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="15" y2="20"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="3" y1="15" x2="19" y2="15"/></svg>
-          </div>
-          <div class="rv-summary__main">
-            <div class="rv-summary__lbl">Código a revertir</div>
-            <div class="rv-summary__code" id="rvCode">—</div>
-          </div>
-          <div class="rv-summary__amount">
-            <div class="rv-summary__amount-lbl">Se devolverá</div>
-            <div class="rv-summary__val" id="rvValor">—</div>
-          </div>
-        </div>
-        <div class="rv-summary__divider"></div>
-        <div class="rv-summary__rows">
-          <div class="rv-summary__row">
-            <span class="rv-summary__row-lbl">Programa</span>
-            <span class="rv-summary__row-val" id="rvProg">—</span>
-          </div>
-          <div class="rv-summary__row">
-            <span class="rv-summary__row-lbl">Beneficiario</span>
-            <span class="rv-summary__row-val" id="rvBenef">—</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Motivo de la reversión -->
-      <div class="naowee-dropdown" id="rvCatDD" data-rv-dropdown>
-        <label class="naowee-dropdown__label naowee-dropdown__label--required">Motivo de la reversión</label>
-        <div class="naowee-dropdown__trigger" tabindex="0">
-          <span class="naowee-dropdown__placeholder">Selecciona un motivo</span>
-          <div class="naowee-dropdown__controls">
-            <span class="naowee-dropdown__chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
-          </div>
-        </div>
-        <div class="naowee-dropdown__menu" role="listbox">
-          <div class="naowee-dropdown__option" data-val="devolucion">Devolución del beneficiario</div>
-          <div class="naowee-dropdown__option" data-val="error">Error en la asignación</div>
-          <div class="naowee-dropdown__option" data-val="no-elegible">Beneficiario no elegible</div>
-          <div class="naowee-dropdown__option" data-val="fraude">Sospecha de fraude</div>
-          <div class="naowee-dropdown__option" data-val="cambio-categoria">Cambio de categoría / programa</div>
-          <div class="naowee-dropdown__option" data-val="cancelacion">Cancelación del programa</div>
-          <div class="naowee-dropdown__option" data-val="otro">Otro motivo</div>
-        </div>
-        <div class="naowee-dropdown__helper rv-error-only">Este campo es obligatorio</div>
-      </div>
-
-      <!-- Solicitante -->
-      <div class="naowee-textfield" id="rvSolicitanteField">
-        <label class="naowee-textfield__label naowee-textfield__label--required">Solicitante</label>
-        <div class="naowee-textfield__input-wrap">
-          <input class="naowee-textfield__input" id="rvSolicitante" type="text" placeholder="Nombre de quien solicita la reversión" maxlength="100"/>
-        </div>
-        <div class="naowee-dropdown__helper rv-error-only">Este campo es obligatorio</div>
-      </div>
-
-      <!-- Justificación -->
-      <div class="naowee-textfield naowee-textfield--textarea" id="rvJustField">
-        <label class="naowee-textfield__label naowee-textfield__label--required">Justificación</label>
-        <div class="naowee-textfield__input-wrap">
-          <textarea class="naowee-textfield__input" id="rvJust" rows="3" placeholder="Describe los detalles de la reversión (evidencia, contexto, acción de seguimiento)..." maxlength="400"></textarea>
-        </div>
-        <div class="naowee-dropdown__helper rv-error-only">Este campo es obligatorio</div>
-      </div>
-
-      <!-- Autor (readonly) -->
-      <div class="naowee-textfield naowee-textfield--readonly">
-        <label class="naowee-textfield__label">Realizado por</label>
-        <div class="naowee-textfield__input-wrap rv-readonly">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="rv-readonly__ico"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span class="rv-readonly__val">Danna Arrieta · Gestor de incentivos</span>
-        </div>
-      </div>
-    </div>
-
-    <footer class="rv-footer">
-      <button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="closeRevertModal()">Cancelar</button>
-      <button class="naowee-btn naowee-btn--loud naowee-btn--large" onclick="doRevert()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-        Revertir código
-      </button>
-    </footer>
-  </div>
 </div>
 
 <!-- Toast container -->

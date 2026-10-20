@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
-<script src="shared/programs-data.js"></script>
+<script src="shared/programs-data.js?v=21b"></script>
 
 <style>
   .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap}
@@ -301,7 +301,7 @@
   .dt-r{min-height:0}
   .dt-r__b{min-height:0}
   .dt-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
-  .dt-top .rv-back{margin:36px 0 0}
+  .dt-top .rv-back{margin:36px 18px 0 0}
   .asig-table td:nth-child(3),.asig-table td:nth-child(4){white-space:nowrap}
   .exc-tag{display:inline-block;margin-top:4px;font-size:11px;font-weight:600;color:#d74009;background:#fde9cf;border-radius:999px;padding:2px 8px;white-space:nowrap}
   /* Más aire entre el texto y la fecha; fecha y perfil centrados con el bloque */
@@ -316,6 +316,7 @@
   .asig-table th:nth-child(5),.asig-table td:nth-child(5){width:14%}
   .asig-table th:nth-child(6),.asig-table td:nth-child(6){width:10%;text-align:right;padding-right:14px}
 </style>
+<script src="shared/profile-switcher.js?v=role-28" defer blocking="render"></script>
 </head>
 <body>
 
@@ -447,9 +448,9 @@
 <div class="rd-toast" id="rdToast" role="status"></div>
 
 <script>
-const PE = {pend:['informative','En revisión documental'],apr:['positive','Documentación aprobada'],porcargar:['neutral','Por cargar'],sub:['caution','Pendiente subsanación'],exp:['neutral','Expirada por vencimiento']};
+const PE = {pend:['informative','En revisión'],apr:['positive','Aprobada'],porcargar:['neutral','Por cargar'],sub:['caution','Pendiente de subsanación'],exp:['negative','Expirada']};
 const DE = {porcargar:['neutral','Por cargar'],revision:['informative','En revisión'],aprobado:['positive','Aprobado'],rechazado:['negative','Rechazado']};
-const EST_OPTS = [['pend','En revisión'],['apr','Aprobadas'],['porcargar','Por cargar'],['sub','Pendiente subsanación'],['exp','Expiradas'],['all','Todos']];
+const EST_OPTS = [['pend','En revisión'],['apr','Aprobadas'],['porcargar','Por cargar'],['sub','Pendiente de subsanación'],['exp','Expiradas'],['all','Todos']];
 const AV = ['orange','purple','green','blue','pink','teal'];
 const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], PAGE = 6;
 const I = {
@@ -511,8 +512,8 @@ function strip(){
   const n = e => ALL.filter(r => r.estado === e).length;
   const items = [
     ['En revisión', n('pend'), n('porcargar') + ' por cargar', 'info', I.rev],
-    ['Aprobadas', n('apr'), 'Pendientes de entrega', 'positive', I.doc],
-    ['Pendiente subsanación', n('sub'), 'Devueltas con motivo', 'pink', I.rej],
+    ['Aprobadas', n('apr'), 'Por asignar', 'positive', I.doc],
+    ['Pendiente de subsanación', n('sub'), 'Devueltas con motivo', 'pink', I.rej],
     ['Expiradas', n('exp'), 'Vencieron sin subsanar', 'brand', I.rej]
   ];
   $('strip').innerHTML = items.map(x => `<article class="kpi-card"><div class="kpi-card__top"><div class="kpi-card__lbl">${x[0]}</div><div class="kpi-card__ico kpi-card__ico--${x[3]}">${x[4]}</div></div><div class="kpi-card__val">${x[1].toLocaleString('es-CO')}</div><div class="kpi-card__foot"><span>${x[2]}</span></div></article>`).join('');
@@ -523,7 +524,7 @@ function renderList(flash){
   state.page = Math.min(state.page, pages);
   const ini = (state.page - 1) * PAGE, slice = rows.slice(ini, ini + PAGE);
   $('rvBody').innerHTML = slice.length ? slice.map((r, k) => {
-    const extra = r.estado === 'sub' ? `<div class="sub-note">Plazo hasta ${r.limite}</div>` : r.estado === 'apr' ? '<div class="sub-note">Pendiente de entrega</div>' : r.estado === 'exp' ? '<div class="sub-note">Venció el plazo para subsanar</div>' : '';
+    const extra = r.estado === 'sub' ? `<div class="sub-note">Plazo hasta ${r.limite}</div>` : r.estado === 'apr' ? '<div class="sub-note">Por asignar</div>' : r.estado === 'exp' ? (r.docs.some(d => d.file) ? '<div class="sub-note">Venció el plazo para subsanar</div>' : '<div class="sub-note">Venció la ventana de cargue</div>') : '';
     const act = `<a class="rv-link" onclick="event.stopPropagation();openUser('${r.id}')">${I.eye}${r.estado === 'pend' ? 'Revisar' : 'Ver'}</a>`;
     const up = r.docs.filter(d => d.file).length;
     return `<tr class="${flash === r.id ? 'rv-flash' : ''}" onclick="openUser('${r.id}')">
@@ -599,14 +600,17 @@ function reqHTML(){
 function hisHTML(){
   const r = state.cur, ev = [];
   const av = (n, k) => `<span class="tl__av tl__av--${k}">${initials(n)}</span>`;
-  r.audit.slice().reverse().filter(x => (x.dictamen !== 'Habilitado por excepción' && x.dictamen !== 'Registrado manualmente')).forEach(x => ev.push({
+  const esDict = x => ['Habilitado por excepción', 'Registrado manualmente', 'Cargue'].indexOf(x.dictamen) < 0;   // el cargue del deportista no es un dictamen
+  r.audit.slice().reverse().filter(esDict).forEach(x => ev.push({
     ico: x.dictamen === 'Aprobado' ? I.ok : I.rej2, ok: x.dictamen === 'Aprobado', t: x.dictamen === 'Aprobado' ? 'Aprobación' : 'Rechazado',
     d: x.dictamen === 'Aprobado' ? `El documento <b>${esc(x.doc)}</b> ha sido validado correctamente.` : `El documento <b>${esc(x.doc)}</b> ha sido rechazado${x.motivo ? ': ' + esc(x.motivo.replace(/[.\s]+$/, '')) : ', revisar notas del revisor'}.`,
     when: x.fecha + ' ' + x.hora, who: x.usuario, k: 'rev'
   }));
-  const rev = (r.audit.find(x => (x.dictamen !== 'Habilitado por excepción' && x.dictamen !== 'Registrado manualmente')) || {}).usuario || 'Sistema';
+  const rev = (r.audit.find(esDict) || {}).usuario || 'Sistema';
   const exA = r.audit.find(x => x.dictamen === 'Habilitado por excepción' || x.dictamen === 'Registrado manualmente');
   if(r.docs.some(d => d.file)) ev.push({ ico: I.eye2, t: 'Pendiente en revisión', d: 'Los documentos han sido puestos en revisión.', when: r.cargado + ' ' + r.hora, who: rev, k: 'rev' });
+  // auditoría del cargue: cada archivo subido por el deportista (archivo, usuario, fecha y hora)
+  r.audit.slice().reverse().filter(x => x.dictamen === 'Cargue').forEach(x => ev.push({ ico: I.sent, t: 'Carga de documento', d: `Se cargó <b>${esc(x.archivo)}</b> como <b>${esc(x.doc)}</b>.`, when: x.fecha + ' ' + x.hora, who: x.usuario, k: 'ben' }));
   const files = r.docs.filter(d => d.file).map(d => `<b>${esc(d.file)}</b>`).join(', ');
   ev.push({ ico: I.sent, t: 'Enviado', d: files ? `El formulario con documento${r.docs.filter(d => d.file).length > 1 ? 's' : ''} ${files} ha sido enviado exitosamente.` : 'La solicitud fue creada; aún no hay documentos cargados.', when: r.cargado + ' ' + r.hora, who: r.persona, k: 'ben' });
   if(exA) ev.push({ ico: I.ok, t: exLabel(r), d: r.excepcion.origen === 'manual' ? 'El gestor del programa lo registró como beneficiario' + (exA.motivo ? ': ' + esc(exA.motivo) : '.') : `Se eximen ${r.excepcion.fechas && r.excepcion.cond ? 'fechas y condicionales' : r.excepcion.fechas ? 'las fechas de la ventana' : 'las condicionales'}: ${esc(exA.motivo)}`, when: exA.fecha + ' ' + exA.hora, who: exA.usuario, k: 'rev' });
@@ -645,8 +649,8 @@ function commit(names, estado, nota){
   renderDetail(); refreshNav();
   const rej = estado === 'rechazado', est = state.cur.estado;
   let txt;
-  if(rej) txt = 'El documento ha sido rechazado exitosamente y se ha notificado al deportista sobre la decisión. El perfil queda en <strong>Pendiente subsanación</strong>: puede reemplazarlo hasta el <strong>' + state.cur.limite + '</strong>. Asegúrate de que las razones del rechazo sean claras para facilitar futuras correcciones.';
-  else if(est === 'apr') txt = 'Todos los documentos requeridos de <strong>' + esc(state.cur.persona) + '</strong> están aprobados. El perfil pasa a asignación y queda en <strong>Pendiente de entrega</strong> para el Operador.';
+  if(rej) txt = 'El documento ha sido rechazado exitosamente y se ha notificado al deportista sobre la decisión. El perfil queda en <strong>Pendiente de subsanación</strong>: puede reemplazarlo hasta el <strong>' + state.cur.limite + '</strong>. Asegúrate de que las razones del rechazo sean claras para facilitar futuras correcciones.';
+  else if(est === 'apr') txt = 'Todos los documentos requeridos de <strong>' + esc(state.cur.persona) + '</strong> están aprobados. El perfil pasa a asignación y queda <strong>Por asignar</strong> para el Operador.';
   else txt = 'El documento ha sido aprobado. Cuando todos los documentos requeridos estén aprobados, el perfil pasa a asignación.';
   modal(rej ? '¡Rechazo de documento!' : '¡Documento aprobado!', txt);
 }
@@ -682,7 +686,7 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMd(); })
 })();
 function fadeAndGo(u){ window.location.href = u; }
 </script>
-<script src="shared/profile-switcher.js?v=role-17" defer></script>
+
 <script src="shared/footer-scroll.js" defer></script>
 <div class="naowee-floating-footer" role="contentinfo" aria-label="Pie de página Naowee">
   <img src="shared/logos/naowee.svg" alt="Naowee" class="naowee-floating-footer__logo"/>

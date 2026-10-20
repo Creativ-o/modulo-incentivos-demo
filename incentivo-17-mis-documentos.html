@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<script src="shared/enter-transition.js?v=1"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SUID – Incentivos · Mis documentos</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
+<link rel="stylesheet" href="shared/shell.css"/>
+<script src="shared/programs-data.js?v=21b"></script>
+
+<style>
+  .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:0;flex-wrap:wrap}
+  .page-title{font-size:24px;font-weight:700;line-height:1.2;letter-spacing:-.01em;margin-bottom:4px;color:var(--naowee-color-text-primary,#282834)}
+  .page-sub{font-size:14px;color:var(--naowee-color-text-secondary,#646587);line-height:1.5;max-width:640px;margin:0 0 10px}
+
+  /* «Ver como» (solo demo): pop-up flotante y movible */
+  .demo-pop{position:fixed;z-index:2500;width:300px;background:#fff;border:1px solid #e7e9f3;border-radius:14px;box-shadow:0 12px 32px rgba(40,40,52,.18);overflow:hidden}
+  .demo-pop__bar{display:flex;align-items:center;gap:8px;padding:10px 10px 10px 12px;background:var(--azul,#002B5B);color:var(--surface,#fff);cursor:grab;user-select:none;touch-action:none}
+  .demo-pop.is-drag .demo-pop__bar{cursor:grabbing}
+  .demo-pop__bar svg{width:16px;height:16px;flex:none;opacity:.7}
+  .demo-pop__bar b{flex:1;font-size:12.5px;font-weight:600;letter-spacing:.2px}
+  .demo-pop__min{border:0;background:rgba(255,255,255,.14);color:#fff;width:26px;height:26px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+  .demo-pop__min svg{width:16px;height:16px;opacity:1;transition:transform .22s}
+  .demo-pop.is-min .demo-pop__min svg{transform:rotate(180deg)}
+  .demo-pop__min:hover{background:rgba(255,255,255,.26)}
+  .demo-pop__body{padding:8px;display:flex;flex-direction:column;gap:4px;max-height:min(60vh,420px);overflow:auto}
+  .demo-pop.is-min .demo-pop__body{display:none}
+  .demo-opt{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid transparent;background:transparent;border-radius:10px;padding:9px 10px;cursor:pointer;font:inherit;width:100%}
+  .demo-opt:hover{background:#f4f5f9}
+  .demo-opt.on{background:#fff6f1;border-color:#f3c5ae}
+  .demo-opt i{width:16px;height:16px;border-radius:50%;border:2px solid #b5b9d4;flex:none;position:relative}
+  .demo-opt.on i{border-color:#d74009}.demo-opt.on i::after{content:'';position:absolute;inset:2px;border-radius:50%;background:#d74009}
+  .demo-opt b{display:block;font-size:13.5px;color:#282834}.demo-opt small{display:block;font-size:12px;color:#646587;margin-top:1px}
+
+  .ptool{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;min-height:4px}
+  .ptool__t{font-size:15px;font-weight:300;color:#b5b9d4}
+  .who__all{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:#d74009;font:inherit;font-size:14px;font-weight:600;cursor:pointer;padding:8px 10px;border-radius:10px}
+  .who__all:hover{background:#fde9cf}.who__all svg{width:16px;height:16px;transition:transform .25s}
+
+  .pcard{background:#fff;border:1px solid #dcdfec;border-radius:16px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(40,40,52,.06)}
+  .pcard__head{display:flex;align-items:center;gap:14px;padding:18px 20px;flex-wrap:wrap;cursor:pointer;user-select:none}
+  .pcard__head:hover{background:#fafbfd}
+  .pcard__head:focus-visible{outline:2px solid #d74009;outline-offset:-2px}
+  .pcard__chev{width:20px;height:20px;color:#646587;flex:none;transition:transform .25s}
+  .pcard.open .pcard__chev{transform:rotate(180deg)}
+  .pcard__body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s cubic-bezier(.4,0,.2,1)}
+  .pcard.open .pcard__body{grid-template-rows:1fr}
+  .pcard__inner{overflow:hidden;min-height:0}
+  @media(prefers-reduced-motion:reduce){.pcard__body,.pcard__chev{transition:none}}
+  .pcard__ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+  .pcard__main{flex:1;min-width:220px}
+  .pcard__name{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;font-weight:700;color:#282834}
+  .pcard__meta{font-size:12.5px;color:#646587;margin-top:2px}
+  .pcard__prog{min-width:230px}
+  .pcard__prog .bar{height:6px;border-radius:99px;background:#e7e9f3;overflow:hidden}
+  .pcard__prog .bar i{display:block;height:100%;background:#1f8923;border-radius:99px}
+  .pcard__prog small{display:block;font-size:12px;color:#646587}
+  .pcard__prog .cnt{margin-bottom:6px}
+
+  /* plazo / ventana de cargue: línea corta bajo el avance, sin fondo de color */
+  .plazo{display:flex !important;align-items:center;gap:5px;margin-top:6px !important;font-size:12px;color:#646587}
+  .plazo svg{width:13px;height:13px;flex:none}
+  .plazo.is-closed{color:#c4031d;font-weight:600}
+
+  /* Tabla de documentos (referencia: Master SUID · Cargue de documento requerido) */
+  .docs{display:flex;flex-direction:column;padding:12px 20px 8px}
+  .dhead,.drow{display:grid;grid-template-columns:minmax(210px,1.7fr) 180px 150px minmax(210px,1.4fr);gap:12px;align-items:center}
+  .dhead{background:#f4f5f9;border-radius:14px;padding:0 12px;height:52px;font-size:14px;font-weight:600;color:#646587}
+  .dwrap{border-bottom:1px solid #e7e9f3}.dwrap:last-child{border-bottom:0}
+  .drow{padding:16px 12px 12px;min-height:64px}
+  .dname{font-size:15px;color:#282834;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .dname .req{color:#d74009;font-weight:700}
+  .q{position:relative;display:inline-flex;width:16px;height:16px;color:#d74009;flex:none;cursor:help;outline:none}
+  .q svg{width:16px;height:16px}
+  .q::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:#282834;color:#fff;font-size:12px;font-weight:500;line-height:1.4;padding:8px 10px;border-radius:8px;width:max-content;max-width:250px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:40;white-space:normal;text-align:left}
+  .q:hover::after,.q:focus::after{opacity:1}
+  .docs.is-off .dhead,.docs.is-off .drow{opacity:.45}   /* expirada: la información queda deshabilitada */
+  .dfmt{font-size:12px;color:#9c9ebf;margin-top:3px}
+  .dsize{font-size:14px;color:#282834}
+  .dhead>div:nth-child(2),.dsize{padding-left:100px}
+  .dact{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .dlink{border:0;background:transparent;color:#d74009;font:inherit;font-size:14px;font-weight:600;cursor:pointer;padding:6px 4px;border-radius:8px}
+  .dlink:hover{background:#fde9cf}
+  .dchip{display:inline-flex;align-items:center;gap:6px;max-width:220px;border:1.5px solid #c9cce0;border-radius:10px;padding:5px 10px;font-size:12.5px;font-weight:600;color:#9c9ebf}
+  .dchip svg{width:14px;height:14px;flex:none}.dchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  button.dchip{background:#fff;font-family:inherit;cursor:pointer}button.dchip:hover{border-color:#d74009;color:#d74009}
+  .dmsg{display:flex;align-items:flex-start;gap:8px;padding:0 12px 12px;font-size:12px;line-height:1.4;color:#646587}
+  .dmsg svg{width:14px;height:14px;flex:none;margin-top:1px;color:#1f78d1}
+  .dmsg.err{color:#c4031d;font-weight:600}.dmsg.err svg{color:#c4031d}
+  .dprog{display:flex;align-items:center;gap:10px;font-size:13.5px;color:#282834}
+  .dprog svg{width:34px;height:34px;flex:none}
+  .dprog text{font:600 11px Inter,sans-serif;fill:#282834}
+  .pfoot{display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:14px 20px;border-top:1px solid #eef0f6;flex-wrap:wrap}
+  .bloq{padding:16px 20px;border-top:1px solid #eef0f6;font-size:13.5px;color:#3d3e55;line-height:1.5}
+  .bloq__h{display:flex;align-items:center;gap:8px;color:#282834}
+  .bloq__h svg{width:18px;height:18px;color:#b42318;flex:none}
+  .bloq__s{margin:4px 0 10px 26px;color:#646587}
+  .bloq__t{margin-left:26px;font-weight:600;color:#282834}
+  .bloq ul{margin:4px 0 10px 26px;padding-left:18px;color:#646587}.bloq li{margin:2px 0}
+  .pfoot__hint{font-size:13px;color:#646587;max-width:560px}
+
+  .empty{background:#fff;border:1px dashed #cfd2e6;border-radius:16px;padding:36px 24px;text-align:center;color:#646587;font-size:14px;line-height:1.5}
+  .empty strong{display:block;color:#282834;font-size:15px;margin-bottom:4px}
+
+  /* Avisos: componente de mensaje del SDK (naowee-message), igual que en el resto del módulo */
+  .tw{position:fixed;right:24px;bottom:24px;z-index:3000;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:calc(100vw - 48px)}
+  .tw .naowee-message{pointer-events:auto;min-width:340px;max-width:420px;box-shadow:0 12px 32px rgba(40,40,52,.18);animation:twIn .25s cubic-bezier(.16,1,.3,1) both}
+  @keyframes twIn{from{opacity:0;transform:translateY(8px)}}
+  @media(max-width:900px){.dhead{display:none}.drow{grid-template-columns:1fr 1fr}.dsize{padding-left:0}}
+</style>
+<script src="shared/profile-switcher.js?v=role-28" defer blocking="render"></script>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <button class="burger-btn" onclick="document.getElementById('sidebar').classList.toggle('collapsed')" aria-label="Toggle sidebar">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="#282834" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <img src="shared/logos/ministerio.svg" alt="Ministerio del Deporte" class="sb-logo-img"/>
+      <div class="logo-sep"></div>
+      <img src="shared/logos/suid.png" alt="SUID" class="sb-logo-img"/>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">INCENTIVOS</div>
+      <div class="nav-row active">
+        <div class="active-bar"></div>
+        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d74009" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><polyline points="14 3 14 8 19 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 14.5 12 11.5 15 14.5"/></svg></div>
+        <span class="lbl">Mis documentos</span>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="nav-row" onclick="window.incGoLanding ? incGoLanding(this) : (location.href='index.html')">
+        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="#B5B9D4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="lbl">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="top-header">
+      <div class="profile-switcher">
+        <div class="user-chip">
+          <div class="ava"><div class="ava-ring" style="background:#bbf7d0;color:#14532d">EM</div><div class="ava-dot"></div></div>
+          <div class="user-info"><span class="user-name">Esteban Mora</span><span class="user-role">Deportista</span></div>
+          <button class="user-chip__chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </div>
+      </div>
+    </header>
+
+    <div class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Mis documentos</h1>
+          <p class="page-sub">Carga los documentos que pide cada programa en el que participas y sigue el estado<br>de tu postulación.</p>
+        </div>
+      </div>
+
+      <div class="ptool" id="ptool"></div>
+      <div id="cards"></div>
+    </div>
+  </div>
+</div>
+
+<div class="demo-pop" id="demoPop" role="dialog" aria-label="Ver como, solo demo">
+  <div class="demo-pop__bar" id="demoBar" title="Arrastra para mover">
+    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
+    <b>Ver como · demo</b>
+    <button class="demo-pop__min" id="demoMin" type="button" aria-label="Mostrar u ocultar la lista" aria-expanded="true" title="Mostrar u ocultar la lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></button>
+  </div>
+  <div class="demo-pop__body" id="demoList"></div>
+</div>
+
+<input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" hidden/>
+<div class="tw" id="tw" aria-live="polite"></div>
+
+<script>
+/* ═══ Mis documentos (Deportista) ═══
+   Expediente de la persona en cada programa activo con documentos (mismos datos que Revisión documental). Según el mapping:
+   1. Solo ve los programas a los que aplica: si fue cargado como excepcional o registrado a mano, el programa le aparece porque se le asignó (sin más validaciones);
+      si no, solo cuando cumple la población y los condicionales (motor de reglas). Si no aplica, no aparece: no le podrían asignar el incentivo.
+      Lo que se eximió sigue como se marcó en la parametrización: las fechas de cargue solo se abren si la excepción eximió fechas.
+   2. Se listan los documentos obligatorios y opcionales de la versión vigente; se aceptan PDF, JPG, JPEG o PNG dentro del peso máximo.
+   3. Los archivos quedan como borrador (se pueden reemplazar o quitar); al enviar con TODOS los obligatorios, la postulación pasa a «En revisión».
+   4. Se avisa en la bandeja del Gestor de programa. 5. Al enviar, cada archivo queda en la auditoría (archivo, usuario, fecha y hora). */
+const BASE = ['Esteban Mora', 'Carlos Guzmán', 'Ana García', 'Santiago López', 'Andrés García'];
+const K_ACORDEON = 'naowee:atleta-acordeon', K_POP = 'naowee:atleta-pop', K_PER = 'naowee:atleta-persona', K_DRAFT = 'naowee:atleta-borrador', K_ARCH = 'naowee:atleta-archivos', MAX_MB = 5, EXT = ['pdf', 'jpg', 'jpeg', 'png'];
+const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const $ = id => document.getElementById(id);
+const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const rd = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(_) { return d; } };
+const wr = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(_) {} };
+const fmtF = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? parseInt(m[3], 10) + ' ' + MES[parseInt(m[2], 10) - 1] + ' ' + m[1] : ''; };
+/* Deportistas de prueba + quienes fueron cargados como excepcionales en algún programa */
+function personas(){
+  const lista = BASE.slice(), vistos = new Set(BASE);
+  window.PROGRAMS_DATA.forEach(p => window.getExceptions(p.id).forEach(x => { if(!vistos.has(x.persona)){ vistos.add(x.persona); lista.push(x.persona); } }));
+  return lista;
+}
+const persona = () => { const p = localStorage.getItem(K_PER); return personas().indexOf(p) > -1 ? p : BASE[0]; };
+const iniciales = n => n.split(' ').filter(w => w.length > 1).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+
+/* Ventana de cargue: lógica compartida con la Revisión documental (window.ventanaCargue) */
+const ventana = (c, exento) => window.ventanaCargue(c, exento);
+const ESTADO = {
+  doc: ['Por cargar', 'neutral'], rev: ['En revisión', 'informative'], apr: ['Aprobada', 'positive'],
+  sub: ['Pendiente de subsanación', 'caution'], exp: ['Expirada', 'negative'], listo: ['Listo para enviar', 'informative']
+};
+/* Estado según los datos: faltan obligatorios → pendiente de documentación; todos cargados → en revisión */
+function estadoDe(r){ return r.estado === 'sub' || r.estado === 'exp' || r.estado === 'apr' ? r.estado : r.estado === 'porcargar' ? 'doc' : 'rev'; }
+/* ¿Puede cargar este documento ahora? */
+function puedeCargar(r, d, est, win){
+  if(est === 'apr' || est === 'exp') return false;
+  if(est === 'sub') return d.estado === 'rechazado';
+  if(d.estado === 'aprobado' || d.estado === 'rechazado') return false;
+  if(d.file && est === 'rev') return false;   // ya en revisión
+  return win.abierta;
+}
+/* Qué falta para poder enviar (cuenta lo ya cargado y los borradores) */
+function faltan(r, dr){
+  if(r.estado === 'sub') return r.docs.filter(d => d.estado === 'rechazado' && !dr[d.name]).map(d => d.name);
+  return r.docs.filter(d => d.oblig && !d.file && !dr[d.name]).map(d => d.name);
+}
+
+/* Solo los programas a los que aplica: con expediente ya en curso, con habilitación excepcional, o cumpliendo población y condicionales */
+function aplica(r, nombre){
+  if(r.docs.some(d => d.file)) return true;
+  return window.checkEligibility(r.p, nombre, r.cc).ok;
+}
+function itemsDe(nombre, todos){
+  const activos = {};
+  window.PROGRAMS_DATA.forEach(p => { if(p.status === 'active') activos[p.id] = p; });
+  const mios = (todos || window.docReviews()).filter(r => r.persona === nombre && r.docs.length && !r.sinDocs && activos[r.prog]);
+  const conExcepcion = new Set(mios.filter(r => r.excepcion).map(r => r.prog));   // su expediente de excepción reemplaza al de la lista general
+  return mios.filter(r => r.excepcion || !conExcepcion.has(r.prog)).map(r => Object.assign({ p: activos[r.prog] }, r)).filter(r => aplica(r, nombre));
+}
+const items = () => itemsDe(persona());
+/* Estado de sus documentos, para el selector «Ver como» */
+const ETQ = { porcargar: 'Por cargar', pend: 'En revisión', sub: 'Rechazado', apr: 'Aprobado', exp: 'Expirada' };
+function estadoDocs(nombre, todos){
+  const e = [...new Set(itemsDe(nombre, todos).map(r => ETQ[r.estado] || r.estado))];
+  return e.length ? e.join(' · ') : 'Sin programas';
+}
+
+const ICO_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><polyline points="14 3 14 8 19 8"/></svg>';
+const ICO_CLK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+const ICO_INF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12.5"/><circle cx="12" cy="16" r=".6" fill="currentColor"/></svg>';
+const badge = (t, v) => `<span class="naowee-badge naowee-badge--${v} naowee-badge--quiet naowee-badge--small">${t}</span>`;
+
+/* Elementos copiados de la referencia de Figma (Master SUID · Cargue de documento requerido) */
+const ICO_Q = t => `<span class="q" tabindex="0" role="img" aria-label="${esc(t)}" data-tip="${esc(t)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.6a2.5 2.5 0 114 2c-.9.6-1.6 1-1.6 2.1"/><circle cx="12" cy="16.8" r=".7" fill="currentColor"/></svg></span>`;
+const ICO_EYE = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICO_FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><polyline points="14 3 14 8 19 8"/></svg>';
+const ICO_MINUS = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><line x1="7" y1="12" x2="17" y2="12" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>';
+const pill = (t, v, ico) => `<span class="naowee-badge naowee-badge--${v} naowee-badge--quiet">${ico || ''}${t}</span>`;
+const ICO_DL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>';
+/* El archivo cargado se puede descargar */
+const chip = (n, id, doc) => `<button type="button" class="dchip" data-dl="1" data-id="${esc(id)}" data-doc="${esc(doc)}" data-file="${esc(n)}" title="Descargar ${esc(n)}">${ICO_DL}<span>${esc(n)}</span></button>`;
+const progreso = p => `<span class="dprog"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="#e7e9f3" stroke-width="3"/><circle cx="18" cy="18" r="15" fill="none" stroke="#1f8923" stroke-width="3" stroke-linecap="round" stroke-dasharray="${(p * 94.2 / 100).toFixed(1)} 94.2" transform="rotate(-90 18 18)"/><text x="18" y="22" text-anchor="middle">${p}</text></svg>Cargando…</span>`;
+const subiendo = {}, errores = {};   // estado de pantalla: progreso por documento y errores de validación
+
+function docRow(r, d, dr, est, win){
+  const key = r.id + '|' + d.name, dra = dr[d.name], sb = subiendo[key], err = errores[key], puede = puedeCargar(r, d, est, win), n = esc(d.name);
+  let st;
+  if(dra) st = pill('Por enviar', 'informative');
+  else if(d.estado === 'aprobado') st = pill('Aprobado', 'positive');
+  else if(d.estado === 'rechazado') st = pill('Rechazado', 'negative');
+  else if(d.file) st = pill('En revisión', 'informative', ICO_EYE);
+  else st = pill('Por cargar', 'neutral');
+  let act = '';
+  if(sb !== undefined) act = progreso(sb);
+  else if(dra) act = chip(dra.file, r.id, d.name) + `<button class="dlink" onclick="quitar('${r.id}','${n}')">Quitar</button>`;
+  else if(puede) act = `<button class="dlink" onclick="elegir('${r.id}','${n}')">${d.estado === 'rechazado' ? 'Recargar archivo' : 'Subir archivo'}</button>`;
+  else if(d.file) act = chip(d.file, r.id, d.name);
+  const msgs = (sb !== undefined ? `<div class="dmsg">${ICO_INF}<span>Analizando el archivo en paralelo. Te notificamos en segundos si es aceptado o necesita corrección.</span></div>` : '')
+    + (err ? `<div class="dmsg err">${ICO_MINUS}<span>${esc(err)}</span></div>` : '')
+    + (d.estado === 'rechazado' && !dra && d.nota ? `<div class="dmsg err">${ICO_MINUS}<span>Motivo del rechazo: ${esc(d.nota)}</span></div>` : '');
+  return `<div class="dwrap"><div class="drow">
+    <div><div class="dname">${n}${d.oblig ? '<span class="req">*</span>' : ''}${ICO_Q((d.oblig ? 'Obligatorio' : 'Opcional') + ' · Formatos de carga: PDF, JPG, JPEG o PNG · Peso máximo: ' + MAX_MB + ' MB')}</div><div class="dfmt">JPG, JPEG, PNG, PDF</div></div>
+    <div class="dsize">${MAX_MB} MB</div><div>${st}</div><div class="dact">${act}</div></div>${msgs}</div>`;
+}
+
+function render(){
+  const me = persona(), all = rd(K_DRAFT, {}), list = items(), abiertas = rd(K_ACORDEON, {});
+  renderPop(me);
+  // chip del encabezado con la persona elegida
+  document.querySelectorAll('.user-chip .user-name').forEach(e => e.textContent = me);
+  document.querySelectorAll('.user-chip .ava-ring').forEach(e => e.textContent = iniciales(me));
+  // subtítulo con el total de programas y, si hay varios, abrir o cerrar todos
+  $('ptool').innerHTML = list.length ? `<span class="ptool__t">${list.length} programa${list.length === 1 ? '' : 's'} con documentos</span>` + (list.length > 1 ? '<button type="button" class="who__all" id="btnTodas" onclick="alternarTodas()"></button>' : '') : '';
+  if(!list.length){
+    $('cards').innerHTML = '<div class="empty"><strong>No tienes documentos por cargar</strong>Aquí aparecen los programas activos que piden documentos y a los que aplicas por población y condiciones.</div>';
+    return;
+  }
+  $('cards').innerHTML = list.map(r => {
+    const c = window.getProgramConfig(r.p), excs = window.getExceptions(r.prog).filter(x => x.doc === r.cc), dr = all[r.id] || {};
+    const win = ventana(c, excs.some(x => x.fechas));   // una excepción que exime fechas mantiene la ventana abierta
+    const nDr = Object.keys(dr).length, fal = faltan(r, dr);
+    const est0 = estadoDe(r);   // «Expirada» ya viene de los datos (plazo vencido o ventana cerrada sin documentos)
+    const puedeEnviar = nDr > 0 && !fal.length && est0 !== 'exp';
+    const est = puedeEnviar && (est0 === 'doc' || est0 === 'sub') ? 'listo' : est0, [lbl, v] = ESTADO[est];
+    const oblig = r.docs.filter(d => d.oblig), listos = oblig.filter(d => d.file || dr[d.name]).length, pct = oblig.length ? Math.round(listos / oblig.length * 100) : 100;
+    const hayAcciones = r.docs.some(d => puedeCargar(r, d, est0, win)) || nDr > 0;
+    let plazo = win.corto, cerrada = !win.abierta;
+    if(r.estado === 'sub'){ plazo = 'Plazo hasta el ' + r.limite; cerrada = false; }
+    else if(r.estado === 'exp'){ if(r.docs.some(d => d.file)){ plazo = 'Plazo vencido'; cerrada = true; } }   // sin archivos: queda el texto de la ventana
+    else if(est0 === 'apr' || est0 === 'rev'){ plazo = ''; cerrada = false; }
+    const abierta = abiertas[r.id] === undefined ? hayAcciones : abiertas[r.id];
+    const ev = (r.p.event || '').trim(), evOk = ev && ev !== '—' && !/^sin evento/i.test(ev);   // solo el evento, si lo tiene
+    return `<section class="pcard${abierta ? ' open' : ''}" data-id="${r.id}">
+      <div class="pcard__head" role="button" tabindex="0" aria-expanded="${abierta}" aria-controls="b-${r.id}" onclick="alternar('${r.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();alternar('${r.id}')}">
+        <div class="pcard__ico" style="background:${r.p.iconBg};color:${r.p.iconColor}">${ICO_DOC.replace('<svg ', '<svg width="22" height="22" ')}</div>
+        <div class="pcard__main"><div class="pcard__name">${esc(r.progName)}${badge(lbl, v)}</div>${evOk ? `<div class="pcard__meta">${esc(ev)}</div>` : ''}</div>
+        <div class="pcard__prog"><small class="cnt">${listos} de ${oblig.length} obligatorio${oblig.length === 1 ? '' : 's'} cargado${listos === 1 ? '' : 's'}</small><div class="bar"><i style="width:${pct}%"></i></div>${plazo ? `<small class="plazo${cerrada ? ' is-closed' : ''}">${ICO_CLK}${esc(plazo)}</small>` : ''}</div>
+        <svg class="pcard__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="pcard__body" id="b-${r.id}"><div class="pcard__inner">
+      <div class="docs${est0 === 'exp' ? ' is-off' : ''}"><div class="dhead"><div>Documento</div><div>Tamaño</div><div>Estado</div><div></div></div>${r.docs.map(d => docRow(r, d, dr, est0, win)).join('')}</div>
+      ${hayAcciones ? `<div class="pfoot"><button class="naowee-btn naowee-btn--loud naowee-btn--large" ${puedeEnviar ? '' : 'disabled'} onclick="enviar('${r.id}')">Enviar a revisión${nDr ? ' (' + nDr + ')' : ''}</button></div>` : ''}
+      </div></div>
+    </section>`;
+  }).join('');
+  etiquetaTodas();
+}
+
+/* ── Cargar un archivo: se valida formato y peso y queda como borrador hasta «Enviar a revisión» ── */
+let destino = null;
+function abrirTarjeta(id){ const a = rd(K_ACORDEON, {}); a[id] = true; wr(K_ACORDEON, a); }
+function elegir(id, doc){ destino = { id, doc }; abrirTarjeta(id); const f = $('fileInput'); f.value = ''; f.click(); }
+$('fileInput').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0]; if(!f || !destino) return;
+  const d = destino, key = d.id + '|' + d.doc, ext = (f.name.split('.').pop() || '').toLowerCase();
+  if(EXT.indexOf(ext) < 0){ errores[key] = 'Formato no soportado. Use PDF, JPG o PNG.'; render(); return; }
+  if(f.size > MAX_MB * 1024 * 1024){ errores[key] = 'El archivo supera ' + MAX_MB + ' MB.'; render(); return; }
+  delete errores[key]; subiendo[key] = 0; render();
+  const leido = new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = () => ok(null); fr.readAsDataURL(f); });
+  const t = setInterval(async () => {
+    subiendo[key] += 25;
+    if(subiendo[key] < 100){ render(); return; }
+    clearInterval(t); delete subiendo[key];
+    const data = await leido, arch = rd(K_ARCH, {}); arch[key] = { name: f.name, type: f.type, data }; wr(K_ARCH, arch);   // si no hay cupo se descarga uno de demostración
+    const all = rd(K_DRAFT, {}); (all[d.id] = all[d.id] || {})[d.doc] = { file: f.name, size: f.size }; wr(K_DRAFT, all);
+    render();
+    const r = items().find(x => x.id === d.id), fal = r ? faltan(r, all[d.id] || {}) : [];
+    toast('Archivo listo para enviar', fal.length ? 'Faltan por cargar: ' + fal.join(', ') + '.' : 'Ya puedes enviar tus documentos a revisión.');
+  }, 160);
+});
+/* Descargar lo cargado: el archivo real si lo subió ahora; para los de ejemplo, un PDF de demostración */
+function pdfDemo(texto){
+  const t = texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\\()]/g, ' '), stream = 'BT /F1 14 Tf 60 780 Td (' + t + ') Tj ET';
+  const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>', '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+    '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
+  let out = '%PDF-1.4\n'; const offs = [];
+  objs.forEach((o, i) => { offs.push(out.length); out += (i + 1) + ' 0 obj\n' + o + '\nendobj\n'; });
+  const x = out.length;
+  out += 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n' + offs.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('') + 'trailer\n<< /Size ' + (objs.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + x + '\n%%EOF';
+  return new Blob([out], { type: 'application/pdf' });
+}
+function descargar(id, doc, nombre){
+  const a = document.createElement('a'), g = rd(K_ARCH, {})[id + '|' + doc];
+  if(g && g.data && g.name === nombre){ a.href = g.data; a.download = nombre; }
+  else { a.href = URL.createObjectURL(pdfDemo('Documento de demostracion: ' + doc + ' - ' + persona())); a.download = nombre.replace(/\.[^.]+$/, '') + '.pdf'; }
+  document.body.appendChild(a); a.click(); a.remove();
+  if(a.href.indexOf('blob:') === 0) setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+$('cards').addEventListener('click', e => { const b = e.target.closest('[data-dl]'); if(b) descargar(b.dataset.id, b.dataset.doc, b.dataset.file); });
+function quitar(id, doc){ abrirTarjeta(id); const all = rd(K_DRAFT, {}); if(all[id]){ delete all[id][doc]; if(!Object.keys(all[id]).length) delete all[id]; } wr(K_DRAFT, all); render(); }
+function enviar(id){
+  const all = rd(K_DRAFT, {}), dr = all[id] || {}, docs = Object.keys(dr).map(n => ({ name: n, file: dr[n].file }));
+  if(!docs.length) return;
+  const res = window.submitAthleteDocs(id, docs, { name: persona() });
+  delete all[id]; wr(K_DRAFT, all); abrirTarjeta(id);
+  render();
+  if(res.enRevision) toast('Postulación en revisión', 'Tu postulación pasó a «En revisión» y avisamos al Gestor del programa.');
+  else toast('Documentos enviados', docs.length === 1 ? 'Tu documento quedó registrado.' : 'Tus ' + docs.length + ' documentos quedaron registrados.');
+}
+function toast(t, m, err){
+  const v = err ? 'negative' : 'positive', el = document.createElement('div');
+  el.className = 'naowee-message naowee-message--' + v;
+  el.innerHTML = `<div class="naowee-message__header"><div class="naowee-message__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${err ? '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' : '<polyline points="20 6 9 17 4 12"/>'}</svg></div>
+    <div class="naowee-message__title">${esc(t)}</div>
+    <button type="button" class="naowee-message__dismiss" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+    <div class="naowee-message__content"><div class="naowee-message__text">${esc(m)}</div></div>`;
+  $('tw').appendChild(el);
+  const cerrar = () => { el.style.transition = 'opacity .2s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 220); };
+  el.querySelector('.naowee-message__dismiss').addEventListener('click', cerrar);
+  setTimeout(cerrar, 5000);
+}
+
+/* ── Acordeón: cada programa se abre y se cierra; por defecto quedan abiertos los que tienen algo por hacer ── */
+/* Abrir o cerrar todos los programas a la vez */
+function etiquetaTodas(){
+  const b = $('btnTodas'); if(!b) return;
+  const cs = [...document.querySelectorAll('.pcard')], todas = cs.length && cs.every(c => c.classList.contains('open'));
+  b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${todas ? '<polyline points="18 15 12 9 6 15"/>' : '<polyline points="6 9 12 15 18 9"/>'}</svg>${todas ? 'Colapsar todo' : 'Expandir todo'}`;
+}
+function alternarTodas(){
+  const cs = [...document.querySelectorAll('.pcard')], abrir = !cs.every(c => c.classList.contains('open')), a = rd(K_ACORDEON, {});
+  cs.forEach(c => { c.classList.toggle('open', abrir); c.querySelector('.pcard__head').setAttribute('aria-expanded', abrir); a[c.dataset.id] = abrir; });
+  wr(K_ACORDEON, a); etiquetaTodas();
+}
+function alternar(id){
+  const card = document.querySelector(`.pcard[data-id="${id}"]`); if(!card) return;
+  const open = !card.classList.contains('open');
+  card.classList.toggle('open', open);
+  card.querySelector('.pcard__head').setAttribute('aria-expanded', open);
+  const a = rd(K_ACORDEON, {}); a[id] = open; wr(K_ACORDEON, a);
+  etiquetaTodas();
+}
+
+/* ── «Ver como» (solo demo): pop-up flotante, movible y minimizable ── */
+function renderPop(me){
+  // un solo perfil por estado de documentos (sin repetidos); el que se está viendo siempre se queda
+  const todos = window.docReviews(), todas = personas(), est = {}, vistos = new Set(), quedan = new Set();
+  todas.forEach(n => { est[n] = estadoDocs(n, todos); });
+  quedan.add(me); vistos.add(est[me]);
+  todas.forEach(n => { if(!vistos.has(est[n])){ vistos.add(est[n]); quedan.add(n); } });
+  $('demoList').innerHTML = todas.filter(n => quedan.has(n)).map(n => `<button type="button" class="demo-opt${n === me ? ' on' : ''}" data-p="${esc(n)}"><i></i><span><b>${esc(n)}</b><small>${esc(est[n])}</small></span></button>`).join('');
+  if(window.__popAcomodar) window.__popAcomodar();
+}
+$('demoList').addEventListener('click', e => {
+  const b = e.target.closest('.demo-opt'); if(!b) return;
+  localStorage.setItem(K_PER, b.dataset.p); render();
+});
+(function popFlotante(){
+  const pop = $('demoPop'), bar = $('demoBar'), min = $('demoMin');
+  const clamp = (x, y) => [Math.min(Math.max(8, x), Math.max(8, innerWidth - pop.offsetWidth - 8)), Math.min(Math.max(8, y), Math.max(8, innerHeight - pop.offsetHeight - 8))];
+  const poner = (x, y) => { const [cx, cy] = clamp(x, y); pop.style.left = cx + 'px'; pop.style.top = cy + 'px'; return [cx, cy]; };
+  const g = rd(K_POP, null);
+  let porDefecto = !g || g.def;   // sin moverlo: abajo a la izquierda, fuera de las tarjetas (se recalcula cuando cambia su alto)
+  const guardar = () => wr(K_POP, { x: pop.offsetLeft, y: pop.offsetTop, min: pop.classList.contains('is-min'), def: porDefecto });
+  const acomodar = () => porDefecto ? poner(298, innerHeight - pop.offsetHeight - 24) : poner(pop.offsetLeft, pop.offsetTop);
+  window.__popAcomodar = acomodar;
+  if(g && g.min) pop.classList.add('is-min');
+  if(g && !g.def) poner(g.x, g.y); else acomodar();
+  const sync = () => min.setAttribute('aria-expanded', !pop.classList.contains('is-min'));
+  sync();
+  min.addEventListener('click', () => { pop.classList.toggle('is-min'); sync(); acomodar(); guardar(); });
+  let off = null;
+  bar.addEventListener('pointerdown', e => {
+    if(e.target.closest('button')) return;
+    off = [e.clientX - pop.offsetLeft, e.clientY - pop.offsetTop]; porDefecto = false; pop.classList.add('is-drag'); bar.setPointerCapture(e.pointerId);
+  });
+  bar.addEventListener('pointermove', e => { if(off) poner(e.clientX - off[0], e.clientY - off[1]); });
+  const fin = () => { if(off){ off = null; pop.classList.remove('is-drag'); guardar(); } };
+  bar.addEventListener('pointerup', fin); bar.addEventListener('pointercancel', fin);
+  addEventListener('resize', acomodar);
+})();
+
+/* el selector de perfiles aplica el rol y vuelve a pintar el chip con la persona elegida */
+window.onRoleApplied = function(){ render(); };
+setTimeout(render, 0);
+window.addEventListener('pageshow', e => { if(e.persisted) render(); });
+</script>
+</body>
+</html>

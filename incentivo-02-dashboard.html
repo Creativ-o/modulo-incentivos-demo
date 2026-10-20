@@ -9,7 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
-<link rel="stylesheet" href="shared/programa-wizard.css"/>
 
 <style>
   .page-header{
@@ -138,6 +137,7 @@
   /* Progress override — tamaño visual cómodo */
   .prg-mini__progress-wrap{display:flex;flex-direction:column;gap:4px;min-width:0}
 </style>
+<script src="shared/profile-switcher.js?v=role-28" defer blocking="render"></script>
 </head>
 <body>
 
@@ -502,10 +502,9 @@ document.addEventListener('click', (e) => { const sw = document.getElementById('
 function fadeAndGo(url){window.location.href=url}
 </script>
 
-<script src="shared/programs-data.js"></script>
-<script src="shared/programa-wizard.js" defer></script>
+<script src="shared/programs-data.js?v=21b"></script>
 
-<script src="shared/profile-switcher.js?v=role-17" defer></script>
+
 <script>
 /* KPIs del dashboard del Gestor de incentivos: agregados sobre todos los
    programas a los que tiene acceso (rol admin = todos). El rol programa
@@ -539,6 +538,25 @@ function fadeAndGo(url){window.location.href=url}
   if(revPctEl) revPctEl.textContent = `${revPct}%`;
 })();
 
+/* «Programas activos» en vivo (Gestor de incentivos): solo los programas activos hoy; un cierre o una reapertura se refleja al volver */
+(function hydrateActivePrograms(){
+  var role=''; try{ role=localStorage.getItem('naowee-incentivos-role')||''; }catch(e){}
+  if(role==='programa'||!window.PROGRAMS_DATA) return;
+  var list=document.querySelector('.layout > article'); if(!list||!list.querySelector('.panel-head')) return;
+  var act=window.PROGRAMS_DATA.filter(function(p){return p.status==='active';});
+  var sub=list.querySelector('.sub'); if(sub) sub.textContent=act.length+(act.length===1?' programa con asignaciones en curso':' programas con asignaciones en curso');
+  var g=document.querySelector('.greeting__sub strong'); if(g) g.textContent=act.length+(act.length===1?' programa activo':' programas activos');
+  var body=list.querySelector('.panel-head').nextElementSibling; if(!body) return;
+  body.innerHTML=act.length?act.map(function(p){
+    var pct=p.codes.total>0?Math.round(p.codes.asig/p.codes.total*100):0;
+    return '<div class="prg-mini__row" onclick="fadeAndGo(\'incentivo-05-programa-detalle.html?id='+p.id+'\')"><div><div class="prg-mini__name">'+p.name+'</div><div class="prg-mini__meta">'+(p.shortDesc||p.id)+'</div></div>'
+      +(window.estadoVisible(p)==='reactivated'?'<span class="naowee-badge naowee-badge--informative naowee-badge--quiet naowee-badge--small">Reactivado</span>':'<span class="naowee-badge naowee-badge--positive naowee-badge--quiet naowee-badge--small">Activo</span>')
+      +'<div class="prg-mini__progress-wrap"><div class="naowee-progress"><div class="naowee-progress__fill" style="width:'+pct+'%"></div></div><div class="prg-mini__exec-lbl">'+pct+'% · '+p.codes.asig+' / '+p.codes.total+'</div></div>'
+      +'<div class="prg-mini__inv">'+p.codes.avail+' códigos</div></div>';
+  }).join(''):'<div style="padding:24px;font-size:14px;color:#646587">No hay programas activos. Reabre uno desde su detalle o crea uno nuevo.</div>';
+})();
+window.addEventListener('pageshow',function(e){ if(e.persisted) location.reload(); });
+
 /* Vista del Gestor de programa: saludo, lista de SUS programas; se ocultan los paneles globales (actividad y geografía de toda la plataforma). */
 (function hydrateProgramaView(){
   var role=''; try{ role=localStorage.getItem('naowee-incentivos-role')||''; }catch(e){}
@@ -557,7 +575,7 @@ function fadeAndGo(url){window.location.href=url}
     var body=list.querySelector('.panel-head').nextElementSibling;
     body.innerHTML=ps.map(function(p){
       var pct=p.codes.total>0?Math.round(p.codes.asig/p.codes.total*100):0;
-      var st={active:['positive','Activo'],draft:['caution','Borrador'],closed:['neutral','Cerrado'],finished:['neutral','Finalizado']}[p.status]||['neutral',p.status];
+      var st={active:['positive','Activo'],reactivated:['informative','Reactivado'],draft:['caution','Borrador'],closed:['negative','Cerrado'],finished:['neutral','Finalizado']}[window.estadoVisible(p)]||['neutral',p.status];
       return '<div class="prg-mini__row" onclick="fadeAndGo(\'incentivo-05-programa-detalle.html?id='+p.id+'\')"><div><div class="prg-mini__name">'+p.name+'</div><div class="prg-mini__meta">'+p.id+(p.cat||p.category?' · '+(p.cat||p.category):'')+'</div></div>'
         +'<span class="naowee-badge naowee-badge--'+st[0]+' naowee-badge--quiet naowee-badge--small">'+st[1]+'</span>'
         +'<div class="prg-mini__progress-wrap"><div class="naowee-progress"><div class="naowee-progress__fill" style="width:'+pct+'%"></div></div><div class="prg-mini__exec-lbl">'+pct+'% · '+p.codes.asig+' / '+p.codes.total+'</div></div>'

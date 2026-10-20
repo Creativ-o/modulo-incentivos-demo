@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
 <link rel="stylesheet" href="shared/programa-wizard.css"/>
-<script src="shared/programs-data.js"></script>
+<script src="shared/programs-data.js?v=21b"></script>
 <script>
 /* Drena la cola de programas guardados (drafts y activations) que el wizard
    empuja a sessionStorage antes de navegar acá. Cada entrada se inserta al
@@ -55,6 +55,7 @@
   }
   .detail-head__body{min-width:0}
   .detail-head__id-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .detail-head__id-row .naowee-badge{align-items:center}
   .detail-head__id{
     font-family:'SF Mono',monospace;font-size:11px;
     color:var(--naowee-color-text-secondary,#646587);font-weight:600;
@@ -71,6 +72,11 @@
   .detail-head__meta strong{color:var(--naowee-color-text-primary,#282834);font-weight:600}
   .detail-head__actions{display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
   .detail-head__btns{display:flex;gap:8px}
+  .detail-head__sep{width:1px;height:28px;background:var(--naowee-color-border-default,#e7e9f3);margin:0 2px}
+  .detail-head__actions .btn-close,.detail-head__actions .btn-close svg{color:#b42318}
+  .detail-head__actions .btn-close:hover{background:#fdeceb}
+  .detail-head__actions .naowee-btn:disabled{opacity:.45;cursor:not-allowed}
+  .timeline-dot.red{background:#b42318;color:#fff}
 
   /* Mini KPI strip — bottom section del hero, sin borders individuales,
      dividers verticales sutiles entre KPIs (con inset vertical). */
@@ -228,6 +234,7 @@
     transition:opacity .18s,transform .18s;
   }
   .toolbar-dd-wrap.open .toolbar-dd-menu{opacity:1;transform:translateY(0);pointer-events:auto}
+  .toolbar-dd-menu--up{top:auto;bottom:calc(100% + 6px);transform:translateY(6px)}
   .toolbar-dd-item{
     display:flex;align-items:center;gap:10px;
     padding:9px 10px;border-radius:6px;
@@ -913,6 +920,18 @@
 .exc__sr{position:relative}
 .exc__sr input,.exc__b select,.exc__b textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;color:#282834;border:1px solid #d9dce8;border-radius:12px;padding:0 14px;background:#fff}
 .exc__sr input,.exc__b select{height:46px}
+.exc__b input[type=date]{width:100%;box-sizing:border-box;font:inherit;font-size:14px;color:#282834;border:1px solid #d9dce8;border-radius:12px;padding:0 14px;background:#fff;height:46px}
+.exc__b input[type=date]:focus{outline:2px solid #d74009;outline-offset:-1px;border-color:transparent}
+.exc__dates{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.exc__b[hidden],.exc__ft[hidden]{display:none}
+#clsF1,#clsF2{justify-content:space-between}
+#clsF1>button:first-child,#clsF2>button:first-child{padding-left:0;padding-right:0}   /* el texto de «Cancelar» queda alineado con el contenido */
+.cls-sum{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;background:#f4f5f9;border-radius:14px;padding:14px 16px;font-size:13.5px}
+.cls-sum span{color:#646587}.cls-sum b{text-align:right;color:#282834;font-weight:600}.cls-sum b.old{color:#b5b9d4}
+.cls-adj{width:100%;border-collapse:collapse;font-size:13px;border:1px solid #e7e9f3;border-radius:12px;overflow:hidden}
+.cls-adj th{font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:#646587;text-align:left;padding:9px 12px;background:#f4f5f9}
+.cls-adj td{padding:10px 12px;border-top:1px solid #e7e9f3;color:#282834;vertical-align:top}
+.cls-adj td:first-child{font-weight:600}.cls-adj td.old{color:#b5b9d4}.cls-adj td:not(:first-child){white-space:nowrap}
 .exc__b textarea{padding:12px 14px;min-height:72px;resize:vertical}
 .exc__sr input:focus,.exc__b select:focus,.exc__b textarea:focus{outline:2px solid #d74009;outline-offset:-1px;border-color:transparent}
 .exc__sg{position:absolute;left:0;right:0;top:50px;background:#fff;border:1px solid #e7e9f3;border-radius:12px;box-shadow:0 12px 30px rgba(40,40,52,.16);z-index:5;display:none;overflow:hidden}
@@ -948,6 +967,7 @@
 .ben-rm{border:0;background:transparent;color:#b42318;font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 8px;border-radius:8px}
 .ben-rm:hover{background:#fff0ee}
 </style>
+<script src="shared/profile-switcher.js?v=role-28" defer blocking="render"></script>
 </head>
 <body>
 
@@ -1060,13 +1080,14 @@
           <div class="detail-head__meta" id="hdMeta"></div>
         </div>
         <div class="detail-head__actions">
-          <button class="naowee-btn naowee-btn--mute naowee-btn--large" id="btnExc" onclick="openExcModal()" hidden>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
-            Habilitación excepcional
-          </button>
           <button class="naowee-btn naowee-btn--mute naowee-btn--large" data-edit-form onclick="editCurrentProgram()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>
             Editar
+          </button>
+          <span class="detail-head__sep" id="btnCloseSep" hidden></span>
+          <button class="naowee-btn naowee-btn--quiet naowee-btn--large btn-close" id="btnClose" onclick="openCloseModal()" hidden>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <span id="btnCloseTxt">Cerrar programa</span>
           </button>
         </div>
       </div>
@@ -1201,7 +1222,7 @@
                     <div class="toolbar-dd-item" role="option" aria-selected="true" data-val="all" onclick="setEstadoFilter('all','Estado: Todos')">Todos los estados</div>
                     <div class="toolbar-dd-item" role="option" data-val="disp" onclick="setEstadoFilter('disp','Disponibles')"><span class="dd-dot" style="background:#a0a3bd"></span>Disponibles</div>
                     <div class="toolbar-dd-item" role="option" data-val="asig" onclick="setEstadoFilter('asig','Asignados')"><span class="dd-dot" style="background:#1f8923"></span>Asignados</div>
-                    <div class="toolbar-dd-item" role="option" data-val="reasig" onclick="setEstadoFilter('reasig','Reasignados')"><span class="dd-dot" style="background:#7c3aed"></span>Reasignados</div>
+                    <div class="toolbar-dd-item" role="option" data-val="reasig" onclick="setEstadoFilter('reasig','Reasignados')"><span class="dd-dot" style="background:#1f78d1"></span>Reasignados</div>
                     <div class="toolbar-dd-item" role="option" data-val="rev" onclick="setEstadoFilter('rev','Revertidos')"><span class="dd-dot" style="background:#9e0015"></span>Revertidos</div>
                   </div>
                 </div>
@@ -1339,7 +1360,12 @@
 
           <div class="tab-pane" data-pane="historial" hidden>
             <div class="section">
-              <div class="section-label">Historial de cambios del programa</div>
+              <div class="section-label section-label--row"><span>Historial de cambios del programa</span>
+                <button type="button" class="naowee-btn naowee-btn--mute naowee-btn--small" onclick="downloadHistorial()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  Descargar reporte
+                </button>
+              </div>
               <div class="timeline" id="timeline"></div>
             </div>
           </div>
@@ -1380,11 +1406,11 @@ function toggleProfileDD(e){
 function switchRole(role){
   document.querySelectorAll('.profile-dd__item').forEach(it => it.classList.toggle('active', it.dataset.role === role));
   if(role === 'operador') fadeAndGo('incentivo-08-asignar-buscar.html');
-  document.getElementById('profileDD').classList.remove('open');
+  document.getElementById('profileDD')?.classList.remove('open');
 }
 document.addEventListener('click', (e) => {
   const sw = document.getElementById('profileSwitcher');
-  if(sw && !sw.contains(e.target)) document.getElementById('profileDD').classList.remove('open');
+  if(sw && !sw.contains(e.target)) document.getElementById('profileDD')?.classList.remove('open');
 });
 
 function fadeAndGo(url){window.location.href=url}
@@ -1392,9 +1418,10 @@ function fadeAndGo(url){window.location.href=url}
 /* ══ HYDRATE: llena la página según el ?id= del query string ══ */
 const STATUS_META = {
   active: { label: 'Activo', variant: 'positive' },
+  reactivated: { label: 'Reactivado', variant: 'informative' },
   draft:  { label: 'Borrador', variant: 'neutral' },
   paused: { label: 'Pausado', variant: 'caution' },
-  closed: { label: 'Cerrado', variant: 'informative' }
+  closed: { label: 'Cerrado', variant: 'negative' }
 };
 // Iconografía de categorías: ahora viene de shared/programs-data.js
 // (window.CAT_ICONS). Alias local para no tocar callsites.
@@ -1506,6 +1533,7 @@ function hydrateProgram(){
   CURRENT_PROGRAM = p;
   HAS_CODES = window.getProgramConfig(p).inc.some(i => i.codigos);
   const bx = document.getElementById('btnExc'); if(bx) bx.hidden = p.status !== 'active';
+  if(window.applyCloseState) window.applyCloseState();
   setTimeout(() => { try { renderBenef(); } catch(e){} }, 0);
 
   // Detail head
@@ -1519,7 +1547,7 @@ function hydrateProgram(){
   document.getElementById('hdId').textContent = p.id;
   document.getElementById('hdTitle').textContent = p.name;
 
-  const meta = STATUS_META[p.status] || STATUS_META.draft;
+  const meta = STATUS_META[window.estadoVisible(p)] || STATUS_META.draft;
   const badge = document.getElementById('hdBadge');
   badge.className = `naowee-badge naowee-badge--${meta.variant} naowee-badge--quiet naowee-badge--small`;
   badge.querySelector('#hdBadgeText').textContent = meta.label;
@@ -1749,7 +1777,7 @@ const reg = { mode: 'ind', pick: null, file: null, qtId: null };
 const benState = { q: '', origen: 'all', tipo: 'all', doc: 'all' };
 function setBenFilter(k, v, wrap, lbl){ benState[k] = v; const l = $(wrap + 'Label'); if(l) l.textContent = lbl; $(wrap + 'Wrap').classList.remove('open'); renderBenef(); }
 function clearBenFilters(){ Object.assign(benState, { q: '', origen: 'all', tipo: 'all', doc: 'all' }); $('benSearch').value = ''; renderBenef(); }
-const EST_BEN = { porcargar: 'Por cargar', pend: 'En revisión', apr: 'Aprobada', sub: 'Pendiente subsanación', exp: 'Expirada' };
+const EST_BEN = { porcargar: 'Por cargar', pend: 'En revisión', apr: 'Aprobada', sub: 'Pendiente de subsanación', exp: 'Expirada' };
 function usaManual(){ return CURRENT_PROGRAM && window.getProgramConfig(CURRENT_PROGRAM).seleccion.indexOf('manual') > -1; }
 function whoAmI(){ const c = document.querySelector('.user-chip .user-name'), r = document.querySelector('.user-chip .user-role'); return { name: c ? c.textContent.trim() : '', role: r ? r.textContent.trim() : '' }; }
 function regCupo(tipo){
@@ -1761,8 +1789,9 @@ function regCupo(tipo){
 function renderBenef(){
   const tab = $('tabBenBtn'); if(!tab || !CURRENT_PROGRAM) return;
   const p = CURRENT_PROGRAM, list = window.getExceptions(p.id), manual = usaManual();   // registrados a mano + habilitados por excepción
-  tab.style.display = (manual || list.length) ? '' : 'none';
-  if(!manual && !list.length){ const pn = document.querySelector('[data-pane="beneficiarios"]'); if(pn && !pn.hidden) switchTab('resumen', document.querySelector('[data-tab="resumen"]')); return; }
+  const activo = p.status === 'active';
+  tab.style.display = (manual || list.length || activo) ? '' : 'none';
+  if(!manual && !list.length && !activo){ const pn = document.querySelector('[data-pane="beneficiarios"]'); if(pn && !pn.hidden) switchTab('resumen', document.querySelector('[data-tab="resumen"]')); return; }
   const nota = document.querySelector('[data-pane="beneficiarios"] .cond-pob-note');
   if(nota) nota.innerHTML = manual ? 'Este programa usa <strong>registro manual</strong>: aquí se registra a las personas que podrán recibir el incentivo. También aparecen las <strong>habilitadas por excepción</strong>. Luego cargan sus documentos (si el programa los pide) y el Operador les entrega.' : 'Personas <strong>habilitadas por excepción</strong> en este programa. Cargan sus documentos (si el programa los pide) y el Operador les entrega.';
   const rv = {}; window.docReviews().forEach(r => { rv[r.id] = r; });
@@ -1777,14 +1806,16 @@ function renderBenef(){
   $('benToolbar').hidden = !list.length;
   const rows = list.filter(x => (benState.origen === 'all' || (benState.origen === 'manual') === (x.origen === 'manual')) && (benState.tipo === 'all' || String(x.tipo || 0) === benState.tipo) && (benState.doc === 'all' || docOf(x) === benState.doc) &&
     (!benState.q || (x.persona + ' ' + x.doc).toLowerCase().includes(benState.q)));
-  $('benActions').innerHTML = manual && (p.status === 'active' || p.status === 'draft') ? '<button class="naowee-btn naowee-btn--loud naowee-btn--small" onclick="openReg()">Registrar beneficiarios</button>' : '';
+  $('benActions').innerHTML = (manual && (activo || p.status === 'draft') ? '<button class="naowee-btn naowee-btn--mute naowee-btn--small" onclick="openReg()">Registrar beneficiarios</button>' : '') +
+    (activo ? '<button class="naowee-btn naowee-btn--loud naowee-btn--small" onclick="openExcModal()">Habilitación excepcional</button>' : '');
+  $('benActions').style.cssText = 'display:inline-flex;gap:8px';
   const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   $('benBody').innerHTML = list.length && !rows.length ? '<div class="ben-empty"><strong>Sin resultados</strong>Ningún beneficiario coincide con estos filtros. <a class="rv-link" style="color:#d74009;cursor:pointer;font-weight:600" onclick="clearBenFilters()">Limpiar filtros</a></div>' : rows.length ? `<table class="ben-table"><thead><tr><th>Beneficiario</th><th>Incentivo</th><th>Origen</th><th>Documentación</th><th>Registrado por</th><th></th></tr></thead><tbody>${rows.map(x => {
     const r = rv[p.id + '-X' + x.id], inc = p.incentives[x.tipo || 0];
     const doc = r ? (r.sinDocs ? 'No requiere' : (EST_BEN[r.estado] || r.estado)) : '—';
     const exc = x.origen !== 'manual', alc = exc ? (x.fechas && x.cond ? 'fechas y condicionales' : x.fechas ? 'fechas' : 'condicionales') : '';
     return `<tr><td><div class="ben-n">${esc(x.persona)}</div><div class="ben-s">${x.docTipo} ${x.doc}</div></td><td>${esc(inc ? inc.name : '—')}</td><td>${exc ? 'Habilitado por excepción<div class="ben-s">Exime ' + alc + '</div>' : 'Registro manual'}</td><td>${doc}</td><td><div>${esc(x.usuario)}</div><div class="ben-s">${x.fecha} · ${x.hora}</div></td><td><button class="ben-rm" onclick="askQt('${x.id}')">Retirar</button></td></tr>`;
-  }).join('')}</tbody></table>` : '<div class="ben-empty"><strong>Aún no hay beneficiarios registrados</strong>Registra a las personas que podrán recibir el incentivo, de una en una o con una plantilla.</div>';
+  }).join('')}</tbody></table>` : '<div class="ben-empty">' + (manual ? '<strong>Aún no hay beneficiarios registrados</strong>Registra a las personas que podrán recibir el incentivo, de una en una o con una plantilla.' : '<strong>Aún no hay personas habilitadas por excepción</strong>Usa «Habilitación excepcional» para permitir que una persona participe fuera de las reglas normales.') + '</div>';
 }
 function openReg(){
   const p = CURRENT_PROGRAM; if(!p) return;
@@ -1915,11 +1946,167 @@ function toggleExcList(id, btn, n){
   const el = document.getElementById(id), open = el.hidden;
   el.hidden = !open; btn.textContent = open ? 'Ver menos' : 'Ver más (' + n + ')';
 }
+/* ═══ Cerrar y reabrir el programa (Gestor de incentivos y Gestor de programa) ═══
+   Cerrado: el operador deja de asignar y no se revierte. No crea versión; queda en el Historial del programa. */
+const CLS_MOTIVOS = {
+  cierre: ['Cumplió su objetivo', 'Se agotó el rubro', 'Terminó la vigencia', 'Decisión administrativa', 'Otro'],
+  reapertura: ['Error en el cierre', 'Nuevo presupuesto', 'Ampliación de la vigencia', 'Decisión administrativa', 'Otro']
+};
+/* Al reabrir con nueva vigencia se reajustan TODAS las fechas que dependen de ella: las ventanas de cargue, revisión y asignación (fechas exactas, programas no recurrentes)
+   y el rango «desde / hasta» de cada incentivo recurrente. Se mueven los mismos días que se movió el inicio, conservan su duración y hora, y se limitan a la nueva vigencia.
+   En programas recurrentes los días del mes de las ventanas se repiten solos y no cambian. */
+function shiftFechas(cfg, d1, d2){
+  const isoRe = /^\d{4}-\d{2}-\d{2}/, fases = ['carga', 'revision', 'asignacion'], cr = cfg.crono, es = v => isoRe.test(v || '');
+  const all = [], usaCrono = !cfg.rec.on;
+  if(usaCrono) fases.forEach(k => ['ini', 'fin'].forEach(e => { if(es(cr[k][e])) all.push(cr[k][e].slice(0, 10)); }));
+  (cfg.inc || []).forEach(x => ['desde', 'hasta'].forEach(e => { if(x.rec && es(x.rec[e])) all.push(x.rec[e].slice(0, 10)); }));
+  if(!all.length) return { changed: false, partes: [] };
+  const day = t => Date.UTC(+t.slice(0, 4), +t.slice(5, 7) - 1, +t.slice(8, 10)) / 864e5, iso = n => new Date(n * 864e5).toISOString().slice(0, 10);
+  const base = es(cfg.desde) ? cfg.desde.slice(0, 10) : all.slice().sort()[0];
+  const delta = day(d1) - day(base), lo = day(d1), hi = d2 ? day(d2) : Infinity;   // sin fecha de fin: no hay tope
+  const mv = v => es(v) ? iso(Math.min(hi, Math.max(lo, day(v.slice(0, 10)) + delta))) + v.slice(10) : v;
+  const nc = JSON.parse(JSON.stringify(cr)), partes = [];
+  if(usaCrono){
+    fases.forEach(k => {
+      nc[k] = { ini: mv(cr[k].ini), fin: mv(cr[k].fin) };
+      if(nc[k].ini && nc[k].fin && nc[k].fin <= nc[k].ini){
+        nc[k].fin = iso(Number.isFinite(hi) ? hi : lo) + (cr[k].fin || '').slice(10);
+        if(nc[k].fin <= nc[k].ini) nc[k].ini = iso(lo) + (cr[k].ini || '').slice(10);
+      }
+    });
+    if(JSON.stringify(nc) !== JSON.stringify(cr)) partes.push('las ventanas de cargue, revisión y asignación');
+  }
+  const inc = (cfg.inc || []).map(x => {
+    if(!x.rec || !(es(x.rec.desde) || es(x.rec.hasta))) return null;
+    const r = Object.assign({}, x.rec, { desde: mv(x.rec.desde), hasta: mv(x.rec.hasta) });
+    return (r.desde !== x.rec.desde || r.hasta !== x.rec.hasta) ? r : null;
+  });
+  if(inc.some(Boolean)) partes.push('las fechas de ' + (inc.filter(Boolean).length === 1 ? 'un incentivo recurrente' : 'los incentivos recurrentes'));
+  return { changed: partes.length > 0, crono: nc, inc: inc, partes: partes };
+}
+let clsMode = 'cierre';
+const fmtVig = iso => { const q = iso.split('-'); return q[2] + ' ' + ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+q[1] - 1] + ' ' + q[0]; };
+window.applyCloseState = function(){
+  const p = CURRENT_PROGRAM, b = $('btnClose'), sep = $('btnCloseSep'); if(!b) return;
+  const show = !!p && (p.status === 'active' || p.status === 'closed');
+  b.hidden = !show; sep.hidden = !show; if(!show) return;
+  const closed = p.status === 'closed';
+  $('btnCloseTxt').textContent = closed ? 'Reabrir programa' : 'Cerrar programa';
+  b.classList.toggle('naowee-btn--quiet', !closed); b.classList.toggle('btn-close', !closed); b.classList.toggle('naowee-btn--loud', closed);
+  document.querySelectorAll('[data-edit-form]').forEach(el => { if(el.tagName === 'BUTTON'){ el.disabled = closed; el.title = closed ? 'Reabre el programa para editarlo' : ''; } });
+};
+function openCloseModal(){
+  const p = CURRENT_PROGRAM; if(!p) return;
+  clsMode = p.status === 'closed' ? 'reapertura' : 'cierre';
+  const cierre = clsMode === 'cierre';
+  $('clsT').textContent = cierre ? 'Cerrar programa' : 'Reabrir programa';
+  $('clsSub').textContent = p.name + ' · ' + p.id;
+  $('clsInfo').innerHTML = cierre
+    ? '<strong>Al cerrar:</strong> el operador deja de poder asignar incentivos de este programa, no se podrán hacer reversiones y los códigos sin usar quedan sin uso. Las asignaciones ya hechas se conservan. Queda en el historial con tu nombre, rol, fecha y hora.'
+    : '<strong>Al reabrir:</strong> el programa vuelve a Activo. Las personas que no alcanzaron a recibir su incentivo quedan habilitadas otra vez, se pueden registrar nuevos beneficiarios y el operador puede asignar de nuevo.' + (window.vigenciaVencida(p) ? ' <strong>La vigencia ya terminó:</strong> puedes definir nuevas fechas (opcional).' : '') + ' Queda en el historial con tu nombre, rol, fecha y hora.';
+  const venc = !cierre && window.vigenciaVencida(p), cfg0 = window.getProgramConfig(p);
+  $('clsDatesBox').hidden = !venc;
+  if(venc){ $('clsD1').value = ''; $('clsD2').value = ''; $('clsD1').min = ''; }
+  $('clsM').innerHTML = '<option value="">Selecciona un motivo</option>' + CLS_MOTIVOS[clsMode].map(m => '<option>' + m + '</option>').join('');
+  $('clsJ').value = ''; $('clsErr').classList.remove('show');
+  const go = $('clsGo'); go.textContent = cierre ? 'Cerrar programa' : 'Reabrir programa';
+  go.style.background = cierre ? '#b42318' : ''; go.style.borderColor = cierre ? '#b42318' : '';
+  clsStep(1);
+  $('clsOv').classList.add('open'); setTimeout(() => $('clsM').focus(), 80);
+}
+function closeCloseModal(){ $('clsOv').classList.remove('open'); }
+function clsStep(n){
+  $('clsB1').hidden = n !== 1; $('clsF1').hidden = n !== 1; $('clsB2').hidden = n !== 2; $('clsF2').hidden = n !== 2;
+  $('clsOv').querySelector('.exc').style.width = n === 2 ? '720px' : '560px';
+  if(CURRENT_PROGRAM) $('clsT').textContent = n === 2 ? 'Confirmar reapertura' : (clsMode === 'cierre' ? 'Cerrar programa' : 'Reabrir programa');
+}
+/* ¿El programa tiene fechas propias que mostrar o reajustar? (ventanas de cargue/revisión/asignación, aunque sean días del mes, o rangos de incentivos recurrentes) */
+function clsFasesConValor(cfg){ return ['carga', 'revision', 'asignacion'].filter(k => cfg.crono[k] && (cfg.crono[k].ini || cfg.crono[k].fin)); }
+function clsTieneFechas(cfg, a){ return a.changed || clsFasesConValor(cfg).length > 0 || cfg.inc.some(x => x.rec && x.rec.on && (x.rec.desde || x.rec.hasta)); }
+function clsValores(){
+  const p = CURRENT_PROGRAM, hoy = new Date().toISOString().slice(0, 10), i1 = $('clsD1').value, i2 = $('clsD2').value;
+  // fechas opcionales: sin inicio arranca hoy; sin fin no hay cierre
+  return { p, m: $('clsM').value, j: $('clsJ').value.trim(), d1: i1 || hoy, d2: i2, dadas: !!(i1 || i2), i1, i2,
+    venc: clsMode === 'reapertura' && window.vigenciaVencida(p), hoy };
+}
+function saveClose(){
+  const { p, m, j, d1, d2, i1, i2, venc, hoy } = clsValores(), err = $('clsErr');
+  if(!p) return;
+  if(!m || !j){ err.textContent = 'El motivo y el detalle son obligatorios.'; err.classList.add('show'); return; }
+  if(venc){
+    if(i1 && i2 && i2 < i1){ err.textContent = 'La fecha de fin no puede ser anterior a la de inicio.'; err.classList.add('show'); return; }
+    if(i2 && i2 < hoy){ err.textContent = 'La fecha de fin debe ser hoy o posterior; si no, el programa se volvería a cerrar.'; err.classList.add('show'); return; }
+    err.classList.remove('show');
+    // la confirmación aparece si el programa tiene fechas propias (ventanas o rangos de incentivos); sin fechas, reabre directo
+    const cfgP = window.getProgramConfig(p);
+    if(clsTieneFechas(cfgP, shiftFechas(cfgP, d1, d2))){ showClsConfirm(); return; }
+  }
+  applyClose(false);
+}
+/* Vista de confirmación: qué cambia al reabrir y qué fechas se reajustan solas, con la opción de ir a editar */
+function showClsConfirm(){
+  const { p, m, d1, d2, dadas } = clsValores(), cfg = window.getProgramConfig(p), a = shiftFechas(cfg, d1, d2);
+  const esIsa = (localStorage.getItem('naowee-incentivos-role') || 'admin') === 'programa';
+  const dondeEd = esIsa ? '«Ciclo y documentos»' : '«Editar programa»';
+  const f = v => v ? fmtVig(v.slice(0, 10)) : '—', rng = (i, o) => f(i) + ' → ' + (o ? f(o) : 'sin fecha de fin'), esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const rows = [];
+  if(a.changed && a.crono) [['carga', 'Ventana de cargue'], ['revision', 'Ventana de revisión'], ['asignacion', 'Ventana de asignación']].forEach(([k, lbl]) => {
+    const o = cfg.crono[k], n = a.crono[k]; if(o.ini !== n.ini || o.fin !== n.fin) rows.push([lbl, rng(o.ini, o.fin), rng(n.ini, n.fin)]);
+  });
+  if(a.changed && a.inc) a.inc.forEach((n, i) => { if(n){ const o = cfg.inc[i].rec; rows.push([esc((p.incentives[i] || {}).name || 'Incentivo ' + (i + 1)) + '<br><span style="font-weight:400;color:#646587">Recurrente</span>', rng(o.desde, o.hasta), rng(n.desde, n.hasta)]); } });
+  // ventanas con fechas que no se mueven (programa recurrente: se repiten cada mes): se muestran como «Sin cambios»
+  const dia = v => /^\d{4}-/.test(v || '') ? f(v) : (v ? 'día ' + v : '—'), ventana = o => dia(o.ini) + ' → ' + dia(o.fin), movidas = rows.length;
+  if(cfg.rec.on || !a.changed) [['carga', 'Ventana de cargue'], ['revision', 'Ventana de revisión'], ['asignacion', 'Ventana de asignación']].forEach(([k, lbl]) => {
+    const o = cfg.crono[k]; if(o && (o.ini || o.fin)) rows.push([lbl, (cfg.rec.on ? 'Cada mes · ' : '') + ventana(o), cfg.rec.on ? 'Sin cambios: se repite cada mes' : 'Sin cambios']);
+  });
+  $('clsB2').innerHTML =
+    '<div class="exc__info"><strong>Revisa antes de reabrir.</strong> El programa vuelve a Activo con la nueva vigencia' + (movidas ? ' y se reajustan automáticamente las fechas que dependen de ella.' : '.') + '</div>' +
+    '<div class="cls-sum"><span>Programa</span><b>' + esc(p.name) + '</b><span>Vigencia anterior</span><b class="old">' + esc(p.from) + ' → ' + esc(p.to) + '</b><span>Nueva vigencia</span><b>' + fmtVig(d1) + ' → ' + (d2 ? fmtVig(d2) : 'sin fecha de cierre') + '</b>' + (cfg.rec.on ? '<span>Primer ciclo</span><b>' + fmtVig(d1) + '</b>' : '') + '<span>Motivo</span><b>' + esc(m) + '</b></div>' +
+    (rows.length
+      ? '<div><span class="exc__l">' + (movidas ? 'Fechas que se ajustan automáticamente' : 'Fechas del programa') + '</span><table class="cls-adj"><thead><tr><th>Qué</th><th>Antes</th><th>Después</th></tr></thead><tbody>' + rows.map(r => '<tr><td>' + r[0] + '</td><td class="old">' + r[1] + '</td><td>' + r[2] + '</td></tr>').join('') + '</tbody></table></div>'
+      : '<div class="exc__l" style="font-weight:400;margin:0">Este programa no tiene otras fechas para reajustar.</div>') +
+    (dadas ? '' : '<div class="exc__l" style="font-weight:400;margin:0">Como no definiste fechas, el programa inicia hoy y no tiene fecha de cierre' + (movidas ? '; las fechas ya definidas se reajustan desde hoy.' : '.') + '</div>') +
+    '<div class="exc__l" style="font-weight:400;margin:0">Si quieres otras fechas, puedes cambiarlas desde ' + dondeEd + '.</div>';
+  clsStep(2);
+}
+function applyClose(goEdit){
+  const { p, m, j, d1, d2, venc } = clsValores();
+  if(!p) return;
+  const n = new Date(), M = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], pad = x => String(x).padStart(2, '0');
+  const chip = document.querySelector('.user-chip .user-name'), rl = document.querySelector('.user-chip .user-role');
+  p.closures = (p.closures || []).concat({ tipo: clsMode, motivoLabel: m, just: j, autor: chip ? chip.textContent.trim() : '', rol: rl ? rl.textContent.trim() : '',
+    fecha: n.getDate() + ' ' + M[n.getMonth()] + ' ' + n.getFullYear(), hora: pad(n.getHours()) + ':' + pad(n.getMinutes()),
+    ...(venc ? { fechas: fmtVig(d1) + ' → ' + (d2 ? fmtVig(d2) : 'sin fecha de cierre') } : {}) });
+  let ajuste = { changed: false };
+  if(venc){
+    const cfg = window.getProgramConfig(p); ajuste = shiftFechas(cfg, d1, d2);
+    p.config = Object.assign({}, cfg, { desde: d1, hasta: d2 }, ajuste.changed ? { crono: ajuste.crono, inc: cfg.inc.map((x, i) => ajuste.inc[i] ? Object.assign({}, x, { rec: ajuste.inc[i] }) : x) } : {});
+    p.from = fmtVig(d1); p.to = d2 ? fmtVig(d2) : 'Sin fecha de fin';
+    if(ajuste.changed && ajuste.crono && (cfg.crono.carga.ini !== ajuste.crono.carga.ini || cfg.crono.carga.fin !== ajuste.crono.carga.fin)){
+      const aud = cronoAudit(), g = String(parseInt(cfg.crono.gracia, 10) || '');
+      (aud[p.id] = aud[p.id] || []).unshift({ usuario: chip ? chip.textContent.trim() : '', rol: rl ? rl.textContent.trim() : '',
+        fecha: n.getDate() + ' ' + M[n.getMonth()] + ' ' + n.getFullYear(), hora: pad(n.getHours()) + ':' + pad(n.getMinutes()), rec: false,
+        antes: { ini: cfg.crono.carga.ini, fin: cfg.crono.carga.fin, gracia: g }, despues: { ini: ajuste.crono.carga.ini, fin: ajuste.crono.carga.fin, gracia: g } });
+      try { localStorage.setItem(K_CRONO_AUD, JSON.stringify(aud)); } catch(_) {}
+    }
+  }
+  p.status = clsMode === 'cierre' ? 'closed' : 'active';
+  if(window.persistProgramEdit) window.persistProgramEdit(p.id, p);
+  closeCloseModal();
+  const esIsa = (localStorage.getItem('naowee-incentivos-role') || 'admin') === 'programa';
+  if(goEdit && !esIsa){ window.location.href = 'incentivo-04-programa-crear.html?edit=1&id=' + encodeURIComponent(p.id); return; }
+  hydrateProgram(); renderHistorial();
+  if(goEdit && esIsa) switchTab('ciclo', document.querySelector('[data-tab="ciclo"]'));
+  showRvToast(clsMode === 'cierre'
+    ? { variant: 'positive', title: 'Programa cerrado', text: p.name + ' ya no admite asignaciones ni reversiones. Puedes reabrirlo cuando lo necesites.' }
+    : { variant: 'positive', title: 'Programa reabierto', text: p.name + ' vuelve a estar activo para los operadores.' + (ajuste.changed ? ' Las fechas se ajustaron automáticamente a la nueva vigencia.' : '') + (venc && !d2 ? ' No tiene fecha de cierre.' : '') });
+}
 /* Qué ve cada rol: el Gestor de programa no edita el formulario global */
 function applyRoleEdit(){
   const bx = $('btnExc'); if(bx) bx.hidden = !(CURRENT_PROGRAM && CURRENT_PROGRAM.status === 'active');
   const prog = (localStorage.getItem('naowee-incentivos-role') || 'admin') === 'programa';
   document.querySelectorAll('[data-edit-form]').forEach(el => { el.style.display = prog ? 'none' : ''; });
+  if(window.applyCloseState) window.applyCloseState();
   if(CURRENT_PROGRAM) renderCiclo(CURRENT_PROGRAM);
 }
 const prevRoleHook = window.onRoleApplied;
@@ -1960,6 +2147,21 @@ function showActivatedToastIfNeeded(){
 /* Historial dinámico — refleja sólo los eventos reales del programa.
    Para programas creados por el usuario: sólo "Programa creado/activado".
    Para programas demo seeded: timeline rico simulado. */
+/* Reporte del historial: CSV (UTF-8 con BOM para que Excel respete los acentos), con los mismos eventos de la línea de tiempo */
+function downloadHistorial(){
+  const p = CURRENT_PROGRAM, items = window.__histItems || [];
+  if(!p) return;
+  const txt = h => { const d = new DOMParser().parseFromString(String(h || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/li>/gi, '\n').replace(/<li>/gi, '• '), 'text/html'); return d.body.textContent.replace(/\n{2,}/g, '\n').replace(/Ver más \(\d+\)|Ver menos/g, '').trim(); };
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const rows = [['Programa', 'ID programa', 'Evento', 'Detalle', 'Responsable', 'Fecha y hora']].concat(items.map(it => {
+    const parts = String(it.date || '').split(' · '), quien = parts.shift() || '';
+    return [p.name, p.id, txt(it.title), txt(it.desc), quien, parts.join(' · ')];
+  }));
+  const csv = '\ufeff' + rows.map(r => r.map(q).join(';')).join('\r\n');
+  const a = document.createElement('a'), url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.href = url; a.download = 'historial-' + p.id + '.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showRvToast({ variant: 'positive', title: 'Reporte descargado', text: 'historial-' + p.id + '.csv con ' + items.length + ' eventos del programa.' });
+}
 function renderHistorial(){
   const tl = document.getElementById('timeline');
   if(!tl || !CURRENT_PROGRAM) return;
@@ -2032,6 +2234,22 @@ function renderHistorial(){
     if(a.antes.gracia !== a.despues.gracia) ch.push(`Plazo de gracia: ${a.antes.gracia || 'sin definir'} → ${a.despues.gracia} días hábiles`);
     items.unshift({ dot:'blue', ico: ICONS.edit, title:'Cronograma de cargue modificado', desc: ch.join(' · '), date:`${a.usuario}${a.rol ? ' (' + a.rol + ')' : ''} · ${a.fecha} ${a.hora}` });
   });
+  // Reversiones de asignaciones de este programa (con o sin código), desde Historial de asignaciones y desde Códigos
+  let revs = []; try { revs = JSON.parse(localStorage.getItem('naowee-reversiones') || '[]').filter(e => e.programaId === p.id); } catch(_) {}
+  const escR = t => String(t == null ? '' : t).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  revs.forEach(e => {
+    const quien = e.beneficiario || e.beneficiarioPrevio || '';
+    const det = [quien && `<strong>Beneficiario:</strong> ${escR(quien)}`, e.incentivo && `<strong>Incentivo:</strong> ${escR(e.incentivo)}`, e.code && `<strong>Código:</strong> ${escR(e.code)}`,
+      e.valor ? `<strong>Valor reintegrado:</strong> $${Number(e.valor).toLocaleString('es-CO')}` : '', `<strong>Motivo:</strong> ${escR(e.motivoLabel || e.motivo || '—')}`, e.justificacion && `<strong>Detalle:</strong> ${escR(e.justificacion)}`].filter(Boolean).join('<br>');
+    items.unshift({ dot:'orange', ico: ICONS.edit, title: 'Asignación revertida', desc: det,
+      date: `${e.autor || ''}${e.rol ? ' (' + e.rol + ')' : ''} · ${e.fecha || ''}${e.hora ? ' ' + e.hora : ''}` });
+  });
+  // Cierres y reaperturas del programa (lo más reciente arriba)
+  (p.closures || []).forEach(c => items.unshift({ dot: c.tipo === 'cierre' ? 'red' : 'green', ico: c.tipo === 'cierre' ? ICONS.edit : ICONS.check,
+    title: c.tipo === 'cierre' ? (c.auto ? 'Programa cerrado automáticamente' : 'Programa cerrado') : 'Programa reabierto',
+    desc: `<strong>Motivo:</strong> ${String(c.motivoLabel).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]))}<br><strong>Detalle:</strong> ${String(c.just).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]))}${c.fechas ? '<br><strong>Nueva vigencia:</strong> ' + c.fechas : ''}`,
+    date: `${c.autor}${c.rol ? ' (' + c.rol + ')' : ''} · ${c.fecha} ${c.hora}` }));
+  window.__histItems = items;
   tl.innerHTML = items.map(it => `
     <div class="timeline-item">
       <div class="timeline-dot ${it.dot}">${it.ico}</div>
@@ -2055,6 +2273,8 @@ function toggleDD(wrapId){
   if(!wasOpen){
     wrap.classList.add('open');
     wrap.querySelector('.toolbar-dd').classList.add('open');
+    const menu = wrap.querySelector('.toolbar-dd-menu'), card = wrap.closest('.detail-card');
+    if(menu && card){ menu.classList.remove('toolbar-dd-menu--up'); if(menu.getBoundingClientRect().bottom > card.getBoundingClientRect().bottom - 8) menu.classList.add('toolbar-dd-menu--up'); }
   }
 }
 document.addEventListener('click', e => {
@@ -2191,7 +2411,7 @@ function renderCodigos(){
   const badges = {
     disp:   '<span class="naowee-badge naowee-badge--neutral naowee-badge--quiet naowee-badge--small">Disponible</span>',
     asig:   '<span class="naowee-badge naowee-badge--positive naowee-badge--quiet naowee-badge--small">Asignado</span>',
-    reasig: '<span class="naowee-badge naowee-badge--informative naowee-badge--quiet naowee-badge--small" style="background:#f3e8ff;color:#7c3aed">Reasignado</span>',
+    reasig: '<span class="naowee-badge naowee-badge--informative naowee-badge--quiet naowee-badge--small">Reasignado</span>',
     rev:    '<span class="naowee-badge naowee-badge--negative naowee-badge--quiet naowee-badge--small">Revertido</span>'
   };
 
@@ -2625,6 +2845,33 @@ document.addEventListener('keydown', e => {
   </div>
 </div>
 
+<!-- Modal: cerrar / reabrir programa -->
+<div class="exc-ov" id="clsOv" onclick="if(event.target===this)closeCloseModal()">
+  <div class="exc" role="dialog" aria-modal="true" aria-labelledby="clsT" style="width:560px">
+    <div class="exc__h"><div><h3 id="clsT">Cerrar programa</h3><p id="clsSub">—</p></div><button class="exc__x" onclick="closeCloseModal()" aria-label="Cerrar">×</button></div>
+    <div class="exc__b" id="clsB1">
+      <div class="exc__info" id="clsInfo">—</div>
+      <div id="clsDatesBox" hidden>
+        <span class="exc__l">Nueva vigencia <span style="font-weight:400;color:#646587">(opcional)</span></span>
+        <div class="exc__dates">
+          <div><label class="exc__l" for="clsD1" style="font-weight:500">Desde</label><input type="date" id="clsD1"/></div>
+          <div><label class="exc__l" for="clsD2" style="font-weight:500">Hasta</label><input type="date" id="clsD2"/></div>
+        </div>
+        <div class="exc__l" style="font-weight:400;color:#646587;margin:8px 0 0">Si no pones fechas, el programa inicia hoy y no tiene fecha de cierre. Las fechas ya definidas en el programa se reajustan desde hoy.</div>
+      </div>
+      <div><label class="exc__l" for="clsM">Motivo <b>*</b></label><select id="clsM"></select></div>
+      <div><label class="exc__l" for="clsJ">Detalle <b>*</b></label><textarea id="clsJ" placeholder="Explica por qué se hace este cambio"></textarea></div>
+      <div class="exc__err" id="clsErr"></div>
+    </div>
+    <div class="exc__ft" id="clsF1"><button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="closeCloseModal()">Cancelar</button><button class="naowee-btn naowee-btn--loud naowee-btn--large" id="clsGo" onclick="saveClose()">Cerrar programa</button></div>
+    <div class="exc__b" id="clsB2" hidden></div>
+    <div class="exc__ft" id="clsF2" hidden>
+      <button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="closeCloseModal()">Cancelar</button>
+      <button class="naowee-btn naowee-btn--loud naowee-btn--large" onclick="applyClose(false)">Confirmar reapertura</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: revertir código (el mismo de la pantalla Códigos) -->
 <div class="exc-ov" id="excOv" onclick="if(event.target===this)closeExcModal()">
   <div class="exc" role="dialog" aria-modal="true" aria-labelledby="excT">
@@ -3030,7 +3277,7 @@ function doRevert(){
 }
 function showRvToast(opts){
   if(typeof opts === 'string') opts = { text: opts, variant: 'positive' };
-  const { variant = 'positive', title, text, cta } = opts;
+  const { variant = 'positive', title, text, cta, sticky } = opts;
   const wrap = document.getElementById('rvToastWrap');
   if(!wrap) return;
   const el = document.createElement('div');
@@ -3041,7 +3288,7 @@ function showRvToast(opts){
   const titleHTML = title ? `<div class="naowee-message__title">${title}</div>` : '';
   const textHTML  = text  ? `<div class="naowee-message__text">${text}</div>`  : '';
   const ctaHTML   = cta
-    ? `<button type="button" class="naowee-message__action" data-cta-url="${cta.url}">${cta.label}</button>`
+    ? `<button type="button" class="naowee-message__action" data-cta-url="${cta.url || ''}">${cta.label}</button>`
     : '';
   // Si hay title + text/cta, el body va dentro de __content (col layout DS)
   const bodyHTML = (title && (text || cta))
@@ -3064,11 +3311,12 @@ function showRvToast(opts){
   const ctaBtn = el.querySelector('.naowee-message__action');
   if(ctaBtn){
     ctaBtn.addEventListener('click', () => {
+      if(cta.fn){ cta.fn(); dismiss(); return; }
       const url = ctaBtn.dataset.ctaUrl;
       if(url) window.location.href = url;
     });
   }
-  setTimeout(dismiss, cta ? 7000 : 5000);
+  if(!sticky) setTimeout(dismiss, cta ? 7000 : 5000);
 }
 
 function closeCargarCodigos(){
@@ -3207,9 +3455,8 @@ function clearSearch(inputId){
 }
 </script>
 
-<script src="shared/programa-wizard.js" defer></script>
 
-<script src="shared/profile-switcher.js?v=role-17" defer></script>
+
 
 <script src="shared/footer-scroll.js" defer></script>
 

@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
-<script src="shared/programs-data.js"></script>
+<script src="shared/programs-data.js?v=21b"></script>
 <script src="shared/revert-modal.js" defer></script>
 
 <style>
@@ -220,6 +220,7 @@
   .rvt-btn{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:#d74009;font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 8px;border-radius:8px;white-space:nowrap}
   .rvt-btn:hover{background:#fde9cf}
 </style>
+<script src="shared/profile-switcher.js?v=role-28" defer blocking="render"></script>
 </head>
 <body>
 
@@ -667,7 +668,8 @@ function render(){
 function canRevert(a){
   const role = localStorage.getItem('naowee-incentivos-role') || 'admin';
   if(a.estado !== 'asig' || !a.prg || a.prg.status !== 'active') return false;
-  if(role === 'admin' || role === 'gestor') return true;   // globales: cualquiera · gestor de programa: solo consulta, no revierte
+  if(role === 'admin') return true;   // Danna: cualquiera
+  if(role === 'programa') return window.scopedPrograms().some(p => p.id === a.prg.id);   // Isa: las de sus programas
   if(role === 'operador') return a.op === CURRENT_OPERATOR;                  // operador: solo sus entregas
   return false;
 }
@@ -725,7 +727,7 @@ function openBenef(cc){
 }
 function fadeAndGo(url){window.location.href=url}
 </script>
-<script src="shared/profile-switcher.js?v=role-17" defer></script>
+
 
 <script src="shared/footer-scroll.js" defer></script>
 

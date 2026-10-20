@@ -377,10 +377,10 @@ a{color:inherit;text-decoration:none}
    iconos activos rápidamente. El active-bar sigue slidando encima por más
    tiempo y queda como el foco visual principal. */
 ::view-transition-old(shell-sidebar){
-  animation: 120ms ease-out both shell-fade-out;
+  animation: 180ms ease-out both shell-fade-out;
 }
 ::view-transition-new(shell-sidebar){
-  animation: 120ms ease-out both shell-fade-in;
+  animation: 180ms ease-out both shell-fade-in;
 }
 
 /* Barra naranja del menú: SOLO slide (sin fade in/out del old/new).

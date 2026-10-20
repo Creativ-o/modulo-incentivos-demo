@@ -15,16 +15,17 @@
   const ROLES = {
     admin:    { name:'Danna Arrieta',    label:'Gestor de incentivos', initials:'DA', bg:'#c4b5fd', fg:'#4c1d95', meta:'Parametriza y audita' },
     operador: { name:'Jorge Guzman',     label:'Operador',             initials:'JG', bg:'#ffdfb5', fg:'#92400e', meta:'Asigna incentivos en campo' },
-    gestor:   { name:'Danna Arrieta',    label:'Gestor',               initials:'DA', bg:'#ffdfb5', fg:'#92400e', meta:'Asigna y revierte incentivos' },
     // Gestor de programa: sólo ve el(los) programa(s) que tiene asignado(s).
     // Persona ficticia distinta de Danna para diferenciar visualmente la vista.
     programa: { name:'Isa Pabon',        label:'Gestor de programa',   initials:'IP', bg:'#bfdbfe', fg:'#1e3a8a', meta:'Gestiona su programa asignado',
-                assignedPrograms: ['PRG-2026-003'] }
+                assignedPrograms: ['PRG-2026-003'] },
+    // Deportista: carga sus documentos. La persona concreta la elige la pantalla «Mis documentos» («Ver como»).
+    deportista: { name:'Esteban Mora',   label:'Deportista',           initials:'EM', bg:'#bbf7d0', fg:'#14532d', meta:'Carga sus documentos' }
   };
 
   // Qué roles muestra el dropdown por default cuando se auto-inyecta.
   // Incluye programa para que el switcher permita probar la vista filtrada.
-  const DEFAULT_ROLES_IN_DD = ['admin', 'programa', 'operador'];
+  const DEFAULT_ROLES_IN_DD = ['admin', 'programa', 'operador', 'deportista'];
 
   function currentRole(){
     return localStorage.getItem(STORAGE_KEY) || 'admin';
@@ -69,7 +70,7 @@
     // y Revisión documental. Se resuelve aquí y no por data-role, porque no todas
     // las páginas traen el atributo. Reportería y creación quedan fuera.
     if(role === 'programa'){
-      const NAV_PROGRAMA = ['Dashboard','Programas','Mis programas','Códigos','Historial de asignaciones','Revisión documental'];
+      const NAV_PROGRAMA = ['Dashboard','Programas','Mis programas','Códigos','Historial de asignaciones','Revisión documental','Asignar incentivos'];
       document.querySelectorAll('.sidebar-nav .nav-row').forEach(row => {
         const lbl = row.querySelector('.lbl');
         const txt = lbl ? lbl.textContent.trim() : '';
@@ -81,13 +82,22 @@
         return;
       }
     }
+    // Danna e Isa dentro del flujo de asignación (08-11): estas pantallas traen el menú del operador; se reemplaza por el de gestión
+    if(role !== 'operador' && /incentivo-(08|09|10|11)/.test(location.pathname)) buildGestionNav(role);
+    if(role === 'operador' || !/incentivo-(08|09|10|11)/.test(location.pathname)) document.documentElement.removeAttribute('data-gest-pending');
+    // Deportista: solo vive en «Mis documentos»; cualquier otro perfil que abra esa pantalla vuelve a su inicio
+    if(role === 'deportista' && !/incentivo-17/.test(location.pathname)){ location.replace(DEPORTISTA_HOME); return; }
+    if(role !== 'deportista' && /incentivo-17/.test(location.pathname)){ location.replace(role === 'operador' ? OPERATOR_HOME : role === 'programa' ? PROGRAMA_HOME : ADMIN_HOME); return; }
     // Operador: solo vive en el flujo de asignación; las pantallas de gestión lo devuelven a su inicio
     if(role === 'operador' && /incentivo-(02|03|04|05|06|07|12|13|15|16)/.test(location.pathname)){
       location.replace(OPERATOR_HOME);
       return;
     }
     // Revisión documental: la ve el Gestor de programa (titular) y los roles con alcance global (apoyo).
-    if((role === 'programa' || role === 'admin' || role === 'gestor') && !document.querySelector('.sidebar-nav .nav-row[data-nav="revision"]')) injectRevisionNav();
+    if((role === 'programa' || role === 'admin') && !document.querySelector('.sidebar-nav .nav-row[data-nav="revision"]')) injectRevisionNav();
+    // Danna e Isa también asignan (Isa solo sobre sus programas: la búsqueda ya sale filtrada por scopedPrograms)
+    if((role === 'programa' || role === 'admin') && !/incentivo-(08|09|10|11)/.test(location.pathname) && !document.querySelector('.sidebar-nav .nav-row[data-nav="asignar"]')) injectAsignarNav();
+    ensureBell(role);
     // Hook opcional por página: si la página define onRoleApplied(role),
     // se llama después del filtrado base. Permite a cada vista reaccionar
     // (ej: cambiar título, hidratar un hero card, etc) sin depender del
@@ -99,13 +109,109 @@
   // Si el rol seleccionado no corresponde al tipo de página actual,
   // se redirige al "home" del perfil para que la UX refleje el cambio.
   const OPERATOR_PAGES = /incentivo-(08|09|10|11|14)/;
-  const ADMIN_PAGES    = /incentivo-(02|03|04|05|06|07|12|13|16)/;
+  const ADMIN_PAGES    = /incentivo-(02|03|04|05|06|07|08|09|10|11|12|13|16)/;
   // Gestor de programa sólo vive en la lista (filtrada) y el detalle.
-  const PROGRAMA_PAGES = /incentivo-(02|03|05|07|12|16)/;
+  const PROGRAMA_PAGES = /incentivo-(02|03|05|07|08|09|10|11|12|16)/;
   const OPERATOR_HOME  = 'incentivo-08-asignar-buscar.html';
   const ADMIN_HOME     = 'incentivo-02-dashboard.html';
   const PROGRAMA_HOME  = 'incentivo-03-programas.html';
+  const DEPORTISTA_HOME = 'incentivo-17-mis-documentos.html';
 
+  /* Contador de pendientes del menú: al final de la fila, sin tapar el nombre; con el menú colapsado queda en la esquina del icono */
+  function ensureNavCountStyle(){
+    if(document.getElementById('navCountStyle')) return;
+    const st = document.createElement('style'); st.id = 'navCountStyle';
+    st.textContent = '.sidebar-nav .nav-row .nav-count{position:static;margin-left:auto;margin-right:0;background:#d74009;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:0 6px;line-height:16px;min-width:8px;text-align:center;box-sizing:content-box}' +
+      '.sidebar.collapsed .sidebar-nav .nav-row .nav-count{position:absolute;left:44px;top:4px;margin:0;border:2px solid #fff;padding:0 5px;line-height:15px}';
+    document.head.appendChild(st);
+  }
+  /* Menú de gestión para Danna e Isa dentro del flujo de asignación, con «Asignar incentivos» activo. */
+  function buildGestionNav(role){
+    const nav = document.querySelector('.sidebar-nav'); if(!nav) return;
+    const ico = (d, c) => '<div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="' + c + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg></div>';
+    const items = [
+      ['Dashboard', 'incentivo-02-dashboard.html', '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>'],
+      [role === 'programa' ? 'Mis programas' : 'Programas', 'incentivo-03-programas.html', '<path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/>'],
+      ['Códigos', 'incentivo-07-codigos.html', '<path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 0 0 3V15a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1.5a1.5 1.5 0 0 0 0-3z"/>'],
+      ['Historial de asignaciones', 'incentivo-12-asignaciones.html', '<path d="M8 7h13M8 12h13M8 17h13"/><circle cx="4" cy="7" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="17" r="1"/>'],
+      ...(role === 'admin' ? [['Reportería', 'incentivo-15-reporteria.html', '<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>']] : []),
+      ['Revisión documental', 'incentivo-16-revision-documental.html', '<circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 9"/>'],
+      ['Asignar incentivos', null, '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>']
+    ];
+    nav.dataset.gestion = role;
+    nav.innerHTML = '<div class="nav-section">INCENTIVOS</div>' + items.map(it => it[1]
+      ? '<div class="nav-row"' + (it[0] === 'Revisión documental' ? ' data-nav="revision"' : '') + ' onclick="fadeAndGo(\'' + it[1] + '\')">' + ico(it[2], '#646587') + '<span class="lbl">' + it[0] + '</span></div>'
+      : '<div class="nav-row active" data-nav="asignar"><div class="active-bar"></div>' + ico(it[2], '#d74009') + '<span class="lbl">' + it[0] + '</span></div>').join('');
+    // Contador de revisiones pendientes, igual que el que inyecta injectRevisionNav en las demás pantallas
+    ensureNavCountStyle();
+    try {
+      const rv = nav.querySelector('.nav-row[data-nav="revision"]'), n = window.pendingReviewCount ? window.pendingReviewCount() : 0;
+      if(rv && n > 0) rv.insertAdjacentHTML('beforeend', '<span class="nav-count" id="navRevCount">' + n + '</span>');
+    } catch(_){}
+    document.documentElement.removeAttribute('data-gest-pending');
+  }
+  /* ── Bandeja de notificaciones (Gestor de programa y roles con alcance global) ──
+     Avisa cuando un deportista completa sus documentos obligatorios: «Hay soportes pendientes de revisión». */
+  function bellEsc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function renderBell(){
+    const wrap = document.getElementById('notifBell'); if(!wrap || !window.getNotifications) return;
+    const list = window.getNotifications(), nuevas = list.filter(x => !x.leida).length, cnt = wrap.querySelector('.notif__count');
+    cnt.textContent = nuevas > 9 ? '9+' : nuevas; cnt.hidden = !nuevas;
+    wrap.querySelector('.notif__btn').setAttribute('aria-label', 'Notificaciones' + (nuevas ? ', ' + nuevas + ' sin leer' : ''));
+    wrap.querySelector('.notif__list').innerHTML = list.length ? list.slice(0, 12).map(x =>
+      '<button type="button" class="notif__it' + (x.leida ? '' : ' is-new') + '" data-go="1"><span class="notif__dot"></span><span class="notif__tx"><b>' + bellEsc(x.texto) + '</b>' +
+      '<span>' + bellEsc(x.persona) + ' completó sus documentos obligatorios en ' + bellEsc(x.progName) + '.</span><small>' + bellEsc(x.fecha) + ' · ' + bellEsc(x.hora) + '</small></span></button>').join('')
+      : '<div class="notif__empty">No tienes notificaciones.</div>';
+  }
+  function ensureBell(role){
+    const hdr = document.querySelector('.top-header'); if(!hdr) return;
+    let wrap = document.getElementById('notifBell');
+    if(role !== 'programa' && role !== 'admin'){ if(wrap) wrap.remove(); return; }
+    if(!window.getNotifications) return;
+    if(!document.getElementById('notifStyle')){
+      const st = document.createElement('style'); st.id = 'notifStyle';
+      st.textContent = '.notif{position:relative}.notif__btn{position:relative;width:40px;height:40px;border-radius:50%;border:1px solid #e7e9f3;background:#fff;color:#646587;display:flex;align-items:center;justify-content:center;cursor:pointer}' +
+        '.notif__btn:hover{background:#f4f5f9}.notif__btn svg{width:20px;height:20px}' +
+        '.notif__count{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#d74009;color:#fff;font-size:10px;font-weight:700;line-height:18px;text-align:center;border:2px solid #fff;box-sizing:content-box}' +
+        '.notif__panel{position:absolute;top:calc(100% + 8px);right:0;width:360px;max-width:92vw;background:#fff;border:1px solid #e7e9f3;border-radius:14px;box-shadow:0 12px 32px rgba(40,40,52,.16);z-index:120;overflow:hidden}' +
+        '.notif__panel[hidden]{display:none}.notif__hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #eef0f6;font-size:13.5px;font-weight:700;color:#282834}' +
+        '.notif__all{border:0;background:transparent;color:#d74009;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}' +
+        '.notif__list{max-height:360px;overflow:auto}.notif__it{display:flex;gap:10px;width:100%;text-align:left;border:0;border-bottom:1px solid #f1f2f8;background:#fff;padding:12px 16px;cursor:pointer;font:inherit}' +
+        '.notif__it:hover{background:#fafbfd}.notif__dot{width:8px;height:8px;border-radius:50%;background:transparent;flex:none;margin-top:6px}.notif__it.is-new .notif__dot{background:#d74009}' +
+        '.notif__tx{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:#646587;line-height:1.4}.notif__tx b{font-size:13px;color:#282834}.notif__tx small{font-size:11.5px;color:#9c9ebf}' +
+        '.notif__empty{padding:28px 16px;text-align:center;font-size:13px;color:#646587}';
+      document.head.appendChild(st);
+    }
+    if(!wrap){
+      wrap = document.createElement('div'); wrap.className = 'notif'; wrap.id = 'notifBell';
+      wrap.innerHTML = '<button class="notif__btn" type="button" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span class="notif__count" hidden>0</span></button>' +
+        '<div class="notif__panel" hidden><div class="notif__hd"><span>Notificaciones</span><button type="button" class="notif__all">Marcar como leídas</button></div><div class="notif__list"></div></div>';
+      hdr.insertBefore(wrap, hdr.querySelector('.profile-switcher'));
+      const panel = wrap.querySelector('.notif__panel'), btn = wrap.querySelector('.notif__btn');
+      btn.addEventListener('click', e => { e.stopPropagation(); renderBell(); panel.hidden = !panel.hidden; btn.setAttribute('aria-expanded', !panel.hidden); });
+      wrap.querySelector('.notif__all').addEventListener('click', () => { window.markNotificationsRead(); renderBell(); });
+      wrap.querySelector('.notif__list').addEventListener('click', e => {
+        if(!e.target.closest('[data-go]')) return;
+        window.markNotificationsRead();
+        const url = 'incentivo-16-revision-documental.html';
+        if(typeof window.fadeAndGo === 'function') window.fadeAndGo(url); else window.location.href = url;
+      });
+      document.addEventListener('click', e => { if(!e.target.closest('#notifBell')){ panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); } });
+      window.addEventListener('storage', renderBell); window.addEventListener('focus', renderBell); window.addEventListener('pageshow', renderBell);
+    }
+    renderBell();
+  }
+  /* Entrada "Asignar incentivos" (Gestor de incentivos y Gestor de programa): lleva al flujo del operador. */
+  function injectAsignarNav(){
+    const nav = document.querySelector('.sidebar-nav'); if(!nav) return;
+    const rows = nav.querySelectorAll('.nav-row'); const last = rows[rows.length - 1]; if(!last) return;
+    const row = document.createElement('div');
+    row.className = 'nav-row';
+    row.setAttribute('data-nav', 'asignar');
+    row.setAttribute('onclick', "fadeAndGo('incentivo-08-asignar-buscar.html')");
+    row.innerHTML = '<div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#646587" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></div><span class="lbl">Asignar incentivos</span>';
+    last.insertAdjacentElement('afterend', row);
+  }
   /* Entrada "Revisión documental" (solo Gestor de programa): se inyecta tras Historial. */
   function injectRevisionNav(){
     const nav = document.querySelector('.sidebar-nav'); if(!nav) return;
@@ -118,7 +224,8 @@
     const st = active ? '#d74009' : '#646587';
     row.innerHTML = (active ? '<div class="active-bar"></div>' : '') +
       '<div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="' + st + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 9"/></svg></div>' +
-      '<span class="lbl">Revisión documental</span><span class="nav-count" id="navRevCount" style="position:absolute;left:44px;top:4px;background:#d74009;border:2px solid #fff;box-sizing:content-box;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:0 5px;line-height:15px;min-width:6px;text-align:center"></span>';
+      '<span class="lbl">Revisión documental</span><span class="nav-count" id="navRevCount"></span>';
+    ensureNavCountStyle();
     last.insertAdjacentElement('afterend', row);
     try { const n = window.pendingReviewCount ? window.pendingReviewCount() : 0; const c = row.querySelector('#navRevCount'); if(n > 0) c.textContent = n; else c.remove(); } catch(_){}
   }
@@ -133,12 +240,14 @@
     const onAdminPage    = ADMIN_PAGES.test(path);
     const onProgramaPage = PROGRAMA_PAGES.test(path);
 
-    if(role === 'operador' && !onOperadorPage){
+    if(role === 'deportista' && !/incentivo-17/.test(path)){
+      setTimeout(() => { window.location.href = DEPORTISTA_HOME; }, 180);
+    } else if(role === 'operador' && !onOperadorPage){
       setTimeout(() => { window.location.href = OPERATOR_HOME; }, 180);
     } else if(role === 'programa' && !onProgramaPage){
       // Gestor de programa: redirijo a su lista filtrada (PRG asignado).
       setTimeout(() => { window.location.href = PROGRAMA_HOME; }, 180);
-    } else if((role === 'admin' || role === 'gestor') && !onAdminPage){
+    } else if(role === 'admin' && !onAdminPage){
       // Gestor de incentivos (admin) vive en el dashboard; si estoy en
       // pages del operador, redirijo.
       setTimeout(() => { window.location.href = ADMIN_HOME; }, 180);

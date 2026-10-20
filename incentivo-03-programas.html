@@ -9,7 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
-<link rel="stylesheet" href="shared/programa-wizard.css"/>
 
 <style>
   .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap}
@@ -42,6 +41,7 @@
   .kpi-card__ico--positive{background:#e6f4e7;color:#15803d}
   .kpi-card__ico--caution{background:#fff3e6;color:#d74009}
   .kpi-card__ico--info{background:#f3e8ff;color:#7c3aed}
+  .kpi-card__ico--closed{background:#fdeceb;color:#b42318}
   .kpi-card__val{
     font-family:'Inter',sans-serif;font-size:30px;font-weight:700;
     line-height:1;letter-spacing:-.02em;color:var(--naowee-color-text-primary,#282834);
@@ -286,6 +286,7 @@
     font-size:12.5px;color:var(--naowee-color-text-secondary,#646587);
   }
 </style>
+<script src="shared/profile-switcher.js?v=role-28" defer blocking="render"></script>
 </head>
 <body>
 
@@ -440,7 +441,7 @@
         <article class="kpi-card">
           <div class="kpi-card__top">
             <div class="kpi-card__lbl">Cerrados</div>
-            <div class="kpi-card__ico kpi-card__ico--info">
+            <div class="kpi-card__ico kpi-card__ico--closed">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
             </div>
           </div>
@@ -476,8 +477,9 @@
               <div class="toolbar-dd-menu" role="listbox">
                 <div class="toolbar-dd-item" role="option" aria-selected="true" data-val="all" onclick="setStatus('all','Estado: Todos')">Todos</div>
                 <div class="toolbar-dd-item" role="option" data-val="active" onclick="setStatus('active','Activos')"><span class="dd-dot" style="background:#15803d"></span>Activos</div>
+                <div class="toolbar-dd-item" role="option" data-val="reactivated" onclick="setStatus('reactivated','Reactivados')"><span class="dd-dot" style="background:#1f78d1"></span>Reactivados</div>
                 <div class="toolbar-dd-item" role="option" data-val="draft" onclick="setStatus('draft','Borrador')"><span class="dd-dot" style="background:#9c9ebf"></span>Borrador</div>
-                <div class="toolbar-dd-item" role="option" data-val="closed" onclick="setStatus('closed','Cerrados')"><span class="dd-dot" style="background:#1f78d1"></span>Cerrados</div>
+                <div class="toolbar-dd-item" role="option" data-val="closed" onclick="setStatus('closed','Cerrados')"><span class="dd-dot" style="background:#b42318"></span>Cerrados</div>
               </div>
             </div>
           </div>
@@ -521,7 +523,7 @@
   </div>
 </div>
 
-<script src="shared/programs-data.js?v=cat-icons-2"></script>
+<script src="shared/programs-data.js?v=21b"></script>
 <script>
 /* Drena la cola de drafts pendientes (cualquier página que guardó un borrador
    antes de navegar acá los empuja a sessionStorage). Cada draft se inserta al
@@ -540,7 +542,7 @@
 const toRow = p => ({
   id: p.id, name: p.name, desc: p.shortDesc,
   iconBg: p.iconBg, iconColor: p.iconColor,
-  status: p.status, rubro: p.rubro, exec: p.exec,
+  status: p.status, vis: window.estadoVisible(p), rubro: p.rubro, exec: p.exec,
   codes: p.codes, from: p.from, to: p.to,
   cfg: window.getProgramConfig(p)
 });
@@ -548,11 +550,27 @@ const PROGRAMS = window.PROGRAMS_DATA.map(toRow);
 
 const STATUS_META = {
   active: { label:'Activo', variant:'positive' },
+  reactivated: { label:'Reactivado', variant:'informative' },
   draft:  { label:'Borrador', variant:'neutral' },
-  closed: { label:'Cerrado', variant:'informative' }
+  closed: { label:'Cerrado', variant:'negative' }
 };
 
 const state = { status: 'all', search: '', page: 1, pageSize: 10 };
+
+/* Filtros de la lista: se conservan (sesión) al entrar a un programa y volver */
+const K_LISTA = 'naowee:prg-list', STATUS_LBL = { all: 'Estado: Todos', active: 'Activos', reactivated: 'Reactivados', draft: 'Borrador', closed: 'Cerrados' };
+function guardarFiltros(){ try { sessionStorage.setItem(K_LISTA, JSON.stringify({ status: state.status, search: (document.getElementById('searchInput') || {}).value || '', page: state.page })); } catch(_) {} }
+(function restaurarFiltros(){
+  let g = null; try { g = JSON.parse(sessionStorage.getItem(K_LISTA) || 'null'); } catch(_) {}
+  if(!g) return;
+  if(STATUS_LBL[g.status]){
+    state.status = g.status;
+    const lbl = document.getElementById('ddStatusLabel'); if(lbl) lbl.textContent = STATUS_LBL[g.status];
+    document.querySelectorAll('#ddStatusWrap .toolbar-dd-item').forEach(it => it.setAttribute('aria-selected', it.dataset.val === g.status ? 'true' : 'false'));
+  }
+  const inp = document.getElementById('searchInput'); if(inp && g.search) inp.value = g.search;
+  state.page = Math.max(1, parseInt(g.page, 10) || 1);
+})();
 
 function toggleDD(wrapId){
   const wrap = document.getElementById(wrapId);
@@ -597,7 +615,9 @@ function filteredPrograms(){
   const allowed = (window.getRoleAssignments && window.getRoleAssignments()) || null;
   return PROGRAMS.filter(p => {
     if(allowed && !allowed.includes(p.id)) return false;
-    if(state.status !== 'all' && p.status !== state.status) return false;
+    // «Activos» incluye a los reactivados (siguen activos); «Reactivados» muestra solo esos
+    if(state.status === 'active'){ if(p.vis !== 'active' && p.vis !== 'reactivated') return false; }
+    else if(state.status !== 'all' && p.vis !== state.status) return false;
     if(q){
       const hay = `${p.name} ${p.desc} ${p.id}`.toLowerCase();
       if(!hay.includes(q)) return false;
@@ -648,6 +668,15 @@ function hydrateProgramHero(){
   set('sumRevSub', (asig > 0 ? (rev / asig * 100).toFixed(1) : '0.0') + '% de ' + asig.toLocaleString('es-CO') + ' asignaciones');
 }
 
+/* KPIs del Gestor de incentivos: se calculan del estado real de los programas (cierres y reaperturas incluidos) */
+(function hydrateAdminKPIs(){
+  const vals = document.querySelectorAll('.kpi-grid[data-role="admin"] .kpi-card__val'); if(vals.length < 4) return;
+  const ps = window.PROGRAMS_DATA, n = s => ps.filter(p => p.status === s).length;
+  [ps.length, n('active'), n('draft'), n('closed')].forEach((v, i) => { vals[i].textContent = v; });
+})();
+/* Al volver con «atrás» el navegador puede traer la lista guardada: se recarga para reflejar cierres y reaperturas */
+window.addEventListener('pageshow', e => { if(e.persisted) location.reload(); });
+
 function renderRows(){
   const noAct = !!(window.currentRole && currentRole() === 'programa');
   const tbl = document.querySelector('.prg-table'); if(tbl) tbl.classList.toggle('prg-table--noact', noAct);
@@ -665,7 +694,7 @@ function renderRows(){
   } else {
     body.innerHTML = slice.map(p => {
       const execPct = p.rubro ? Math.round((p.exec/p.rubro)*100) : 0;
-      const meta = STATUS_META[p.status];
+      const meta = STATUS_META[p.vis || p.status];
       const codesLow = p.codes.total > 0 && p.codes.avail > 0 && p.codes.avail/p.codes.total < 0.15;
       return `
         <tr onclick="fadeAndGo('incentivo-05-programa-detalle.html?id=${p.id}')">
@@ -737,6 +766,7 @@ function renderRows(){
   document.getElementById('pagTotal').textContent = totalPages;
   document.getElementById('pagPrev').disabled = state.page <= 1;
   document.getElementById('pagNext').disabled = state.page >= totalPages;
+  guardarFiltros();
 }
 
 function changePage(delta){
@@ -786,8 +816,7 @@ setTimeout(() => { applyRoleHeader(); renderRows(); }, 0);
 
 function fadeAndGo(url){window.location.href=url}
 </script>
-<script src="shared/programa-wizard.js" defer></script>
-<script src="shared/profile-switcher.js?v=role-17" defer></script>
+
 
 <script src="shared/footer-scroll.js" defer></script>
 
