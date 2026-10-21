@@ -24,13 +24,22 @@
   var ENTIDADES = ['Escenarios deportivos', 'Institución educativa']; // roles que son entidades, no personas
   var CAMPOS_PERSONA = ['edad', 'genero', 'escolaridad', 'grado', 'categoria', 'logro', 'etapa', 'medallas', 'medallasOro', 'participaciones']; // no aplican a entidades
   var EVENTO_EDAD = { 'Juegos Intercolegiados Nacionales 2026': 17 }; // edad máxima de los participantes del evento
-  var GESTORES = ['Isa Pabon', 'Laura Meza', 'Carla Suárez', 'Andrés Polo'];
+  var GESTORES_BASE = ['Isa Pabon', 'Laura Meza', 'Carla Suárez', 'Andrés Polo'];
+  /* Gestores que se pueden asignar: las personas activas de «Gestión de usuarios» (si ya hay lista); si no, las de ejemplo */
+  function gestoresActivos() {
+    try {
+      var l = JSON.parse(localStorage.getItem('naowee:usuarios'));
+      if (Array.isArray(l) && l.length) return l.filter(function (u) { return u.rol === 'programa' && u.estado === 'activo'; }).map(function (u) { return u.nombre; });
+    } catch (_) { }
+    return GESTORES_BASE;
+  }
+  var GESTORES = gestoresActivos();
   var REGIONES = ['Nacional', 'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bogotá D.C.', 'Bolívar', 'Boyacá', 'Caldas', 'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda', 'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada']; // Nacional + 32 departamentos + Bogotá D.C.
-  /* valor: 1 = tiene valor numérico (se pide valor total); 0 = no se pide valor. cert: 1 = se entrega como certificado digital. */
+  /* valor: 1 = tiene valor numérico (se pide valor total); 0 = no se pide valor. cert: 1 = se entrega como certificado digital. opc: 1 = el valor es opcional (ej. certificados: el Ministerio puede querer imprimirlos). */
   var CATEGORIAS = [
     { k: 'bono', l: 'Bono', valor: 1 }, { k: 'beca', l: 'Beca', valor: 1 }, { k: 'kit', l: 'Kit', valor: 1 }, { k: 'transporte', l: 'Transporte', valor: 1 },
     { k: 'inscripcion', l: 'Inscripción', valor: 1 }, { k: 'descuento', l: 'Descuento', valor: 1 }, { k: 'dinero', l: 'Dinero', valor: 1 },
-    { k: 'pase', l: 'Pase / acceso', valor: 1 }, { k: 'diploma', l: 'Diploma / reconocimiento', valor: 0, cert: 1 }
+    { k: 'pase', l: 'Pase / acceso', valor: 1 }, { k: 'diploma', l: 'Diploma / reconocimiento', valor: 1, opc: 1, cert: 1 }
   ];
   function catOf(i) { return CATEGORIAS.filter(function (c) { return c.k === i.categoria; })[0] || null; }
   function conValor(i) { var c = catOf(i); return !c || !!c.valor; }
@@ -451,8 +460,8 @@
           tf({ label: 'Desde', type: 'date', k: k + 'rec.desde', val: rr.desde, attrs: vg, hint: 'Opcional. Si la dejas vacía, desde que inicia la vigencia.' }) + tf({ label: 'Hasta', type: 'date', k: k + 'rec.hasta', val: rr.hasta, attrs: vg, hint: 'Opcional. Dentro de la vigencia del programa.' }) + '</div>' +
           alertBox('Queda <b>exento de documentación</b>: no se le piden documentos al beneficiario.', 'informative') : '<p class="pf-hint">Actívalo si este incentivo se entrega varias veces en un período dentro de la vigencia, sin pedir documentos.</p>') + '</div>';
     }
-    var unitL = fijo ? 'Valor unitario por ciclo' : 'Valor unitario', totL = fijo ? 'Valor total por ciclo' : 'Valor total';
-    var cantL = hasCodes(inc) ? 'Cantidad / stock de códigos' : (fijo ? 'Cantidad de beneficiarios' : 'Cantidad');
+    var unitL = (fijo ? 'Valor unitario por ciclo' : 'Valor unitario') + (cat && cat.opc ? ' (opcional)' : ''), totL = fijo ? 'Valor total por ciclo' : 'Valor total';
+    var cantL = hasCodes(inc) ? 'Cantidad / stock de códigos' : (fijo ? 'Cantidad de beneficiarios' : (cat && cat.cert ? 'Cantidad de certificados' : 'Cantidad'));
     var vals = '';
     if (cv && cat) {
       var u = tf({ label: unitL, k: k + 'unit', val: numTxt(inc.unit), ph: '0', mode: 'numeric', pre: '$' });
@@ -473,7 +482,7 @@
       '<div class="nwt-card__content"><div class="pf-inc">' +
         '<div class="pf-grid">' +
           tf({ label: 'Nombre', req: 1, k: k + 'nombre', val: inc.nombre, ph: 'Ej. Beca educativa · Medallistas de oro' }) +
-          sel({ label: 'Categoría', req: 1, k: k + 'categoria', val: inc.categoria, ph: 'Selecciona categoría', opts: CATEGORIAS.map(function (c) { return [c.k, c.l]; }), attrs: ' data-struct="1"', hint: inc.categoria ? (cv ? 'Con valor numérico.' : 'Sin valor monetario: no se pide valor.') : '' }) +
+          sel({ label: 'Categoría', req: 1, k: k + 'categoria', val: inc.categoria, ph: 'Selecciona categoría', opts: CATEGORIAS.map(function (c) { return [c.k, c.l]; }), attrs: ' data-struct="1"', hint: inc.categoria ? (cv ? (cat && cat.opc ? 'Certificado digital. El valor es opcional: por si el Ministerio quiere imprimirlo.' : 'Con valor numérico.') : 'Sin valor monetario: no se pide valor.') : '' }) +
         '</div>' + extra + recOwn + vals +
       '</div></div><div class="nwt-card__footer"></div></div></div>';
   }

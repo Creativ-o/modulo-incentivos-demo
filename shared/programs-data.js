@@ -618,10 +618,10 @@ window.getProgramCategory = function(p){
     if (!c.rec.on && ci.rec && ci.rec.on) return [];
     return c.doc.list.filter(function (d) { return (ci.docOff || []).indexOf(d.name) < 0; });
   };
-  /* Ventana de cargue del programa hoy: abierta o cerrada, con el texto largo y uno corto. Una excepción que exime fechas la mantiene abierta. */
+  /* Ventana de cargue del programa hoy: abierta o cerrada, con el texto largo y uno corto. Si la persona fue habilitada con las fechas eximidas, se le muestra el cargue habilitado (sin hablar de «excepción»). */
   window.ventanaCargue = function (c, exencionFechas) {
     var f = c.crono.carga || {}, now = new Date(), pad = function (n) { return String(n).padStart(2, '0'); };
-    if (exencionFechas) return { abierta: true, txt: 'Tienes una habilitación excepcional: tus fechas de cargue están habilitadas.', corto: 'Habilitada por excepción' };
+    if (exencionFechas) return { abierta: true, txt: 'Tu cargue está habilitado: puedes subir tus documentos.', corto: 'Cargue habilitado' };
     if (!f.ini && !f.fin) return { abierta: true, txt: 'Puedes cargar tus documentos mientras el programa esté activo.', corto: '' };
     if (c.rec.on || /^\d{1,2}$/.test(f.ini || f.fin || '')) {
       var A = +f.ini || 1, B = +f.fin || 31, d = now.getDate();
@@ -772,7 +772,19 @@ window.getProgramCategory = function(p){
     return res;
   };
   /* Bandeja del Gestor de programa (y de los roles con alcance global): solo ve las de sus programas */
+  /* Notificación de ejemplo (una sola vez): el aviso que recibe el gestor cuando un deportista completa sus documentos. */
+  function sembrarNotificacion() {
+    var K = 'naowee:notif-ejemplo';
+    try { if (localStorage.getItem(K)) return; } catch (_) { return; }
+    var r = window.docReviews().filter(function (x) { return x.estado === 'pend' && x.prog === 'PRG-2026-006'; })[0] || window.docReviews().filter(function (x) { return x.estado === 'pend'; })[0];
+    if (!r) return;
+    var nt = read(K_NOT, []), d = new Date();
+    nt.unshift({ id: 'n-ejemplo', progId: r.prog, itemId: r.id, progName: r.progName, persona: r.persona, fecha: fmtD(isoD(d)), hora: '09:12', leida: false, texto: 'Hay soportes pendientes de revisión' });
+    write(K_NOT, nt.slice(0, 60));
+    try { localStorage.setItem(K, '1'); } catch (_) {}
+  }
   window.getNotifications = function () {
+    sembrarNotificacion();
     var ids = window.scopedPrograms().map(function (p) { return p.id; });
     return read(K_NOT, []).filter(function (x) { return ids.indexOf(x.progId) > -1; });
   };

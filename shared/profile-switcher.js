@@ -83,20 +83,21 @@
       }
     }
     // Danna e Isa dentro del flujo de asignación (08-11): estas pantallas traen el menú del operador; se reemplaza por el de gestión
-    if(role !== 'operador' && /incentivo-(08|09|10|11)/.test(location.pathname)) buildGestionNav(role);
+    if((role === 'admin' || role === 'programa') && /incentivo-(02|03|04|05|07|08|09|10|11|12|15|16|18)/.test(location.pathname)) buildAdminNav(role);
+    else if(role !== 'operador' && /incentivo-(08|09|10|11)/.test(location.pathname)) buildGestionNav(role);
     if(role === 'operador' || !/incentivo-(08|09|10|11)/.test(location.pathname)) document.documentElement.removeAttribute('data-gest-pending');
     // Deportista: solo vive en «Mis documentos»; cualquier otro perfil que abra esa pantalla vuelve a su inicio
     if(role === 'deportista' && !/incentivo-17/.test(location.pathname)){ location.replace(DEPORTISTA_HOME); return; }
     if(role !== 'deportista' && /incentivo-17/.test(location.pathname)){ location.replace(role === 'operador' ? OPERATOR_HOME : role === 'programa' ? PROGRAMA_HOME : ADMIN_HOME); return; }
     // Operador: solo vive en el flujo de asignación; las pantallas de gestión lo devuelven a su inicio
-    if(role === 'operador' && /incentivo-(02|03|04|05|06|07|12|13|15|16)/.test(location.pathname)){
+    if(role === 'operador' && /incentivo-(02|03|04|05|06|07|12|13|15|16|18)/.test(location.pathname)){
       location.replace(OPERATOR_HOME);
       return;
     }
     // Revisión documental: la ve el Gestor de programa (titular) y los roles con alcance global (apoyo).
-    if((role === 'programa' || role === 'admin') && !document.querySelector('.sidebar-nav .nav-row[data-nav="revision"]')) injectRevisionNav();
+    if((role === 'programa' || (role === 'admin' && !document.querySelector('.sidebar-nav[data-gestion]'))) && !document.querySelector('.sidebar-nav[data-gestion]') && !document.querySelector('.sidebar-nav .nav-row[data-nav="revision"]')) injectRevisionNav();
     // Danna e Isa también asignan (Isa solo sobre sus programas: la búsqueda ya sale filtrada por scopedPrograms)
-    if((role === 'programa' || role === 'admin') && !/incentivo-(08|09|10|11)/.test(location.pathname) && !document.querySelector('.sidebar-nav .nav-row[data-nav="asignar"]')) injectAsignarNav();
+    if((role === 'programa' || (role === 'admin' && !document.querySelector('.sidebar-nav[data-gestion]'))) && !document.querySelector('.sidebar-nav[data-gestion]') && !/incentivo-(08|09|10|11)/.test(location.pathname) && !document.querySelector('.sidebar-nav .nav-row[data-nav="asignar"]')) injectAsignarNav();
     ensureBell(role);
     // Hook opcional por página: si la página define onRoleApplied(role),
     // se llama después del filtrado base. Permite a cada vista reaccionar
@@ -109,9 +110,9 @@
   // Si el rol seleccionado no corresponde al tipo de página actual,
   // se redirige al "home" del perfil para que la UX refleje el cambio.
   const OPERATOR_PAGES = /incentivo-(08|09|10|11|14)/;
-  const ADMIN_PAGES    = /incentivo-(02|03|04|05|06|07|08|09|10|11|12|13|16)/;
+  const ADMIN_PAGES    = /incentivo-(02|03|04|05|06|07|08|09|10|11|12|13|15|16|18)/;
   // Gestor de programa sólo vive en la lista (filtrada) y el detalle.
-  const PROGRAMA_PAGES = /incentivo-(02|03|05|07|08|09|10|11|12|16)/;
+  const PROGRAMA_PAGES = /incentivo-(02|03|05|07|08|09|10|11|12|16|18)/;
   const OPERATOR_HOME  = 'incentivo-08-asignar-buscar.html';
   const ADMIN_HOME     = 'incentivo-02-dashboard.html';
   const PROGRAMA_HOME  = 'incentivo-03-programas.html';
@@ -124,6 +125,45 @@
     st.textContent = '.sidebar-nav .nav-row .nav-count{position:static;margin-left:auto;margin-right:0;background:#d74009;color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:0 6px;line-height:16px;min-width:8px;text-align:center;box-sizing:content-box}' +
       '.sidebar.collapsed .sidebar-nav .nav-row .nav-count{position:absolute;left:44px;top:4px;margin:0;border:2px solid #fff;padding:0 5px;line-height:15px}';
     document.head.appendChild(st);
+  }
+  /* Menú del Gestor de incentivos, agrupado: Dashboard · Parametrización · Gestión de programas · Administración */
+  function buildAdminNav(role){
+    const nav = document.querySelector('.sidebar-nav'); if(!nav) return;
+    const p = location.pathname;
+    const ico = (d, c) => '<div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="' + c + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg></div>';
+    const I = {
+      dash: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
+      prog: '<path d="M4 4h16v16H4z"/><path d="M4 9h16M9 9v11"/>',
+      cod: '<path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 0 0 3V15a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1.5a1.5 1.5 0 0 0 0-3z"/>',
+      rev: '<circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 9"/>',
+      asig: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>',
+      hist: '<path d="M8 7h13M8 12h13M8 17h13"/><circle cx="4" cy="7" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="17" r="1"/>',
+      rep: '<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
+      users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'
+    };
+    const act = /incentivo-02/.test(p) ? 'dash' : /incentivo-(03|04|05)/.test(p) ? 'prog' : /incentivo-07/.test(p) ? 'cod' : /incentivo-16/.test(p) ? 'rev'
+      : /incentivo-(08|09|10|11)/.test(p) ? 'asig' : /incentivo-12/.test(p) ? 'hist' : /incentivo-15/.test(p) ? 'rep' : /incentivo-18/.test(p) ? 'users' : '';
+    const L = {dash:['Dashboard','incentivo-02-dashboard.html'], prog:['Programas','incentivo-03-programas.html'], cod:['Códigos','incentivo-07-codigos.html'],
+      rev:['Revisión documental','incentivo-16-revision-documental.html'], asig:['Asignar incentivos','incentivo-08-asignar-buscar.html'],
+      hist:['Historial de asignaciones','incentivo-12-asignaciones.html'], rep:['Reportería','incentivo-15-reporteria.html'], users:['Gestión de usuarios','incentivo-18-gestion-usuarios.html']};
+    const row = k => {
+      const on = k === act, here = p.indexOf(L[k][1]) > -1;
+      return '<div class="nav-row' + (on ? ' active' : '') + '"' + (k === 'rev' ? ' data-nav="revision"' : k === 'asig' ? ' data-nav="asignar"' : '') + (here ? '' : ' onclick="fadeAndGo(\'' + L[k][1] + '\')"') + '>'
+        + (on ? '<div class="active-bar"></div>' : '') + ico(I[k], on ? '#d74009' : '#646587') + '<span class="lbl">' + L[k][0] + '</span></div>';
+    };
+    const admin = role === 'admin';
+    if(!admin) L.prog[0] = 'Mis programas';   // el Gestor de programa solo ve los suyos
+    nav.dataset.gestion = role;
+    nav.innerHTML = row('dash')
+      + '<div class="nav-section">Parametrización</div>' + row('prog') + row('cod')
+      + '<div class="nav-section">Gestión de programas</div>' + row('rev') + row('asig') + row('hist') + (admin ? row('rep') : '')
+      + '<div class="nav-section">Admin</div>' + row('users');
+    ensureNavCountStyle();
+    try {
+      const rv = nav.querySelector('.nav-row[data-nav="revision"]'), n = window.pendingReviewCount ? window.pendingReviewCount() : 0;
+      if(rv && n > 0) rv.insertAdjacentHTML('beforeend', '<span class="nav-count" id="navRevCount">' + n + '</span>');
+    } catch(_){}
+    document.documentElement.removeAttribute('data-gest-pending');
   }
   /* Menú de gestión para Danna e Isa dentro del flujo de asignación, con «Asignar incentivos» activo. */
   function buildGestionNav(role){

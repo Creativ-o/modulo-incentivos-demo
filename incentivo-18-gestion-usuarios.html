@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<script src="shared/enter-transition.js?v=1"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SUID – Incentivos · Gestión de usuarios</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
+<link rel="stylesheet" href="shared/shell.css"/>
+<script src="shared/programs-data.js?v=21d"></script>
+<script src="shared/profile-switcher.js?v=role-33"></script>
+
+<style>
+  .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap}
+  .page-title{font-size:24px;font-weight:700;line-height:1.2;letter-spacing:-.01em;margin-bottom:4px;color:#282834}
+  .page-sub{font-size:14px;color:#646587;line-height:1.5;max-width:640px}
+  .page-header__actions{display:flex;gap:10px;align-items:center}
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+  @media(max-width:900px){.kpi-grid{grid-template-columns:1fr}}
+  .kpi-card{background:#fff;border:1px solid #e7e9f3;border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+  .kpi-card__lbl{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#646587}
+  .kpi-card__val{font-size:30px;font-weight:700;line-height:1;letter-spacing:-.02em;color:#282834}
+  .kpi-card__foot{font-size:12px;color:#646587;margin-top:2px}
+  .tablet{border:1px solid #e7e9f3;border-radius:16px;padding:20px;background:#fff;display:flex;flex-direction:column;gap:18px}
+  .tablet-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .tablet-toolbar__left{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .tablet .naowee-searchbox--pill{width:280px;max-width:100%}
+  .tablet .naowee-searchbox--pill .naowee-searchbox__input-wrap{border-radius:9999px;height:36px;padding:4px 12px}
+  .asig-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+  .asig-table thead th{font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:#646587;padding:12px 18px;text-align:left;background:#f5f6fa;border:none}
+  .asig-table thead th:first-child{border-top-left-radius:12px;border-bottom-left-radius:12px}
+  .asig-table thead th:last-child{border-top-right-radius:12px;border-bottom-right-radius:12px}
+  .asig-table tbody td{padding:14px 18px;font-size:13px;vertical-align:middle;border-bottom:1px solid #e7e9f3;overflow:hidden}
+  .asig-table tbody tr:last-child td{border-bottom:none}
+  .asig-table th:nth-child(1){width:22%}.asig-table th:nth-child(2){width:12%}.asig-table th:nth-child(3){width:20%}.asig-table th:nth-child(4){width:19%}.asig-table th:nth-child(5){width:12%}.asig-table th:nth-child(6){width:15%}
+  .asig-table th:nth-child(6),.asig-table td:nth-child(6){text-align:right}
+  .who{display:flex;align-items:center;gap:12px;min-width:0}
+  .ava2{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}
+  .who b{display:block;font-size:13.5px;font-weight:600;color:#282834;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .who small,.sub2{font-size:12px;color:#646587}
+  .cont{font-size:12.5px;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .st-badge{white-space:nowrap}
+  .acc{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+  .lk{border:0;background:transparent;font:inherit;font-size:12.5px;font-weight:600;color:#d74009;cursor:pointer;padding:6px 8px;border-radius:8px}
+  .lk:hover{background:#fff3e6}
+  .lk--no{color:#b42318}.lk--no:hover{background:#fff0ee}
+  .lk--demo{color:#646587;font-weight:500;border:1px dashed #cfd2e6}
+  .toolbar-dd-wrap{position:relative;display:inline-flex}
+  .toolbar-dd{position:relative;display:inline-flex;align-items:center;gap:8px;justify-content:space-between;height:36px;padding:4px 12px 4px 14px;background:#fff;border:1px solid #8788ab;border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;color:#282834;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+  .toolbar-dd:hover{border-color:#646587}
+  .toolbar-dd-wrap.open .toolbar-dd,.toolbar-dd:focus-visible{outline:none;border-color:#d74009;box-shadow:0 0 0 3px rgba(215,64,9,.15)}
+  .toolbar-dd svg{width:16px;height:16px;flex-shrink:0;color:#646587;transition:transform .2s}
+  .toolbar-dd-wrap.open .toolbar-dd svg{transform:rotate(180deg)}
+  .toolbar-dd-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:50;min-width:100%;background:#fff;white-space:nowrap;border:1px solid #e7e9f3;border-radius:10px;box-shadow:0 12px 32px rgba(40,40,52,.12);padding:6px;max-height:320px;overflow-y:auto;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .18s,transform .18s}
+  .toolbar-dd-wrap.open .toolbar-dd-menu{opacity:1;transform:translateY(0);pointer-events:auto}
+  .toolbar-dd-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .12s}
+  .toolbar-dd-item:hover{background:#f5f6fa}
+  .toolbar-dd-item[aria-selected="true"]{background:#fff3e6;color:#d74009;font-weight:600}
+  .prg-tags{display:flex;align-items:center;gap:4px;min-width:0}
+  .prg-tags .prg-tag{flex:0 1 auto}
+  .prg-more{position:relative;flex:none;font-size:11.5px;font-weight:700;background:#fff3e6;color:#d74009;border-radius:999px;padding:3px 9px;cursor:default;outline:none}
+  .prg-pop{position:absolute;left:0;top:calc(100% + 6px);z-index:60;min-width:220px;max-width:300px;background:#282834;color:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 12px 28px rgba(40,40,52,.3);display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;line-height:1.35;white-space:normal;opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .15s,transform .15s}
+  .prg-more:hover .prg-pop,.prg-more:focus .prg-pop{opacity:1;visibility:visible;transform:none}
+  .asig-table tbody td{overflow:visible}
+  .prg-tag{font-size:11.5px;font-weight:600;background:#f3f4f8;color:#3d3e55;border-radius:999px;padding:3px 9px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .prg-none{font-size:12px;color:#b42318}
+  .exc__chips .exc__chip{max-width:100%}
+  .exc__hint{font-size:12.5px;color:#646587;margin:-2px 0 0}
+  .empty2{padding:36px 12px;text-align:center;color:#646587;font-size:14px}
+.exc-ov{position:fixed;inset:0;background:rgba(40,40,52,.6);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}
+.exc-ov.open{display:flex}
+.exc{background:#fff;border-radius:20px;width:640px;max-width:100%;max-height:92vh;overflow:auto;box-shadow:0 24px 60px rgba(40,40,52,.3)}
+.exc__h{padding:26px 32px 4px;display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.exc__h h3{font-size:20px;font-weight:700;color:#282834;margin:0 0 4px}
+.exc__h p{font-size:13.5px;color:#646587;margin:0}
+.exc__x{border:0;background:transparent;cursor:pointer;width:32px;height:32px;border-radius:8px;color:#646587;font-size:20px;line-height:1}
+.exc__x:hover{background:#f4f5f9}
+.exc__b{padding:14px 32px 4px;display:flex;flex-direction:column;gap:16px}
+.exc__l{font-size:12.5px;font-weight:600;color:#3d3e55;margin-bottom:8px;display:block}
+.exc__l b{color:#d74009}
+.exc__who{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.exc__opt{display:flex;gap:12px;align-items:flex-start;border:1px solid #d9dce8;border-radius:14px;padding:14px 16px;cursor:pointer;background:#fff;text-align:left;font:inherit}
+.exc__opt.on{border-color:#d74009;background:#fff6f1}
+.exc__opt i{width:18px;height:18px;border-radius:50%;border:2px solid #b5b9d4;flex:none;margin-top:2px;position:relative}
+.exc__opt.on i{border-color:#d74009}.exc__opt.on i::after{content:'';position:absolute;inset:3px;border-radius:50%;background:#d74009}
+.exc__opt strong{display:block;font-size:14px;color:#282834}.exc__opt span{font-size:12.5px;color:#646587}
+.exc__sr{position:relative}
+.exc__sr input,.exc__b select,.exc__b textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;color:#282834;border:1px solid #d9dce8;border-radius:12px;padding:0 14px;background:#fff}
+.exc__sr input,.exc__b select{height:46px}
+.exc__b input[type=date]{width:100%;box-sizing:border-box;font:inherit;font-size:14px;color:#282834;border:1px solid #d9dce8;border-radius:12px;padding:0 14px;background:#fff;height:46px}
+.exc__b input[type=date]:focus{outline:2px solid #d74009;outline-offset:-1px;border-color:transparent}
+.exc__dates{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.exc__b[hidden],.exc__ft[hidden]{display:none}
+#clsF1,#clsF2{justify-content:space-between}
+#clsF1>button:first-child,#clsF2>button:first-child{padding-left:0;padding-right:0}   /* el texto de «Cancelar» queda alineado con el contenido */
+.cls-sum{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;background:#f4f5f9;border-radius:14px;padding:14px 16px;font-size:13.5px}
+.cls-sum span{color:#646587}.cls-sum b{text-align:right;color:#282834;font-weight:600}.cls-sum b.old{color:#b5b9d4}
+.cls-adj{width:100%;border-collapse:collapse;font-size:13px;border:1px solid #e7e9f3;border-radius:12px;overflow:hidden}
+.cls-adj th{font-size:11px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:#646587;text-align:left;padding:9px 12px;background:#f4f5f9}
+.cls-adj td{padding:10px 12px;border-top:1px solid #e7e9f3;color:#282834;vertical-align:top}
+.cls-adj td:first-child{font-weight:600}.cls-adj td.old{color:#b5b9d4}.cls-adj td:not(:first-child){white-space:nowrap}
+.exc__b textarea{padding:12px 14px;min-height:72px;resize:vertical}
+.exc__sr input:focus,.exc__b select:focus,.exc__b textarea:focus{outline:2px solid #d74009;outline-offset:-1px;border-color:transparent}
+.exc__sg{position:absolute;left:0;right:0;top:50px;background:#fff;border:1px solid #e7e9f3;border-radius:12px;box-shadow:0 12px 30px rgba(40,40,52,.16);z-index:5;display:none;overflow:hidden}
+.exc__sg.show{display:block}
+.exc__sg div{padding:10px 14px;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;gap:10px}
+.exc__sg div:hover{background:#f4f5f9}.exc__sg small{color:#646587}
+.exc__pick{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #e7e9f3;border-radius:12px;padding:10px 14px;font-size:14px;margin-top:8px}
+.exc__pick button{border:0;background:transparent;color:#d74009;font-weight:600;cursor:pointer;font:inherit;font-size:13px}
+.exc__file{display:flex;align-items:center;gap:12px;border:1px dashed #cfd2e6;border-radius:14px;padding:14px 16px;font-size:14px}
+.exc__file small{display:block;color:#646587;font-size:12.5px}
+.exc__file .grow{flex:1}
+.exc__chips{display:flex;gap:8px;flex-wrap:wrap}
+.exc__chip{border:1px solid #d9dce8;background:#fff;border-radius:999px;padding:9px 16px;font:inherit;font-size:13px;font-weight:600;color:#282834;cursor:pointer}
+.exc__chip.on{border-color:#d74009;background:#fff1ec;color:#d74009}
+.exc__info{font-size:14px;line-height:1.45;color:#282834;background:#d6f3ff;border-radius:14px;padding:12px 16px}
+.exc__err{display:none;font-size:13px;color:#b42318;background:#fff0ee;border-radius:12px;padding:10px 14px}.exc__err.show{display:block}
+.exc__ft{padding:18px 32px 26px;display:flex;justify-content:flex-end;gap:10px}
+
+.exc-list{margin:4px 0 0;padding-left:18px;list-style:disc}
+.exc-list li{margin:2px 0}
+.exc-more{border:0;background:transparent;color:#d74009;font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:4px 0;margin-left:0}
+.exc-more:hover{text-decoration:underline}
+  .exc__b input[type=text]{width:100%;box-sizing:border-box;font:inherit;font-size:14px;color:#282834;border:1px solid #d9dce8;border-radius:12px;height:46px;padding:0 14px;background:#fff}
+  .exc__b input[type=text]:focus{outline:2px solid #d74009;outline-offset:-1px;border-color:transparent}
+  .exc__b input[type=text]::placeholder{color:#9a9cb5}
+  .f-err{font-size:12px;color:#b42318;margin-top:6px;display:none}.bad .f-err{display:block}
+  .bad input{border-color:#b42318!important}
+  .exc__grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .exc__grid .full{grid-column:1/-1}
+  .exc--wide{width:600px}
+  .danger{background:#da1630!important}.danger:hover{background:#b8112a!important}
+  .rd-toast{position:fixed;right:24px;bottom:84px;z-index:3000;max-width:420px;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s}
+  .rd-toast.show{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <button class="burger-btn" onclick="document.getElementById('sidebar').classList.toggle('collapsed')" aria-label="Toggle sidebar">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="#282834" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <img src="shared/logos/ministerio.svg" alt="Ministerio del Deporte" class="sb-logo-img"/>
+      <div class="logo-sep"></div>
+      <img src="shared/logos/suid.png" alt="SUID" class="sb-logo-img"/>
+    </div>
+    <nav class="sidebar-nav"></nav>
+    <div class="sidebar-bottom">
+      <div class="nav-row" onclick="window.incGoLanding ? incGoLanding(this) : (location.href='index.html')">
+        <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="#B5B9D4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="lbl">Cerrar sesión</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="top-header">
+      <div class="profile-switcher">
+        <div class="user-chip">
+          <div class="ava"><div class="ava-ring" style="background:#c4b5fd;color:#4c1d95">DA</div><div class="ava-dot"></div></div>
+          <div class="user-info"><span class="user-name">Danna Arrieta</span><span class="user-role">Gestor de incentivos</span></div>
+          <button class="user-chip__chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </div>
+      </div>
+    </header>
+
+    <div class="page">
+
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Gestión de usuarios</h1>
+          <p class="page-sub" id="sub">—</p>
+        </div>
+        <div class="page-header__actions">
+          <button class="naowee-btn naowee-btn--loud naowee-btn--large" id="btnInvitar" onclick="abrirInvitar()">Invitar persona</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="kpis" style="grid-template-columns:repeat(3,1fr)"></div>
+
+      <section class="tablet">
+        <div class="tablet-toolbar">
+          <div class="tablet-toolbar__left">
+            <div class="naowee-searchbox naowee-searchbox--small naowee-searchbox--pill">
+              <div class="naowee-searchbox__input-wrap"><input class="naowee-searchbox__input" id="q" type="text" placeholder="Buscar por nombre, cédula o correo" autocomplete="off"/></div>
+            </div>
+            <div class="toolbar-dd-wrap" id="ddRolWrap">
+              <button type="button" class="toolbar-dd" onclick="toggleDD('ddRolWrap')"><span id="ddRolLabel">Rol: Todos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <div class="toolbar-dd-menu" role="listbox" id="ddRolMenu"></div>
+            </div>
+            <div class="toolbar-dd-wrap" id="ddEstWrap">
+              <button type="button" class="toolbar-dd" onclick="toggleDD('ddEstWrap')"><span id="ddEstLabel">Estado: Todos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <div class="toolbar-dd-menu" role="listbox" id="ddEstMenu"></div>
+            </div>
+          </div>
+        </div>
+        <table class="asig-table">
+          <thead><tr><th>Persona</th><th>Rol</th><th>Programas</th><th>Contacto</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty2" id="vacio" hidden>No hay personas con esos filtros.</div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal: invitar persona -->
+<div class="exc-ov" id="invOv" onclick="if(event.target===this)cerrarInvitar()">
+  <div class="exc exc--wide" role="dialog" aria-modal="true" aria-labelledby="invT">
+    <div class="exc__h"><div><h3 id="invT">Invitar persona</h3><p id="invSub">Le llegará un correo para confirmar su acceso a la plataforma.</p></div><button class="exc__x" onclick="cerrarInvitar()" aria-label="Cerrar">×</button></div>
+    <div class="exc__b">
+      <div id="invRolBox">
+        <span class="exc__l">Rol <b>*</b></span>
+        <div class="exc__who" id="invRol">
+          <div class="exc__opt on" role="radio" aria-checked="true" tabindex="0" data-rol="programa"><i></i><div><strong>Gestor de programa</strong><span>Revisa documentos y asigna incentivos en sus programas.</span></div></div>
+          <div class="exc__opt" role="radio" aria-checked="false" tabindex="0" data-rol="operador"><i></i><div><strong>Operador</strong><span>Asigna los incentivos que le toquen y revierte los suyos.</span></div></div>
+        </div>
+      </div>
+      <div class="exc__grid">
+        <div class="full" data-f="nombre"><label class="exc__l" for="invNombre">Nombres y apellidos <b>*</b></label><input id="invNombre" type="text" autocomplete="off" placeholder="Ej. Laura Gómez Rojas"/><div class="f-err">Escribe los nombres y apellidos.</div></div>
+        <div data-f="cc"><label class="exc__l" for="invCc">Cédula de ciudadanía <b>*</b></label><input id="invCc" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números"/><div class="f-err" id="invCcE">Escribe una cédula válida (6 a 10 dígitos).</div></div>
+        <div data-f="tel"><label class="exc__l" for="invTel">Teléfono <b>*</b></label><input id="invTel" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej. 3105550123"/><div class="f-err">Escribe un teléfono válido (10 dígitos).</div></div>
+        <div class="full" data-f="mail"><label class="exc__l" for="invMail">Correo electrónico <b>*</b></label><input id="invMail" type="text" autocomplete="off" placeholder="nombre@entidad.gov.co"/><div class="f-err" id="invMailE">Escribe un correo válido.</div></div>
+      </div>
+      <div data-f="prg">
+        <span class="exc__l">Programas activos <b id="invPrgReq">*</b></span>
+        <p class="exc__hint" id="invPrgHint" style="padding-bottom:15px">Elige en cuáles va a trabajar.</p>
+        <div class="exc__chips" id="invPrg"></div>
+        <div class="f-err" id="invPrgE">Elige al menos un programa.</div>
+      </div>
+    </div>
+    <div class="exc__ft"><button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="cerrarInvitar()">Cancelar</button><button class="naowee-btn naowee-btn--loud naowee-btn--large" id="invGo" onclick="enviarInvitacion()">Enviar invitación</button></div>
+  </div>
+</div>
+
+<!-- Modal: desvincular -->
+<div class="exc-ov" id="desOv" onclick="if(event.target===this)cerrarDesvincular()">
+  <div class="exc" role="dialog" aria-modal="true" aria-labelledby="desT" style="width:520px">
+    <div class="exc__h"><div><h3 id="desT">Desvincular persona</h3><p id="desSub">—</p></div><button class="exc__x" onclick="cerrarDesvincular()" aria-label="Cerrar">×</button></div>
+    <div class="exc__b"><div class="exc__info" id="desInfo">—</div></div>
+    <div class="exc__ft"><button class="naowee-btn naowee-btn--mute naowee-btn--large" onclick="cerrarDesvincular()">Cancelar</button><button class="naowee-btn naowee-btn--loud naowee-btn--large danger" id="desGo" onclick="confirmarDesvincular()">Desvincular</button></div>
+  </div>
+</div>
+
+<div class="rd-toast" id="toast"><div class="naowee-message naowee-message--positive" role="status"><div class="naowee-message__content"><div class="naowee-message__header"><span class="naowee-message__title" id="toastT">—</span></div><div class="naowee-message__text" id="toastP">—</div></div></div></div>
+
+<script>
+function fadeAndGo(url){ window.location.href = url; }
+(function () {
+  var K = 'naowee:usuarios';
+  var SESION = (function () { try { return localStorage.getItem('naowee-incentivos-role') === 'programa' ? 'programa' : 'admin'; } catch (_) { return 'admin'; } })();
+  var ROL = { incentivos: 'Gestor de incentivos', programa: 'Gestor de programa', operador: 'Operador' };
+  var COL = { incentivos: ['#c4b5fd', '#4c1d95'], programa: ['#bfdbfe', '#1e3a8a'], operador: ['#ffdfb5', '#92400e'] };
+  var EST = { activo: ['positive', 'Activo'], espera: ['caution', 'En espera de confirmación'], desvinculado: ['neutral', 'Desvinculado'] };
+  var SEMILLA = [
+    { id: 'u1', nombre: 'Danna Arrieta', cc: '52345678', tel: '3105550101', mail: 'danna.arrieta@mindeporte.gov.co', rol: 'incentivos', estado: 'activo', fecha: '2026-08-03', programas: [], por: 'sistema' },
+    { id: 'u2', nombre: 'Isa Pabon', cc: '1020444555', tel: '3105550102', mail: 'isa.pabon@mindeporte.gov.co', rol: 'programa', estado: 'activo', fecha: '2026-08-10', programas: ['PRG-2026-006'], por: 'incentivos' },
+    { id: 'u3', nombre: 'Laura Meza', cc: '1032888123', tel: '3105550103', mail: 'laura.meza@mindeporte.gov.co', rol: 'programa', estado: 'activo', fecha: '2026-08-10', programas: ['PRG-2026-001', 'PRG-2026-006'], por: 'incentivos' },
+    { id: 'u4', nombre: 'Jorge Guzman', cc: '80123456', tel: '3105550104', mail: 'jorge.guzman@mindeporte.gov.co', rol: 'operador', estado: 'activo', fecha: '2026-08-17', programas: ['PRG-2026-006'], por: 'incentivos' },
+    { id: 'u5', nombre: 'Carla Suárez', cc: '1018222333', tel: '3105550105', mail: 'carla.suarez@mindeporte.gov.co', rol: 'programa', estado: 'espera', fecha: '2026-10-19', programas: ['PRG-2026-001'], por: 'incentivos' }
+  ];
+  var MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var $ = function (i) { return document.getElementById(i); };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var fmtF = function (iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? parseInt(m[3], 10) + ' ' + MES[+m[2] - 1] + ' ' + m[1] : '—'; };
+  var fmtCc = function (c) { return String(c).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); };
+  var ini = function (n) { return n.split(' ').filter(function (w) { return w.length > 1; }).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase(); };
+  function leer() { try { var l = JSON.parse(localStorage.getItem(K)); if (Array.isArray(l) && l.length) return l; } catch (_) { } return SEMILLA.map(function (u) { return Object.assign({}, u, { programas: u.programas.slice() }); }); }
+  function guardar(l) { try { localStorage.setItem(K, JSON.stringify(l)); } catch (_) { } }
+
+  /* Programas activos sobre los que esta sesión puede asignar: Danna, todos; Isa, solo los suyos */
+  function activos() {
+    var todos = (window.PROGRAMS_DATA || []).filter(function (p) { return p.status === 'active'; });
+    if (SESION === 'programa') { var ids = (window.scopedPrograms ? window.scopedPrograms() : []).map(function (p) { return p.id; }); todos = todos.filter(function (p) { return ids.indexOf(p.id) > -1; }); }
+    return todos.map(function (p) { return { id: p.id, name: p.name }; });
+  }
+  function nombrePrg(id) { var p = (window.PROGRAMS_DATA || []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : id; }
+  var users = leer(), f = { rol: 'todos', est: 'todos', q: '' }, rolNuevo = SESION === 'programa' ? 'operador' : 'programa', prgSel = [], desId = null;
+
+  /* Lo que ve cada sesión: Danna, a todos; Isa, a los operadores de sus programas (o que ella invitó) */
+  function visibles() {
+    if (SESION === 'admin') return users;
+    var mios = activos().map(function (p) { return p.id; });
+    return users.filter(function (u) { return u.rol === 'operador' && (u.por === 'programa' || (u.programas || []).some(function (id) { return mios.indexOf(id) > -1; })); });
+  }
+  var OPC_ROL = [['todos', 'Todos los roles'], ['programa', 'Gestor de programa'], ['operador', 'Operador']];
+  var OPC_EST = [['todos', 'Todos los estados'], ['activo', 'Activo'], ['espera', 'En espera de confirmación'], ['desvinculado', 'Desvinculado']];
+  function menu(id, labelId, pref, opts, cur, clave) {
+    $(id).innerHTML = opts.map(function (o) { return '<div class="toolbar-dd-item" role="option"' + (o[0] === cur ? ' aria-selected="true"' : '') + ' data-f="' + clave + '" data-v="' + o[0] + '">' + esc(o[1]) + '</div>'; }).join('');
+    var sel = opts.filter(function (o) { return o[0] === cur; })[0];
+    $(labelId).textContent = pref + ': ' + (cur === 'todos' ? 'Todos' : sel[1]);
+  }
+  window.toggleDD = function (id) { var w = $(id), o = w.classList.contains('open'); document.querySelectorAll('.toolbar-dd-wrap.open').forEach(function (x) { x.classList.remove('open'); }); if (!o) w.classList.add('open'); };
+  function kpis() {
+    var v = visibles(), n = function (e) { return v.filter(function (u) { return u.estado === e; }).length; };
+    var K3 = [['Activas', n('activo'), 'Con acceso a la plataforma'], ['En espera de confirmación', n('espera'), 'Aún no aceptan la invitación'], ['Desvinculadas', n('desvinculado'), 'Sin acceso']];
+    $('kpis').innerHTML = K3.map(function (x) { return '<article class="kpi-card"><div class="kpi-card__top"><div class="kpi-card__lbl">' + x[0] + '</div></div><div class="kpi-card__val">' + x[1] + '</div><div class="kpi-card__foot">' + x[2] + '</div></article>'; }).join('');
+  }
+  function prgTags(u) {
+    if (u.rol === 'incentivos') return '<span class="sub2">Todos los programas</span>';
+    var ps = (u.programas || []).filter(function (id) { return SESION === 'admin' || activos().some(function (a) { return a.id === id; }); });
+    if (!ps.length) return '<span class="prg-none">Sin programas</span>';
+    var resto = ps.slice(1), tip = resto.length ? '<span class="prg-more" tabindex="0">+' + resto.length + '<span class="prg-pop" role="tooltip">' + ps.map(function (id) { return '<span>' + esc(nombrePrg(id)) + '</span>'; }).join('') + '</span></span>' : '';
+    return '<div class="prg-tags"><span class="prg-tag" title="' + esc(nombrePrg(ps[0])) + '">' + esc(nombrePrg(ps[0])) + '</span>' + tip + '</div>';
+  }
+  function pintar() {
+    kpis();
+    $('sub').textContent = SESION === 'admin'
+      ? 'Invita a los gestores de programa y a los operadores, y asígnalos a los programas activos. Cuando aceptan la invitación quedan activos; si ya no deben tener acceso, se desvinculan.'
+      : 'Invita a los operadores que van a entregar los incentivos de tus programas. Cuando aceptan la invitación quedan activos; si ya no deben tener acceso, se desvinculan.';
+    $('ddRolWrap').style.display = SESION === 'programa' ? 'none' : '';
+    menu('ddRolMenu', 'ddRolLabel', 'Rol', OPC_ROL, f.rol, 'rol');
+    menu('ddEstMenu', 'ddEstLabel', 'Estado', OPC_EST, f.est, 'est');
+    var q = f.q.toLowerCase();
+    var lista = visibles().filter(function (u) { return (f.rol === 'todos' || u.rol === f.rol) && (f.est === 'todos' || u.estado === f.est) && (!q || (u.nombre + ' ' + u.cc + ' ' + u.mail).toLowerCase().indexOf(q) > -1); });
+    $('vacio').hidden = lista.length > 0;
+    $('rows').innerHTML = lista.map(function (u) {
+      var c = COL[u.rol], acc = '';
+      if (u.rol === 'incentivos') acc = '<span class="sub2">Titular</span>';
+      else if (u.estado === 'activo') acc = '<button class="lk lk--no" data-act="des" data-id="' + u.id + '">Desvincular</button>';
+      else if (u.estado === 'espera') acc = '<button class="lk" data-act="reenviar" data-id="' + u.id + '">Reenviar</button><button class="lk lk--demo" data-act="acceso" data-id="' + u.id + '" title="Solo demo: simula que la persona abre el correo y accede">Simular acceso</button>';
+      else acc = '<span class="sub2">—</span>';
+      var e = EST[u.estado];
+      return '<tr data-id="' + u.id + '"><td><div class="who"><span class="ava2" style="background:' + c[0] + ';color:' + c[1] + '">' + ini(u.nombre) + '</span><div style="min-width:0"><b>' + esc(u.nombre) + '</b><small>CC ' + fmtCc(u.cc) + '</small></div></div></td>'
+        + '<td>' + ROL[u.rol] + '</td><td>' + prgTags(u) + '</td><td><div class="cont">' + esc(u.mail) + '</div><div class="sub2">' + esc(u.tel) + '</div></td>'
+        + '<td><span class="naowee-badge naowee-badge--' + e[0] + ' naowee-badge--quiet naowee-badge--small st-badge">' + e[1] + '</span><div class="sub2" style="margin-top:4px">' + (u.estado === 'espera' ? 'Invitada el ' : 'Desde el ') + fmtF(u.fecha) + '</div></td><td><div class="acc">' + acc + '</div></td></tr>';
+    }).join('');
+  }
+  function toast(t, p) { $('toastT').textContent = t; $('toastP').textContent = p; var e = $('toast'); e.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(function () { e.classList.remove('show'); }, 4200); }
+  function chipsPrg(host, lista, sel) {
+    host.innerHTML = lista.length ? lista.map(function (p) { return '<button type="button" class="exc__chip' + (sel.indexOf(p.id) > -1 ? ' on' : '') + '" data-prg="' + p.id + '">' + esc(p.name) + '</button>'; }).join('') : '<span class="exc__hint">No hay programas activos para asignar.</span>';
+  }
+
+  /* Invitar */
+  window.abrirInvitar = function () {
+    ['invNombre', 'invCc', 'invTel', 'invMail'].forEach(function (i) { $(i).value = ''; });
+    document.querySelectorAll('#invOv [data-f]').forEach(function (e) { e.classList.remove('bad'); });
+    rolNuevo = SESION === 'programa' ? 'operador' : 'programa'; prgSel = [];
+    $('invRolBox').hidden = SESION === 'programa';
+    $('invSub').textContent = SESION === 'programa' ? 'Invitas a un operador para tus programas. Le llegará un correo para confirmar su acceso.' : 'Le llegará un correo para confirmar su acceso a la plataforma.';
+    $('invPrgHint').textContent = SESION === 'programa' ? 'Elige entre tus programas activos en cuáles va a entregar.' : 'Opcional: también se puede asignar al crear el programa, eligiéndolo como gestor.';
+    $('invPrgReq').hidden = SESION !== 'programa';
+    pintarRol(); chipsPrg($('invPrg'), activos(), prgSel); $('invOv').classList.add('open'); setTimeout(function () { $('invNombre').focus(); }, 50);
+  };
+  window.cerrarInvitar = function () { $('invOv').classList.remove('open'); };
+  function pintarRol() { document.querySelectorAll('#invRol .exc__opt').forEach(function (o) { var on = o.dataset.rol === rolNuevo; o.classList.toggle('on', on); o.setAttribute('aria-checked', on); }); }
+  document.querySelectorAll('#invRol .exc__opt').forEach(function (o) {
+    o.addEventListener('click', function () { rolNuevo = o.dataset.rol; pintarRol(); });
+    o.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rolNuevo = o.dataset.rol; pintarRol(); } });
+  });
+  $('invPrg').addEventListener('click', function (e) { var b = e.target.closest('[data-prg]'); if (!b) return; var i = prgSel.indexOf(b.dataset.prg); if (i > -1) prgSel.splice(i, 1); else prgSel.push(b.dataset.prg); chipsPrg($('invPrg'), activos(), prgSel); document.querySelector('#invOv [data-f="prg"]').classList.remove('bad'); });
+  ['invCc', 'invTel'].forEach(function (i) { $(i).addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); }); });
+  document.querySelectorAll('#invOv input').forEach(function (i) { i.addEventListener('input', function () { var w = i.closest('[data-f]'); if (w) w.classList.remove('bad'); }); });
+  window.enviarInvitacion = function () {
+    var nombre = $('invNombre').value.trim().replace(/\s+/g, ' '), cc = $('invCc').value, tel = $('invTel').value, mail = $('invMail').value.trim().toLowerCase();
+    var ok = true, mal = function (campo, msg) { var w = document.querySelector('#invOv [data-f="' + campo + '"]'); w.classList.add('bad'); if (msg) w.querySelector('.f-err').textContent = msg; ok = false; };
+    if (nombre.split(' ').length < 2) mal('nombre');
+    if (!/^\d{6,10}$/.test(cc)) mal('cc'); else if (users.some(function (u) { return u.cc === cc && u.estado !== 'desvinculado'; })) mal('cc', 'Ya hay una persona invitada o activa con esa cédula.');
+    if (!/^\d{10}$/.test(tel)) mal('tel');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) mal('mail'); else if (users.some(function (u) { return u.mail === mail && u.estado !== 'desvinculado'; })) mal('mail', 'Ya hay una persona invitada o activa con ese correo.');
+    if (SESION === 'programa' && !prgSel.length) mal('prg');
+    if (!ok) return;
+    var rol = SESION === 'programa' ? 'operador' : rolNuevo;
+    var hoy = new Date(), iso = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+    users.unshift({ id: 'u' + Date.now(), nombre: nombre, cc: cc, tel: tel, mail: mail, rol: rol, estado: 'espera', fecha: iso, programas: prgSel.slice(), por: SESION === 'programa' ? 'programa' : 'incentivos' });
+    guardar(users); cerrarInvitar(); f = { rol: 'todos', est: 'todos', q: '' }; $('q').value = ''; pintar();
+    toast('Invitación enviada', 'Le llegará un correo a ' + mail + ' para confirmar su acceso como ' + ROL[rol] + (prgSel.length ? ' en ' + prgSel.length + (prgSel.length === 1 ? ' programa.' : ' programas.') : '.'));
+  };
+
+  /* Acciones de la lista */
+  $('rows').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var u = users.filter(function (x) { return x.id === b.dataset.id; })[0]; if (!u) return;
+    if (b.dataset.act === 'des') { desId = u.id; $('desSub').textContent = u.nombre + ' · ' + ROL[u.rol]; $('desInfo').innerHTML = '<b>' + esc(u.nombre) + '</b> perderá el acceso a la plataforma de inmediato. Podrás invitarla de nuevo cuando quieras.'; $('desOv').classList.add('open'); }
+    if (b.dataset.act === 'reenviar') toast('Invitación reenviada', 'Se envió de nuevo el correo a ' + u.mail + '.');
+    if (b.dataset.act === 'acceso') { u.estado = 'activo'; guardar(users); pintar(); toast('Persona activa', u.nombre + ' aceptó la invitación y ya tiene acceso como ' + ROL[u.rol] + '.'); }
+  });
+  window.cerrarDesvincular = function () { $('desOv').classList.remove('open'); desId = null; };
+  window.confirmarDesvincular = function () {
+    var u = users.filter(function (x) { return x.id === desId; })[0]; if (!u) return cerrarDesvincular();
+    u.estado = 'desvinculado'; guardar(users); var n = u.nombre; cerrarDesvincular(); pintar();
+    toast('Persona desvinculada', n + ' ya no tiene acceso a la plataforma.');
+  };
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest('.toolbar-dd-item[data-f]');
+    if (c) { f[c.dataset.f] = c.dataset.v; document.querySelectorAll('.toolbar-dd-wrap.open').forEach(function (x) { x.classList.remove('open'); }); pintar(); return; }
+    if (!e.target.closest('.toolbar-dd-wrap')) document.querySelectorAll('.toolbar-dd-wrap.open').forEach(function (x) { x.classList.remove('open'); });
+  });
+  $('q').addEventListener('input', function () { f.q = this.value.trim(); pintar(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { cerrarInvitar(); cerrarDesvincular(); } });
+  pintar();
+})();
+</script>
+<script src="shared/footer-scroll.js" defer></script>
+<div class="naowee-floating-footer" role="contentinfo" aria-label="Pie de página Naowee">
+  <img src="shared/logos/naowee.svg" alt="Naowee" class="naowee-floating-footer__logo"/>
+  <div class="naowee-floating-footer__sep"></div>
+  <span class="naowee-floating-footer__text">Todos los derechos reservados <strong>&copy; 2026</strong></span>
+</div>
+</body>
+</html>
