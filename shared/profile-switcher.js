@@ -394,6 +394,14 @@
     a.href = 'recorrido/?panel=1&desde=' + encodeURIComponent(archivo + location.search);
     a.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5 15.5 8.5"/></svg>Recorridos de la DEMO';
     a.style.cssText = "position:fixed;right:20px;bottom:20px;z-index:8000;display:flex;align-items:center;gap:8px;background:#002b5b;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:10px 17px;font:700 12.5px 'Inter',sans-serif;text-decoration:none;box-shadow:0 10px 30px -10px rgba(0,43,91,.55)";
+    // Se abre encima de la misma vista, sin cambiar de dirección: el recorrido carga esta pantalla y perfil en un marco a pantalla completa
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      const f = document.createElement('iframe');
+      f.title = 'Recorridos de la DEMO'; f.src = a.getAttribute('href');
+      f.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:0;z-index:9000;background:#fff';
+      document.body.appendChild(f); a.style.display = 'none';
+    });
     document.body.appendChild(a);
   }
 
