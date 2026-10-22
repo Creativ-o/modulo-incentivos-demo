@@ -375,17 +375,6 @@
       sw.appendChild(dd);
     }
 
-    // Acceso a los recorridos guiados desde el menú de perfiles (no dentro del propio recorrido, que ya los trae)
-    const ddm = sw.querySelector('.profile-dd');
-    let embebido = false; try { embebido = window.parent !== window; } catch(e){ embebido = true; }
-    if(ddm && !embebido && !ddm.querySelector('.profile-dd__tour')){
-      const a = document.createElement('a');
-      a.className = 'profile-dd__tour'; a.href = 'recorrido/';
-      a.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Recorridos guiados</span>';
-      ddm.appendChild(a);
-    }
-
-
     // Wire-up de los items del dropdown. Skipeamos si ya tienen onclick
     // inline (páginas legacy) para evitar doble-fire de switchRole.
     sw.querySelectorAll('.profile-dd__item').forEach(item => {
@@ -395,7 +384,21 @@
     });
   }
 
+  // Botón flotante «Recorridos de la DEMO»: abre el recorrido en la misma pantalla y perfil (no dentro del propio recorrido)
+  function botonRecorridos(){
+    let embebido = false; try { embebido = window.parent !== window; } catch(e){ embebido = true; }
+    if(embebido || document.querySelector('.rc-launch-lnk')) return;
+    const a = document.createElement('a');
+    const archivo = location.pathname.split('/').pop() || 'index.html';
+    a.className = 'rc-launch-lnk';
+    a.href = 'recorrido/?panel=1&desde=' + encodeURIComponent(archivo + location.search);
+    a.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 13.5 13.5 8.5 15.5 10.5 10.5 15.5 8.5"/></svg>Recorridos de la DEMO';
+    a.style.cssText = "position:fixed;right:20px;bottom:20px;z-index:8000;display:flex;align-items:center;gap:8px;background:#002b5b;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:10px 17px;font:700 12.5px 'Inter',sans-serif;text-decoration:none;box-shadow:0 10px 30px -10px rgba(0,43,91,.55)";
+    document.body.appendChild(a);
+  }
+
   function mountAll(){
+    botonRecorridos();
     document.querySelectorAll('.profile-switcher').forEach(mountSwitcher);
     applyRole(currentRole());
   }

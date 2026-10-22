@@ -112,6 +112,8 @@
   /* ── Arranque: la demo en el perfil guardado ── */
   var inicial = lsG('naowee-incentivos-role'); if (!ROLES[inicial]) { inicial = 'admin'; ponerRol('admin'); }
   var q = new URLSearchParams(location.search).get('caso');
-  frame.src = '../' + ROLES[inicial].inicio;
+  var qs = new URLSearchParams(location.search), desde = qs.get('desde');
+  frame.src = '../' + (desde && /^[\w.-]+\.html(\?[\w=&%.-]*)?$/.test(desde) ? desde : ROLES[inicial].inicio);
+  if (qs.get('panel')) setTimeout(function () { togglePanel(true); }, 300);
   if (q) frame.addEventListener('load', function una() { frame.removeEventListener('load', una); var b = panel; setTimeout(function () { var c = window.CASOS.filter(function (x) { return x.id === q && x.pasos; })[0]; if (c) { aplicarEscena(c.escena); frame.src = '../' + (window.ESCENAS[c.escena].inicio); frame.addEventListener('load', function dos() { frame.removeEventListener('load', dos); setTimeout(function () { R.iniciar(c.id); }, 150); }); } }, 100); });
 })();
