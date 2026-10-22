@@ -893,14 +893,16 @@ window.getProgramCategory = function(p){
     var dg = digitsOf(q), nm = normT(q).trim(), all = window.docReviews();
     var hit = all.filter(function (r) { return (dg.length >= 5 && digitsOf(r.cc) === dg) || (!dg && nm.length >= 3 && normT(r.persona).indexOf(nm) > -1); });
     if (!hit.length) return null;
-    var key = digitsOf(hit[0].cc);
-    return window.opBuild(all.filter(function (r) { return digitsOf(r.cc) === key; }));
+    var key = digitsOf(hit[0].cc), prof = window.opBuild(all.filter(function (r) { return digitsOf(r.cc) === key; }));
+    /* Al operador solo le salen personas que ya pueden recibir al menos un incentivo (documentación aprobada); el resto, como si no existieran */
+    return prof.entries.length ? prof : null;
   };
   /* Ejemplos para probar en el buscador: uno por estado documental */
   window.opSamples = function () {
     var all = window.docReviews(), seen = {}, out = [];
-    [['apr', 2], ['pend', 1], ['sub', 1], ['exp', 1], ['porcargar', 1]].forEach(function (pair) {
-      all.filter(function (r) { return r.estado === pair[0] && !seen[digitsOf(r.cc)]; }).slice(0, pair[1]).forEach(function (r) { seen[digitsOf(r.cc)] = 1; out.push({ cc: r.cc, persona: r.persona, estado: r.estado, excepcion: !!r.excepcion }); });
+    all.filter(function (r) { return r.estado === 'apr' && !seen[digitsOf(r.cc)]; }).forEach(function (r) {
+      if (out.length >= 4 || seen[digitsOf(r.cc)] || !window.opSearch(r.cc)) return;   // una vez por persona, y solo quienes de verdad pueden recibir algo
+      seen[digitsOf(r.cc)] = 1; out.push({ cc: r.cc, persona: r.persona, estado: r.estado, excepcion: !!r.excepcion });
     });
     return out;
   };

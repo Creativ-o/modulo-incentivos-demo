@@ -37,8 +37,8 @@
   /* ── Panel ── */
   var launch = document.createElement('button');
   launch.className = 'rc-launch'; launch.type = 'button'; launch.setAttribute('aria-haspopup', 'dialog');
-  launch.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 10.5 10.5 8.5 15.5 13.5 13.5" fill="currentColor" stroke="none"/></svg>Recorrido del flujo';
-  var panel = document.createElement('aside'); panel.className = 'rc-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Recorrido del flujo');
+  launch.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 10.5 10.5 8.5 15.5 13.5 13.5" fill="currentColor" stroke="none"/></svg>Recorridos de la DEMO';
+  var panel = document.createElement('aside'); panel.className = 'rc-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Recorridos de la DEMO');
   var scrim = document.createElement('div'); scrim.className = 'rc-scrim'; scrim.addEventListener('click', function () { togglePanel(false); });
   document.body.appendChild(scrim); document.body.appendChild(launch); document.body.appendChild(panel);
 
@@ -52,23 +52,6 @@
   }
   R.alTerminar = function () { if (panel.classList.contains('open')) pintarPanel(); };
 
-  /* ── Panel ── */
-  var launch = document.createElement('button');
-  launch.className = 'rc-launch'; launch.type = 'button'; launch.setAttribute('aria-haspopup', 'dialog');
-  launch.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="15.5 8.5 10.5 10.5 8.5 15.5 13.5 13.5" fill="currentColor" stroke="none"/></svg>Recorrido del flujo';
-  var panel = document.createElement('aside'); panel.className = 'rc-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Recorrido del flujo');
-  var scrim = document.createElement('div'); scrim.className = 'rc-scrim'; scrim.addEventListener('click', function () { togglePanel(false); });
-  document.body.appendChild(scrim); document.body.appendChild(launch); document.body.appendChild(panel);
-
-  var abierto = null;   // caso desplegado
-  /* Carga la escena del caso y lo arranca cuando la pantalla de partida está lista */
-  function lanzar(id) {
-    var c = window.CASOS.filter(function (x) { return x.id === id; })[0]; if (!c || !c.pasos) return;
-    var e = aplicarEscena(c.escena); togglePanel(false); R.terminar();
-    frame.src = '../' + (e.inicio || ROLES[e.rol || 'admin'].inicio);
-    frame.addEventListener('load', function una() { frame.removeEventListener('load', una); setTimeout(function () { R.iniciar(c.id); }, 150); });
-  }
-  R.alTerminar = function () { if (panel.classList.contains('open')) pintarPanel(); };
   function pintarPanel() {
     var rol = lsG('naowee-incentivos-role') || 'admin', done = R.hechos();
     var yo = ROLES[rol], CH = '<svg class="rc-chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 4 4-4"/></svg>';
@@ -80,11 +63,11 @@
     function fila(c) {
       var listo = !!c.pasos, abierto_ = abierto === c.id;
       return '<div class="rc-cu' + (abierto_ ? ' is-open' : '') + (done.indexOf(c.id) > -1 ? ' rc-ok' : '') + (listo ? '' : ' rc-soon') + '" data-id="' + c.id + '">'
-        + '<button type="button" data-abrir="' + c.id + '"><span class="rc-code">' + esc(c.id) + '</span><span class="rc-t">' + esc(c.titulo) + '</span></button>'
+        + '<button type="button" data-abrir="' + c.id + '"><span class="rc-code">' + esc(c.id) + '</span><span class="rc-t">' + esc(c.titulo) + '</span><svg class="rc-cv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 4l4 4 4-4"/></svg></button>'
         + '<div class="rc-det">' + esc(c.resumen) + '<div class="rc-gap"></div>'
         + (listo ? '<button type="button" class="rc-go" data-go="' + c.id + '">Ver recorrido</button>' : '') + '</div></div>';
     }
-    panel.innerHTML = '<div class="rc-h"><b>Recorrido del flujo</b><span id="rcResetBox"><button type="button" class="rc-ib" id="rcReset" title="Reiniciar demo: borra lo guardado" aria-label="Reiniciar demo">↺</button></span><button type="button" class="rc-ib" id="rcCerrar" aria-label="Cerrar">×</button></div>'
+    panel.innerHTML = '<div class="rc-h"><b>Recorridos de la DEMO</b><span id="rcResetBox"><button type="button" class="rc-ib" id="rcReset" title="Reiniciar demo: borra lo guardado" aria-label="Reiniciar demo">↺</button></span><button type="button" class="rc-ib" id="rcCerrar" aria-label="Cerrar">×</button></div>'
       + '<div class="rc-b"><div class="rc-g">Perfil</div>' + perf
       + '<div class="rc-g">Flujo completo</div><div class="rc-sub">La historia de principio a fin, con el mismo programa y las mismas personas. Avisa cuando cambia el perfil y en qué parte va.</div>' + flujo.map(fila).join('')
       + '<div class="rc-g">Casos independientes</div><div class="rc-sub">Cada caso se puede ver solo y parte de su propia escena.</div>' + casos.map(fila).join('')

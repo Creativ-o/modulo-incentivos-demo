@@ -543,7 +543,7 @@
   </div>
 </div>
 
-<script src="shared/programs-data.js?v=21d"></script>
+<script src="shared/programs-data.js?v=21e"></script>
 <script>
 const SAMPLE = {
   eligible: {
@@ -1047,8 +1047,8 @@ function renderNotFound(){
         <div class="not-found__icon">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8.5 11h5M11 8.5v5"/></svg>
         </div>
-        <h4>Documento no encontrado en la plataforma</h4>
-        <p>El documento ingresado no está registrado en el SUID. Verifica el número o solicita que el beneficiario (deportista o personal de apoyo) se registre antes de continuar.</p>
+        <h4>No hay un beneficiario para entregar con ese documento</h4>
+        <p>El documento no está registrado o la persona aún no tiene la documentación aprobada por el gestor del programa. Verifica el número o espera a que se apruebe.</p>
         <div class="not-found__actions">
           <button class="naowee-btn naowee-btn--mute naowee-btn--medium" onclick="document.getElementById('docNumber').value='';document.getElementById('docNumber').focus();resetState()">Intentar otro</button>
           <button class="naowee-btn naowee-btn--link naowee-btn--medium">Contactar soporte</button>
@@ -1170,7 +1170,7 @@ function realCard(prof){
       <div class="profile-meta">${prof.excepcion ? '<div style="display:inline-flex;margin-bottom:2px"><span class="profile-tag profile-tag--entrenador">' + (prof.excepcion === 'manual' ? 'Registrado manualmente' : 'Habilitado por excepción') + '</span></div>' : ''}
         <div class="profile-name">${esc2(prof.persona)}</div>
         <div class="profile-sub"><span><strong>${prof.tipo}</strong> ${prof.cc}</span><span class="dot"></span><span>${progNames.length} programa${progNames.length === 1 ? '' : 's'}</span></div></div>
-      <div class="profile-side">${badge}</div></div>
+      <div class="profile-side" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${done.length ? `<span class="naowee-badge naowee-badge--informative naowee-badge--quiet naowee-badge--small">${done.length} asignado${done.length === 1 ? '' : 's'}</span>` : ''}${badge}</div></div>
     <div class="profile-body"><div class="data-block"><h5>Datos del beneficiario</h5><div class="kv-list">
         <div class="kv-row"><span class="kv-row__ico">${KV_ICONS.matricula}</span><span class="kv-row__lbl">Documento</span><span class="kv-row__val">${prof.tipo} ${prof.cc}</span></div>
         <div class="kv-row"><span class="kv-row__ico">${KV_ICONS.category}</span><span class="kv-row__lbl">Programas</span><span class="kv-row__val" style="font-weight:300">${progListHTML(progNames)}</span></div>

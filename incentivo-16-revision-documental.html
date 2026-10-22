@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
-<script src="shared/programs-data.js?v=21d"></script>
+<script src="shared/programs-data.js?v=21e"></script>
 
 <style>
   .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap}
@@ -68,7 +68,8 @@
   .toolbar-dd:hover{border-color:#646587}
   .toolbar-dd.open,.toolbar-dd:focus-visible{outline:none;border-color:var(--naowee-color-text-accent,#d74009);box-shadow:0 0 0 3px rgba(215,64,9,.15)}
   .toolbar-dd svg{width:16px;height:16px;flex-shrink:0;color:var(--naowee-color-text-secondary,#646587);transition:transform .2s}
-  .toolbar-dd.open svg{transform:rotate(180deg)}
+  .toolbar-dd.open svg,.toolbar-dd-wrap.open .toolbar-dd svg{transform:rotate(180deg)}
+  .toolbar-dd-wrap.open .toolbar-dd{outline:none;border-color:var(--naowee-color-text-accent,#d74009);box-shadow:0 0 0 3px rgba(215,64,9,.15)}
   .toolbar-dd-menu{
     position:absolute;top:calc(100% + 6px);left:0;z-index:50;
     min-width:100%;background:#fff;white-space:nowrap;
@@ -396,7 +397,7 @@
               <div class="toolbar-dd-menu" role="listbox" id="ddEstMenu"></div>
             </div>
             <div class="toolbar-dd-wrap" id="ddCicloWrap">
-              <button type="button" class="toolbar-dd" onclick="toggleDD('ddCicloWrap')"><span id="ddCicloLabel">Ciclo: Oct 2026</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <button type="button" class="toolbar-dd" onclick="toggleDD('ddCicloWrap')"><span id="ddCicloLabel">Ciclo: Todos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
               <div class="toolbar-dd-menu" role="listbox" id="ddCicloMenu"></div>
             </div>
             </div>
@@ -450,7 +451,9 @@
 <script>
 const PE = {pend:['informative','En revisión'],apr:['positive','Aprobada'],porcargar:['neutral','Por cargar'],sub:['caution','Pendiente de subsanación'],exp:['negative','Expirada']};
 const DE = {porcargar:['neutral','Por cargar'],revision:['informative','En revisión'],aprobado:['positive','Aprobado'],rechazado:['negative','Rechazado']};
-const EST_OPTS = [['pend','En revisión'],['apr','Aprobadas'],['porcargar','Por cargar'],['sub','Pendiente de subsanación'],['exp','Expiradas'],['all','Todos']];
+const EST_OPTS = [['all','Todos','#5b5e8a'],['pend','En revisión','#1f78d1'],['apr','Aprobadas','#15803d'],['porcargar','Por cargar','#9c9ebf'],['sub','Pendiente de subsanación','#b7791f'],['exp','Expiradas','#b42318']];
+const MESES_L = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function cicloDe(r){ const m = /(\d+)\s+([a-z]{3})\s+(\d{4})/i.exec(r.cargado || ''); if(!m) return null; const i = MES.indexOf(m[2].toLowerCase()); return i < 0 ? null : { k: m[3] + '-' + String(i + 1).padStart(2, '0'), l: MESES_L[i] + ' ' + m[3] }; }
 const AV = ['orange','purple','green','blue','pink','teal'];
 const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], PAGE = 6;
 const I = {
@@ -473,7 +476,7 @@ const I = {
   rej:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><polyline points="14 3 14 8 19 8"/><line x1="9.5" y1="12" x2="14.5" y2="17"/><line x1="14.5" y1="12" x2="9.5" y2="17"/></svg>',
   rev:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><polyline points="14 3 14 8 19 8"/><circle cx="12" cy="14" r="2.2"/></svg>'
 };
-const state = { view:'list', est:'pend', prog:'all', q:'', page:1, cur:null, doc:null, notes:{}, chk:{}, pend:null, tab:'req', open:true, zoom:1 };
+const state = { view:'list', est:'pend', prog:'all', ciclo:'all', q:'', page:1, cur:null, doc:null, notes:{}, chk:{}, pend:null, tab:'req', open:true, zoom:1 };
 let ALL = [];
 const badge = (map, k, extra) => `<span class="naowee-badge naowee-badge--${map[k][0]} naowee-badge--quiet naowee-badge--small st-badge">${map[k][1]}</span>${extra || ''}`;
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -505,7 +508,7 @@ function show(v){ state.view = v; $('vList').hidden = v !== 'list'; $('vDet').hi
 
 /* ═══ Lista: Documentos pendientes (por perfil) ═══ */
 function filtered(){
-  return ALL.filter(r => (state.est === 'all' || r.estado === state.est) && (state.prog === 'all' || r.prog === state.prog) &&
+  return ALL.filter(r => (state.est === 'all' || r.estado === state.est) && (state.prog === 'all' || r.prog === state.prog) && (state.ciclo === 'all' || (cicloDe(r) || {}).k === state.ciclo) &&
     (!state.q || (r.persona + ' ' + r.cc).toLowerCase().includes(state.q)));
 }
 function strip(){
@@ -536,13 +539,14 @@ function renderList(flash){
   $('rowCountFoot').textContent = rows.length ? `Mostrando ${ini + 1}–${ini + slice.length} de ${rows.length}` : 'Sin resultados';
   $('pagInput').value = state.page; $('pagTotal').textContent = pages;
   $('pagPrev').disabled = state.page <= 1; $('pagNext').disabled = state.page >= pages;
-  $('ddEstMenu').innerHTML = EST_OPTS.map(o => `<div class="toolbar-dd-item" role="option" ${o[0] === state.est ? 'aria-selected="true"' : ''} onclick="setEst('${o[0]}','${o[1]}')">${o[1]}</div>`).join('');
+  $('ddEstMenu').innerHTML = EST_OPTS.map(o => `<div class="toolbar-dd-item" role="option" ${o[0] === state.est ? 'aria-selected="true"' : ''} onclick="setEst('${o[0]}','${o[1]}')"><span class="dd-dot" style="background:${o[2]}"></span>${o[1]}</div>`).join('');
 }
 function toggleKebab(id){ const k = $('kb-' + id), o = k.classList.contains('open'); document.querySelectorAll('.kebab.open').forEach(x => x.classList.remove('open')); if(!o) k.classList.add('open'); }
 function changePage(d){ state.page += d; renderList(); }
 document.addEventListener('change', e => { if(e.target.id === 'pagInput'){ state.page = Math.max(1, parseInt(e.target.value, 10) || 1); renderList(); } });
 function setEst(e, lbl){ state.est = e; state.page = 1; $('ddEstLabel').textContent = 'Estado: ' + lbl; $('ddEstWrap').classList.remove('open'); renderList(); }
-function setProg(v, lbl){ state.prog = v; state.page = 1; $('ddProgLabel').textContent = lbl; $('ddProgWrap').classList.remove('open'); renderList(); }
+function setCiclo(v, lbl){ state.ciclo = v; state.page = 1; $('ddCicloLabel').textContent = 'Ciclo: ' + lbl; $('ddCicloWrap').classList.remove('open'); $('ddCicloMenu').querySelectorAll('.toolbar-dd-item').forEach(i => { if(i.dataset.val === v) i.setAttribute('aria-selected', 'true'); else i.removeAttribute('aria-selected'); }); renderList(); }
+function setProg(v, lbl){ state.prog = v; $('ddProgMenu').querySelectorAll('.toolbar-dd-item').forEach(i => { if(i.dataset.val === v) i.setAttribute('aria-selected', 'true'); else i.removeAttribute('aria-selected'); }); state.page = 1; $('ddProgLabel').textContent = lbl; $('ddProgWrap').classList.remove('open'); renderList(); }
 
 /* ═══ Detalle del usuario ═══ */
 function openUser(id){
@@ -680,13 +684,17 @@ $('searchInput').addEventListener('input', e => { state.q = e.target.value.trim(
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeMd(); });
 (function init(){
   const ps = window.scopedPrograms().filter(p => { try { return window.progDocsOn(window.getProgramConfig(p)); } catch(e){ return false; } });
-  $('ddProgMenu').innerHTML = '<div class="toolbar-dd-item" role="option" onclick="setProg(\'all\',\'Programa: Todos\')">Todos los programas</div>' +
-    ps.map(p => `<div class="toolbar-dd-item" role="option" onclick="setProg('${p.id}','${esc(p.name).replace(/'/g,'&#39;')}')">${esc(p.name)}</div>`).join('');
+  $('ddProgMenu').innerHTML = '<div class="toolbar-dd-item" role="option" data-val="all" aria-selected="true" onclick="setProg(\'all\',\'Programa: Todos\')"><span class="dd-dot" style="background:#5b5e8a"></span>Todos los programas</div>' +
+    ps.map(p => `<div class="toolbar-dd-item" role="option" data-val="${p.id}" onclick="setProg('${p.id}','${esc(p.name).replace(/'/g,'&#39;')}')"><span class="dd-dot" style="background:${p.iconColor || '#5b5e8a'}"></span>${esc(p.name)}</div>`).join('');
   load();
+  const cs = {}; ALL.forEach(r => { const c = cicloDe(r); if(c) cs[c.k] = c.l; });
+  $('ddCicloMenu').innerHTML = '<div class="toolbar-dd-item" role="option" data-val="all" aria-selected="true" onclick="setCiclo(\'all\',\'Todos\')"><span class="dd-dot" style="background:#5b5e8a"></span>Todos los ciclos</div>' +
+    Object.keys(cs).sort().reverse().map(k => `<div class="toolbar-dd-item" role="option" data-val="${k}" onclick="setCiclo('${k}','${cs[k]}')"><span class="dd-dot" style="background:#1f78d1"></span>${cs[k]}</div>`).join('');
 })();
 function fadeAndGo(u){ window.location.href = u; }
 </script>
 
+<script src="shared/filtros.js?v=1" defer></script>
 <script src="shared/footer-scroll.js" defer></script>
 <div class="naowee-floating-footer" role="contentinfo" aria-label="Pie de página Naowee">
   <img src="shared/logos/naowee.svg" alt="Naowee" class="naowee-floating-footer__logo"/>

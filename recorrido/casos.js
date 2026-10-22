@@ -43,7 +43,7 @@
         f('tarjeta:Etapas de cada ciclo, tarjeta:Fechas de cargue', { preparar: async function (c) { await P(2)(c); await A.docsActivar(c); }, titulo: 'Etapas: cargue, revisión y asignación', llenar: A.llenarEtapas,
           texto: 'Cada etapa tiene su ventana. Fuera de la ventana de cargue el deportista no puede subir documentos, salvo **habilitación excepcional**. El **plazo de gracia** da días hábiles para subsanar un documento rechazado.' }),
         f('tarjeta:Tipos de incentivo', { preparar: async function (c) { await P(2)(c); await A.docsActivar(c); }, titulo: 'Cuatro tipos de incentivo', llenar: A.llenarTipos,
-          texto: 'Un programa puede entregar **varios tipos** a la vez. Cada tipo se valora y se entrega a su manera: la **categoría** decide si lleva valor (Bono, Beca, Kit…) o no (Diploma), y la modalidad se deriva sola.' }),
+          texto: 'Un programa puede entregar **varios tipos** a la vez. Cada tipo se valora y se entrega a su manera: la **categoría** decide si lleva valor (Bono, Beca, Kit o diploma), y la modalidad se deriva sola.' }),
         f('inc:1', { preparar: P(2), titulo: 'Tipo 1 · Beca con código', llenar: function (c) { return A.llenarInc(c, 0); },
           texto: 'Una **beca de entrega única con código**: cada código es único y equivale a una unidad entregable. Se valora «de abajo hacia arriba»: valor unitario × cantidad = **total**.' }),
         f('inc:2', { preparar: P(2), titulo: 'Tipo 2 · Bono recurrente', llenar: function (c) { return A.llenarInc(c, 1); },
@@ -51,7 +51,7 @@
         f('inc:3', { preparar: P(2), titulo: 'Tipo 3 · Kit sin código', llenar: function (c) { return A.llenarInc(c, 2); },
           texto: 'Un **kit de entrega única sin código**: el Operador solo registra la entrega. Sin código no hay inventario que cargar en el paso 4.' }),
         f('inc:4', { preparar: P(2), titulo: 'Tipo 4 · Certificado', llenar: function (c) { return A.llenarInc(c, 3); },
-          texto: 'La categoría **Diploma / reconocimiento** se entrega como **certificado digital** y no lleva código. El **valor unitario es opcional**: sirve por si el Ministerio quiere imprimirlo. Aquí se registran 120 certificados de $ 4.500.' }),
+          texto: 'La categoría **Diploma / reconocimiento** se entrega como **certificado digital** y no lleva código. El **valor unitario es opcional.**' }),
         f('#pfDist', { preparar: P(2), titulo: 'Total del programa',
           texto: 'El sistema suma los tipos que tienen valor y cantidad. Los tipos recurrentes se calculan **por ciclo**.' }),
 
@@ -71,7 +71,7 @@
         f('tipo:3', { preparar: P(3), titulo: 'Tipo 3 · documentos por tipo', llenar: A.llenarCondicionesKit,
           texto: 'Los documentos del programa se eligen **por tipo**: el kit no necesita **Certificación bancaria**, así que se desmarca. Las fechas de cargue siguen siendo las del paso 2.' }),
         f('tipo:4', { preparar: P(3), titulo: 'Tipo 4 · sin condiciones propias', llenar: A.llenarCondicionesDiploma,
-          texto: 'Sin condiciones propias: puede recibirlo quien cumpla la **población** del programa. El certificado tampoco necesita pago, así que no exige la certificación bancaria ni la autorización.' }),
+          texto: 'Sin condiciones propias: puede recibirlo quien cumpla la **población** del programa.' }),
 
         /* Paso 4 */
         f('tarjeta:Inventario de códigos', { preparar: P(4), titulo: 'Paso 4 · Inventario de códigos', llenar: A.llenarCodigos,
@@ -189,7 +189,7 @@
         { rol: 'operador', pantalla: A08, sel: '.search-card', titulo: 'Buscar a la persona',
           texto: 'El Operador **entrega lo que se le asigna**. Busca al beneficiario por **documento o nombre**; solo puede entregar a quien tiene la **documentación aprobada** por el Gestor de programa.' },
         { pantalla: A08, sel: '.quick-chip', contiene: 'Andrés García', pulsar: true, titulo: 'Una persona de ejemplo',
-          texto: 'Para la demo hay personas de prueba en distintos estados. Usaremos a **Andrés García**, que tiene documentación aprobada.' },
+          texto: 'Para la demo hay personas de ejemplo, todas con **documentación aprobada**: a quien no la tiene el operador **no lo ve**. Usaremos a **Andrés García**.' },
         { pantalla: A08, sel: '.profile-card', titulo: 'Programas y documentación',
           texto: 'Se ven los programas de la persona y el estado de su **documentación por programa**. Solo se entrega en los que están **aprobados**; los demás muestran **por qué** están bloqueados (en revisión, pendiente de subsanación, expirada…).' },
         { pantalla: A08, sel: '.naowee-btn--loud', contiene: 'Continuar', pulsar: true, titulo: 'Continuar', texto: 'Con la persona validada, pulsa **Continuar**.' },
@@ -213,8 +213,10 @@
 
         { pantalla: A11, sel: '.status-banner', titulo: 'Incentivo entregado',
           texto: 'La asignación queda registrada con un **ID de entrega**. El estado del código cambia de **Disponible** a **Asignado**, con fecha, hora y operador.' },
-        { pantalla: A11, sel: '.naowee-btn--loud', contiene: 'Nueva asignación', titulo: 'Seguir asignando',
-          texto: 'Desde aquí se puede imprimir el **comprobante**, ver el historial de lo entregado o hacer una nueva asignación.' },
+        { pantalla: A11, sel: '#perfilPersona', titulo: 'Lo que ya tiene la persona',
+          texto: 'Debajo se ve el **perfil de Andrés**: lo que ya recibió (**Asignado**, con su código y la hora) y lo que **le falta por entregar** en sus programas.' },
+        { pantalla: A11, sel: '#btnOtro', titulo: 'Seguir con otro incentivo',
+          texto: 'Si le quedan incentivos, **«Asignar otro incentivo»** vuelve a su perfil, donde el ya entregado aparece como **Asignado**, y se continúa el flujo con el siguiente. **«Nueva asignación»** empieza con otra persona.' },
 
         { rol: 'programa', pantalla: A08, sel: '.nav-row[data-nav="asignar"]', titulo: 'Isa y Danna también asignan',
           texto: 'El **Gestor de programa** también asigna, pero **solo en sus programas**: la búsqueda ya sale filtrada. El **Gestor de incentivos** lo puede hacer en cualquiera.' }
@@ -370,7 +372,7 @@
     var parte1 = [
       { rol: 'admin', parte: 1, pantalla: U18, sel: '.page-header', titulo: 'Todo empieza con las personas',
         texto: 'Antes de crear un programa, el **Gestor de incentivos** invita a quienes van a trabajar en la plataforma: una **Gestora de programa** (Isa) y un **Operador** (Jorge). Quienes aceptan quedan activos y ven la plataforma según su rol.' },
-      { pantalla: U18, sel: '.asig-table', titulo: 'Hoy solo está Danna', texto: 'La lista parte con la titular, el **Gestor de incentivos**. Vamos a sumar a las otras dos personas.' },
+      { pantalla: U18, sel: '.asig-table', titulo: 'Aún no hay nadie invitado', texto: 'La lista parte vacía: solo muestra a las personas que el Gestor de incentivos invita. Vamos a sumar a Isa y a Jorge.' },
       { pantalla: U18, sel: '#btnInvitar', pulsar: true, titulo: 'Invitar a la Gestora de programa', texto: 'Pulsa **Invitar persona**.' },
       { pantalla: U18, sel: '#invRol', llenar: function (c) { return A.rolInvitado(c, 'programa'); }, titulo: 'Rol: Gestor de programa',
         texto: 'Primero Isa, como **Gestora de programa**: revisa documentos y asigna en los programas que tenga a cargo.' },
@@ -388,7 +390,7 @@
       { pantalla: U18, sel: '#invGo', pulsar: true, titulo: 'Enviar la invitación', texto: 'Pulsa **Enviar invitación**.' },
       { pantalla: U18, sel: '[data-act="acceso"]', pulsar: true, titulo: 'Jorge acepta', texto: 'Jorge también acepta la invitación.' },
       { pantalla: U18, sel: '#kpis', titulo: 'Equipo listo',
-        texto: 'Ya hay **tres personas activas**: Danna, Isa y Jorge. Con el equipo armado, Danna puede **crear el programa** y dejar a Isa como su gestora.' }
+        texto: 'Ya hay **dos personas activas**: Isa y Jorge. Con el equipo armado, Danna puede **crear el programa** y dejar a Isa como su gestora.' }
     ];
 
     /* Parte 2: la parametrización del caso 1, con el gestor que acaba de quedar activo */
@@ -437,7 +439,7 @@
     var parte5 = [
       { rol: 'operador', parte: 5, pantalla: A08, sel: '.search-card', titulo: 'Le sale al Operador',
         texto: 'Jorge entra a **Asignar incentivo**. Busca a Esteban por documento o nombre: solo se puede entregar a quien tiene la **documentación aprobada**.' },
-      { pantalla: A08, sel: '.quick-chip', contiene: 'Esteban Mora', pulsar: true, titulo: 'Buscar a Esteban', texto: 'Se busca a **Esteban Mora**.' },
+      { pantalla: A08, sel: '#btnSearch', llenar: function (c) { return A.escribir(c, '#docNumber', '1.020.088.848', true); }, pulsar: true, titulo: 'Buscar a Esteban', texto: 'Se busca a **Esteban Mora** por su documento. Si no tuviera documentación aprobada, **no aparecería**.' },
       { pantalla: A08, sel: '.profile-card', titulo: 'Documentación aprobada',
         texto: 'Esteban aparece con el programa nuevo **«Aprobada»**: el gestor ya validó sus documentos, así que se le puede entregar.' },
       { pantalla: A08, sel: '.naowee-btn--loud', contiene: 'Continuar', pulsar: true, titulo: 'Continuar', texto: 'Pulsa **Continuar**.' },

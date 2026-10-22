@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
-<script src="shared/programs-data.js?v=21d"></script>
+<script src="shared/programs-data.js?v=21e"></script>
 <script src="shared/profile-switcher.js?v=role-33"></script>
 
 <style>
@@ -48,6 +48,10 @@
   .lk--no{color:#b42318}.lk--no:hover{background:#fff0ee}
   .lk--demo{color:#646587;font-weight:500;border:1px dashed #cfd2e6}
   .toolbar-dd-wrap{position:relative;display:inline-flex}
+  .pdd{display:flex;width:100%}.pdd .toolbar-dd{width:100%;height:46px;border-radius:12px;border-color:#d9dce8;font-size:14px;font-weight:400;padding:0 14px}
+  .pdd .toolbar-dd-menu{top:auto;bottom:calc(100% + 6px);max-height:220px}
+  .toolbar-dd-item .ck{width:16px;height:16px;border:1.5px solid #b5b9d4;border-radius:4px;flex:none;display:grid;place-items:center;color:#fff}
+  .toolbar-dd-item[aria-selected="true"] .ck{background:#d74009;border-color:#d74009}
   .toolbar-dd{position:relative;display:inline-flex;align-items:center;gap:8px;justify-content:space-between;height:36px;padding:4px 12px 4px 14px;background:#fff;border:1px solid #8788ab;border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;color:#282834;cursor:pointer;transition:border-color .15s,box-shadow .15s}
   .toolbar-dd:hover{border-color:#646587}
   .toolbar-dd-wrap.open .toolbar-dd,.toolbar-dd:focus-visible{outline:none;border-color:#d74009;box-shadow:0 0 0 3px rgba(215,64,9,.15)}
@@ -178,7 +182,7 @@
           <p class="page-sub" id="sub">—</p>
         </div>
         <div class="page-header__actions">
-          <button class="naowee-btn naowee-btn--loud naowee-btn--large" id="btnInvitar" onclick="abrirInvitar()">Invitar persona</button>
+          <button class="naowee-btn naowee-btn--loud naowee-btn--large" id="btnInvitar" onclick="abrirInvitar()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Invitar persona</button>
         </div>
       </div>
 
@@ -232,7 +236,10 @@
       <div data-f="prg">
         <span class="exc__l">Programas activos <b id="invPrgReq">*</b></span>
         <p class="exc__hint" id="invPrgHint" style="padding-bottom:15px">Elige en cuáles va a trabajar.</p>
-        <div class="exc__chips" id="invPrg"></div>
+        <div class="toolbar-dd-wrap pdd" id="ddPrgWrap">
+          <button type="button" class="toolbar-dd" onclick="toggleDD('ddPrgWrap')"><span id="ddPrgLabel">Selecciona uno o varios programas</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="toolbar-dd-menu" role="listbox" aria-multiselectable="true" id="ddPrgMenu"></div>
+        </div>
         <div class="f-err" id="invPrgE">Elige al menos un programa.</div>
       </div>
     </div>
@@ -286,7 +293,7 @@ function fadeAndGo(url){ window.location.href = url; }
 
   /* Lo que ve cada sesión: Danna, a todos; Isa, a los operadores de sus programas (o que ella invitó) */
   function visibles() {
-    if (SESION === 'admin') return users;
+    if (SESION === 'admin') return users.filter(function (u) { return u.rol !== 'incentivos'; });   // el titular no hace parte de la lista
     var mios = activos().map(function (p) { return p.id; });
     return users.filter(function (u) { return u.rol === 'operador' && (u.por === 'programa' || (u.programas || []).some(function (id) { return mios.indexOf(id) > -1; })); });
   }
@@ -323,8 +330,7 @@ function fadeAndGo(url){ window.location.href = url; }
     $('vacio').hidden = lista.length > 0;
     $('rows').innerHTML = lista.map(function (u) {
       var c = COL[u.rol], acc = '';
-      if (u.rol === 'incentivos') acc = '<span class="sub2">Titular</span>';
-      else if (u.estado === 'activo') acc = '<button class="lk lk--no" data-act="des" data-id="' + u.id + '">Desvincular</button>';
+      if (u.estado === 'activo') acc = '<button class="lk lk--no" data-act="des" data-id="' + u.id + '">Desvincular</button>';
       else if (u.estado === 'espera') acc = '<button class="lk" data-act="reenviar" data-id="' + u.id + '">Reenviar</button><button class="lk lk--demo" data-act="acceso" data-id="' + u.id + '" title="Solo demo: simula que la persona abre el correo y accede">Simular acceso</button>';
       else acc = '<span class="sub2">—</span>';
       var e = EST[u.estado];
@@ -334,8 +340,12 @@ function fadeAndGo(url){ window.location.href = url; }
     }).join('');
   }
   function toast(t, p) { $('toastT').textContent = t; $('toastP').textContent = p; var e = $('toast'); e.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(function () { e.classList.remove('show'); }, 4200); }
-  function chipsPrg(host, lista, sel) {
-    host.innerHTML = lista.length ? lista.map(function (p) { return '<button type="button" class="exc__chip' + (sel.indexOf(p.id) > -1 ? ' on' : '') + '" data-prg="' + p.id + '">' + esc(p.name) + '</button>'; }).join('') : '<span class="exc__hint">No hay programas activos para asignar.</span>';
+  var TICK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  function pintarPrg() {
+    var lista = activos();
+    $('ddPrgMenu').innerHTML = lista.length ? lista.map(function (p) { var on = prgSel.indexOf(p.id) > -1; return '<div class="toolbar-dd-item" role="option" aria-selected="' + on + '" data-prg="' + p.id + '"><span class="ck">' + (on ? TICK : '') + '</span>' + esc(p.name) + '</div>'; }).join('') : '<div class="toolbar-dd-item" style="cursor:default;color:#646587">No hay programas activos para asignar.</div>';
+    var n = prgSel.length;
+    $('ddPrgLabel').textContent = !n ? 'Selecciona uno o varios programas' : n === 1 ? nombrePrg(prgSel[0]) : n + ' programas seleccionados';
   }
 
   /* Invitar */
@@ -347,7 +357,7 @@ function fadeAndGo(url){ window.location.href = url; }
     $('invSub').textContent = SESION === 'programa' ? 'Invitas a un operador para tus programas. Le llegará un correo para confirmar su acceso.' : 'Le llegará un correo para confirmar su acceso a la plataforma.';
     $('invPrgHint').textContent = SESION === 'programa' ? 'Elige entre tus programas activos en cuáles va a entregar.' : 'Opcional: también se puede asignar al crear el programa, eligiéndolo como gestor.';
     $('invPrgReq').hidden = SESION !== 'programa';
-    pintarRol(); chipsPrg($('invPrg'), activos(), prgSel); $('invOv').classList.add('open'); setTimeout(function () { $('invNombre').focus(); }, 50);
+    pintarRol(); pintarPrg(); document.querySelectorAll('.toolbar-dd-wrap.open').forEach(function (x) { x.classList.remove('open'); }); $('invOv').classList.add('open'); setTimeout(function () { $('invNombre').focus(); }, 50);
   };
   window.cerrarInvitar = function () { $('invOv').classList.remove('open'); };
   function pintarRol() { document.querySelectorAll('#invRol .exc__opt').forEach(function (o) { var on = o.dataset.rol === rolNuevo; o.classList.toggle('on', on); o.setAttribute('aria-checked', on); }); }
@@ -355,7 +365,7 @@ function fadeAndGo(url){ window.location.href = url; }
     o.addEventListener('click', function () { rolNuevo = o.dataset.rol; pintarRol(); });
     o.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rolNuevo = o.dataset.rol; pintarRol(); } });
   });
-  $('invPrg').addEventListener('click', function (e) { var b = e.target.closest('[data-prg]'); if (!b) return; var i = prgSel.indexOf(b.dataset.prg); if (i > -1) prgSel.splice(i, 1); else prgSel.push(b.dataset.prg); chipsPrg($('invPrg'), activos(), prgSel); document.querySelector('#invOv [data-f="prg"]').classList.remove('bad'); });
+  $('ddPrgMenu').addEventListener('click', function (e) { e.stopPropagation(); var b = e.target.closest('[data-prg]'); if (!b) return; var i = prgSel.indexOf(b.dataset.prg); if (i > -1) prgSel.splice(i, 1); else prgSel.push(b.dataset.prg); pintarPrg(); document.querySelector('#invOv [data-f="prg"]').classList.remove('bad'); });   // se pueden elegir varios: el menú queda abierto
   ['invCc', 'invTel'].forEach(function (i) { $(i).addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); }); });
   document.querySelectorAll('#invOv input').forEach(function (i) { i.addEventListener('input', function () { var w = i.closest('[data-f]'); if (w) w.classList.remove('bad'); }); });
   window.enviarInvitacion = function () {
@@ -389,7 +399,7 @@ function fadeAndGo(url){ window.location.href = url; }
     toast('Persona desvinculada', n + ' ya no tiene acceso a la plataforma.');
   };
   document.addEventListener('click', function (e) {
-    var c = e.target.closest('.toolbar-dd-item[data-f]');
+    var c = e.target.closest('.toolbar-dd-item[data-f]');   // (los programas del modal llevan data-prg y se manejan aparte)
     if (c) { f[c.dataset.f] = c.dataset.v; document.querySelectorAll('.toolbar-dd-wrap.open').forEach(function (x) { x.classList.remove('open'); }); pintar(); return; }
     if (!e.target.closest('.toolbar-dd-wrap')) document.querySelectorAll('.toolbar-dd-wrap.open').forEach(function (x) { x.classList.remove('open'); });
   });
@@ -398,6 +408,7 @@ function fadeAndGo(url){ window.location.href = url; }
   pintar();
 })();
 </script>
+<script src="shared/filtros.js?v=1" defer></script>
 <script src="shared/footer-scroll.js" defer></script>
 <div class="naowee-floating-footer" role="contentinfo" aria-label="Pie de página Naowee">
   <img src="shared/logos/naowee.svg" alt="Naowee" class="naowee-floating-footer__logo"/>

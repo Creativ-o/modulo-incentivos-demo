@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
-<script src="shared/programs-data.js?v=21d"></script>
+<script src="shared/programs-data.js?v=21e"></script>
 <script src="shared/profile-switcher.js?v=role-33"></script>
 
 <style>
@@ -120,6 +120,19 @@
     padding:14px 20px 16px;
   }
   .preview__filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex:1;min-width:0}
+  .toolbar-dd-wrap{position:relative;display:inline-flex}
+  .toolbar-dd{position:relative;display:inline-flex;align-items:center;gap:8px;justify-content:space-between;height:36px;padding:4px 12px 4px 14px;background:#fff;border:1px solid #8788ab;border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;color:var(--naowee-color-text-primary,#282834);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+  .toolbar-dd:hover{border-color:#646587}
+  .toolbar-dd-wrap.open .toolbar-dd,.toolbar-dd:focus-visible{outline:none;border-color:var(--naowee-color-text-accent,#d74009);box-shadow:0 0 0 3px rgba(215,64,9,.15)}
+  .toolbar-dd svg{width:16px;height:16px;flex-shrink:0;color:var(--naowee-color-text-secondary,#646587);transition:transform .2s}
+  .toolbar-dd-wrap.open .toolbar-dd svg{transform:rotate(180deg)}
+  .toolbar-dd-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:50;min-width:100%;background:#fff;white-space:nowrap;border:1px solid var(--naowee-color-border-default,#e7e9f3);border-radius:10px;box-shadow:0 12px 32px rgba(40,40,52,.12);padding:6px;max-height:320px;overflow-y:auto;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .18s,transform .18s}
+  .toolbar-dd-wrap.open .toolbar-dd-menu{opacity:1;transform:translateY(0);pointer-events:auto}
+  .toolbar-dd-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .12s}
+  .toolbar-dd-item:hover{background:#f5f6fa}
+  .toolbar-dd-item[aria-selected="true"]{background:#fff3e6;color:var(--naowee-color-text-accent,#d74009);font-weight:600}
+  .dd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
   .preview__cta{display:flex;gap:10px;flex-shrink:0;align-items:center}
 
   /* Filter button — usa naowee-btn--mute del DS, badge custom encima */
@@ -351,46 +364,23 @@
         <!-- Row 2 (debajo del divider): filtros + paginación -->
         <div class="preview__toolbar">
             <div class="preview__filters">
-              <div class="filter-btn-wrap" id="filterBtnWrap">
-                <button type="button" class="naowee-btn naowee-btn--mute filter-btn" id="filterBtn" onclick="toggleFilterPopover()">
-                  <svg class="icon-funnel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                  <span>Filtros</span>
-                  <span class="filter-btn__badge" id="filterCount" style="display:none">0</span>
-                </button>
-                <div class="filter-popover" id="filterPopover">
-                  <div class="fp-head">
-                    <span class="fp-title">Filtros avanzados</span>
-                    <button class="fp-clear" onclick="resetFilters()">Limpiar todo</button>
-                  </div>
-                  <hr class="fp-divider"/>
-
-                  <div class="fp-group">
-                    <div class="fp-group__lbl">Año</div>
-                    <div id="fpAno"></div>
-                  </div>
-                  <hr class="fp-divider"/>
-
-                  <div class="fp-group">
-                    <div class="fp-group__lbl">Mes</div>
-                    <div id="fpMes"></div>
-                  </div>
-                  <hr class="fp-divider"/>
-
-                  <div class="fp-group">
-                    <div class="fp-group__lbl">Programa</div>
-                    <div id="fpProg"></div>
-                  </div>
-                  <hr class="fp-divider"/>
-
-                  <div class="fp-group">
-                    <div class="fp-group__lbl">Logro</div>
-                    <div id="fpLogro"></div>
-                  </div>
-                </div>
+              <div class="toolbar-dd-wrap" id="ddAnoWrap">
+                <button type="button" class="toolbar-dd" onclick="toggleDD('ddAnoWrap')"><span id="ddAnoLabel">Año: 2026</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                <div class="toolbar-dd-menu" role="listbox" id="ddAnoMenu"></div>
               </div>
-
-              <!-- Active filter tags (DS) -->
-              <div class="preview__tags" id="prevTags"></div>
+              <div class="toolbar-dd-wrap" id="ddMesWrap">
+                <button type="button" class="toolbar-dd" onclick="toggleDD('ddMesWrap')"><span id="ddMesLabel">Mes: Todo el año</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                <div class="toolbar-dd-menu" role="listbox" id="ddMesMenu"></div>
+              </div>
+              <div class="toolbar-dd-wrap" id="ddProgWrap">
+                <button type="button" class="toolbar-dd" onclick="toggleDD('ddProgWrap')"><span id="ddProgLabel">Programa: Todos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                <div class="toolbar-dd-menu" role="listbox" id="ddProgMenu"></div>
+              </div>
+              <div class="toolbar-dd-wrap" id="ddLogroWrap">
+                <button type="button" class="toolbar-dd" onclick="toggleDD('ddLogroWrap')"><span id="ddLogroLabel">Logro: Todos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+                <div class="toolbar-dd-menu" role="listbox" id="ddLogroMenu"></div>
+              </div>
+              <button type="button" class="naowee-btn naowee-btn--link naowee-btn--small" id="fClear" onclick="resetFilters()" hidden>Limpiar</button>
             </div>
 
             <div class="preview__cta">
@@ -494,58 +484,43 @@ function describePeriod(){
 const MESES_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
-function buildFpItem(val, label, group, currentVal, dot){
+function ddItem(val, label, group, currentVal, dot){
   const sel = String(val) === String(currentVal);
   const dotHtml = dot ? `<span class="dd-dot" style="background:${dot}"></span>` : '';
-  return `<div class="fp-item ${sel?'selected':''}" data-val="${val}" onclick="setFilter('${group}','${val}')">
-    <span class="fp-item__check">${CHECK_SVG}</span>${dotHtml}<span>${label}</span>
-  </div>`;
+  return `<div class="toolbar-dd-item" role="option" ${sel ? 'aria-selected="true"' : ''} onclick="setFilter('${group}','${val}')">${dotHtml}${label}</div>`;
 }
-
+function ddFill(wrap, pref, items, cur, todos){
+  document.getElementById('dd' + wrap + 'Menu').innerHTML = items.map(i => ddItem(i[0], i[1], wrap.toLowerCase().replace('ano','ano'), cur, i[2])).join('');
+  const it = items.filter(i => String(i[0]) === String(cur))[0];
+  document.getElementById('dd' + wrap + 'Label').textContent = pref + ': ' + (String(cur) === 'all' ? todos : (it ? it[1] : cur));
+}
 function populatePopover(){
-  // Año
   const years = Array.from(new Set(ALL.map(a => a.date.getFullYear()))).sort();
-  document.getElementById('fpAno').innerHTML =
-    buildFpItem('all','Todos los años','ano',state.ano) +
-    years.map(y => buildFpItem(y, y, 'ano', state.ano)).join('');
-
-  // Mes
-  document.getElementById('fpMes').innerHTML =
-    buildFpItem('all','Todo el año','mes',state.mes) +
-    MESES_FULL.map((m,i) => buildFpItem(i, m, 'mes', state.mes)).join('');
-
-  // Programa
-  document.getElementById('fpProg').innerHTML =
-    buildFpItem('all','Todos los programas','prog',state.prog) +
-    PROGRAMS.map(p => buildFpItem(p.id, p.name, 'prog', state.prog, p.iconColor || '#d74009')).join('');
-
-  // Logro
-  document.getElementById('fpLogro').innerHTML =
-    buildFpItem('all','Cualquier logro','logro',state.logro) +
-    buildFpItem('oro','Medalla de oro','logro',state.logro,'#f59e0b') +
-    buildFpItem('plata','Medalla de plata','logro',state.logro,'#9ca3af') +
-    buildFpItem('bronce','Medalla de bronce','logro',state.logro,'#b45309');
+  ddFill('Ano', 'Año', [['all','Todos los años']].concat(years.map(y => [y, y])), state.ano, 'Todos');
+  ddFill('Mes', 'Mes', [['all','Todo el año']].concat(MESES_FULL.map((m,i) => [i, m])), state.mes, 'Todo el año');
+  document.getElementById('ddProgMenu').innerHTML = [['all','Todos los programas']].concat(PROGRAMS.map(p => [p.id, p.name, p.iconColor || '#d74009'])).map(i => ddItem(i[0], i[1], 'prog', state.prog, i[2])).join('');
+  const pr = PROGRAMS.filter(p => p.id === state.prog)[0];
+  document.getElementById('ddProgLabel').textContent = 'Programa: ' + (state.prog === 'all' ? 'Todos' : (pr ? pr.name : state.prog));
+  const LOGROS = [['all','Cualquier logro'], ['oro','Medalla de oro','#f59e0b'], ['plata','Medalla de plata','#9ca3af'], ['bronce','Medalla de bronce','#b45309']];
+  document.getElementById('ddLogroMenu').innerHTML = LOGROS.map(i => ddItem(i[0], i[1], 'logro', state.logro, i[2])).join('');
+  const lg = LOGROS.filter(l => l[0] === state.logro)[0];
+  document.getElementById('ddLogroLabel').textContent = 'Logro: ' + (state.logro === 'all' ? 'Todos' : (lg ? lg[1] : state.logro));
 }
 
-function toggleFilterPopover(){
-  const wrap = document.getElementById('filterBtnWrap');
-  const btn = document.getElementById('filterBtn');
-  const wasOpen = wrap.classList.contains('open');
-  wrap.classList.toggle('open', !wasOpen);
-  btn.classList.toggle('open', !wasOpen);
-  if (!wasOpen) populatePopover();
+function toggleDD(id){
+  const w = document.getElementById(id), o = w.classList.contains('open');
+  document.querySelectorAll('.toolbar-dd-wrap.open').forEach(x => x.classList.remove('open'));
+  if(!o) w.classList.add('open');
 }
 document.addEventListener('click', e => {
-  if (!e.target.closest('#filterBtnWrap')) {
-    document.getElementById('filterBtnWrap').classList.remove('open');
-    document.getElementById('filterBtn').classList.remove('open');
-  }
+  if(!e.target.closest('.toolbar-dd-wrap')) document.querySelectorAll('.toolbar-dd-wrap.open').forEach(x => x.classList.remove('open'));
 });
 
 function setFilter(group, val){
   state[group] = val;
   state.page = 1;
-  populatePopover(); // refresh checks
+  document.querySelectorAll('.toolbar-dd-wrap.open').forEach(x => x.classList.remove('open'));
+  populatePopover();
   render();
 }
 
@@ -615,39 +590,7 @@ function render(){
 }
 
 function renderActiveTags(){
-  const logros = { oro:'Medalla de oro', plata:'Medalla de plata', bronce:'Medalla de bronce' };
-  const tags = [];
-  // Cualquier selección no-default produce un tag — incluye el año por
-  // default (2026) porque el usuario lo ve seleccionado en el popover y
-  // espera ver el filtro reflejado afuera.
-  if (state.ano === 'all') tags.push({ k:'ano', def:'all', label:'Todos los años' });
-  else tags.push({ k:'ano', def:'all', label:'Año: '+state.ano });
-  if (state.mes !== 'all') tags.push({ k:'mes', def:'all', label:MESES_FULL[+state.mes] });
-  if (state.prog !== 'all') {
-    const p = PROGRAMS.find(x => x.id === state.prog);
-    tags.push({ k:'prog', def:'all', label:p?.name || state.prog });
-  }
-  if (state.logro !== 'all') tags.push({ k:'logro', def:'all', label:logros[state.logro] || state.logro });
-
-  // Badge en el botón
-  const count = tags.length;
-  const badge = document.getElementById('filterCount');
-  badge.textContent = count;
-  badge.style.display = count ? 'inline-flex' : 'none';
-  document.getElementById('filterBtn').classList.toggle('has-active', count > 0);
-
-  // Tags al lado del botón
-  const wrap = document.getElementById('prevTags');
-  if (!count) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = tags.map(t => `
-    <span class="naowee-tag naowee-tag--accent naowee-tag--small">
-      <span class="naowee-tag__label">${t.label}</span>
-      <span class="naowee-tag__active-area" role="button" tabindex="0" onclick="setFilter('${t.k}','${t.def}')" onkeydown="if(event.key==='Enter'||event.key===' '){setFilter('${t.k}','${t.def}')}">
-        <span class="naowee-tag__close" aria-label="Quitar filtro">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </span>
-      </span>
-    </span>`).join('');
+  document.getElementById('fClear').hidden = activeFilterCount() === 0;
 }
 
 function changePage(delta){
@@ -719,6 +662,7 @@ populatePopover();
 render();
 
 </script>
+<script src="shared/filtros.js?v=1" defer></script>
 <script src="shared/footer-scroll.js" defer></script>
 
 <!-- Footer flotante Naowee -->

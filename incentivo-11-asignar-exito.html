@@ -439,7 +439,48 @@ document.addEventListener('click', (e) => { const sw = document.getElementById('
 
 </script>
 
-<script src="shared/programs-data.js?v=21d"></script>
+<script src="shared/programs-data.js?v=21e"></script>
+<script>
+/* Perfil de la persona tras la entrega: lo que ya tiene, lo que le falta y cómo seguir con otro incentivo */
+(function perfilTrasEntrega(){
+  let s = {}; try { s = JSON.parse(sessionStorage.getItem('inc-assignment-complete') || '{}'); } catch(e){}
+  if(!s.real || !s.delivery || !window.opSearch) return;
+  const d = s.delivery, prof = window.opSearch(d.cc); if(!prof) return;
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const hechos = prof.entries.filter(e => e.delivered), pend = prof.entries.filter(e => !e.delivered), nombre = d.persona.split(' ')[0];
+  const ok = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const fila = e => `<div class="pf-row pf-row--ok"><div class="pf-row__b"><b>${esc(e.incName)}</b><small>${esc(e.progName)}${e.delivered && e.delivered.code ? ' · código ' + esc(e.delivered.code) : ''}</small></div><span class="pf-tag pf-tag--ok">${ok} Asignado</span><span class="pf-when">${e.delivered.fecha} · ${e.delivered.hora}</span></div>`;
+  const filaP = e => `<div class="pf-row"><div class="pf-row__b"><b>${esc(e.incName)}</b><small>${esc(e.progName)}</small></div><span class="pf-tag">Por entregar</span><span class="pf-when"></span></div>`;
+  const css = document.createElement('style');
+  css.textContent = '.pf{background:#fff;border:1px solid var(--naowee-color-border-default,#e7e9f3);border-radius:16px;margin-bottom:20px;overflow:hidden}'
+    + '.pf__h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 22px;border-bottom:1px solid #eef0f6}'
+    + '.pf__h h3{margin:0;font-size:15px;font-weight:700;color:#282834}.pf__h small{display:block;font-size:12.5px;color:#646587;font-weight:400;margin-top:2px}'
+    + '.pf-count{font-size:12px;font-weight:700;color:#15803d;background:#e6f4e7;border-radius:999px;padding:4px 10px;white-space:nowrap}'
+    + '.pf-row{display:grid;grid-template-columns:1fr auto 150px;gap:12px;align-items:center;padding:12px 22px;border-bottom:1px solid #f3f4f8}.pf-row:last-child{border-bottom:0}'
+    + '.pf-row--ok{background:#f6fbf6}.pf-row__b b{display:block;font-size:13.5px;color:#282834}.pf-row__b small{font-size:12px;color:#646587}'
+    + '.pf-tag{font-size:11px;font-weight:700;border-radius:999px;padding:4px 10px;background:#f3f4f8;color:#646587;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}'
+    + '.pf-tag--ok{background:#1f8923;color:#fff}.pf-when{font-size:12px;color:#646587;text-align:right}'
+    + '.pf__f{padding:14px 22px;background:#fafbfd;font-size:13px;color:#646587}';
+  document.head.appendChild(css);
+  const card = document.createElement('section');
+  card.className = 'pf'; card.id = 'perfilPersona';
+  card.innerHTML = `<div class="pf__h"><div><h3>Incentivos de ${esc(d.persona)}</h3><small>${esc(d.tipo)} ${esc(d.cc)}</small></div><span class="pf-count">${hechos.length} asignado${hechos.length === 1 ? '' : 's'}</span></div>`
+    + hechos.map(fila).join('') + pend.map(filaP).join('')
+    + `<div class="pf__f">${pend.length ? 'Le ' + (pend.length === 1 ? 'queda <b>1 incentivo</b> por entregar' : 'quedan <b>' + pend.length + ' incentivos</b> por entregar') + ' en sus programas.' : 'Ya recibió todos los incentivos disponibles en sus programas.'}</div>`;
+  const receipt = document.querySelector('.receipt'); if(receipt) receipt.parentNode.insertBefore(card, receipt);
+  /* seguir con otro incentivo de la misma persona */
+  const acts = document.querySelector('.actions'); if(!acts) return;
+  if(pend.length){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'naowee-btn naowee-btn--loud naowee-btn--large'; b.id = 'btnOtro';
+    b.textContent = 'Asignar otro incentivo a ' + nombre;
+    b.onclick = () => { sessionStorage.setItem('inc-profile', JSON.stringify({ real: true, doc: d.cc, ts: Date.now() })); fadeAndGo('incentivo-08-asignar-buscar.html?volver=1'); };
+    acts.insertBefore(b, acts.firstChild);
+    const nueva = acts.children[1]; if(nueva){ nueva.classList.remove('naowee-btn--loud'); nueva.classList.add('naowee-btn--mute'); }
+    acts.style.gridTemplateColumns = '2fr 1.2fr 1fr 1fr';
+  }
+})();
+</script>
 
 
 <script src="shared/footer-scroll.js" defer></script>

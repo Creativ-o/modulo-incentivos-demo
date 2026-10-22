@@ -259,6 +259,7 @@
     text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis;
     font-family:'Inter',sans-serif;font-style:normal;
   }
+  .summary-row .val.val--ligero{font-weight:200}
   .summary-row.big .val{font-size:20px;font-weight:700;color:var(--naowee-color-text-accent,#d74009)}
   .summary-row.pending .val{color:#9c9ebf;font-weight:400;font-style:normal;font-family:'Inter',sans-serif}
   .summary hr{border:none;border-top:1px dashed var(--naowee-color-border-default,#e7e9f3);margin:2px 0}
@@ -495,7 +496,7 @@
           <hr/>
           <div class="summary-row">
             <span class="lbl">Operador</span>
-            <span class="val">Jorge Guzman</span>
+            <span class="val val--ligero">Jorge Guzman</span>
           </div>
           <div class="summary-row">
             <span class="lbl">Fecha</span>
@@ -517,7 +518,7 @@
   </div>
 </div>
 
-<script src="shared/programs-data.js?v=21d"></script>
+<script src="shared/programs-data.js?v=21e"></script>
 <script>
 // Generación de códigos (cantidades realistas: 60 becas + 60 kits)
 const MONTHS = ['ene','feb','mar','abr','may','jun'];
@@ -701,7 +702,7 @@ function updateSummary(){
   }
 }
 
-document.getElementById('nowLabel').textContent = new Date().toLocaleString('es-CO', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+(function(){ const n = new Date(); document.getElementById('nowLabel').textContent = n.getDate() + ' ' + n.toLocaleString('es-CO', {month:'short'}).replace('.', '') + ' de ' + n.getFullYear() + ', ' + n.toLocaleString('es-CO', {hour:'2-digit', minute:'2-digit'}); })();
 
 // Estado inicial del clear button (oculto si no hay query)
 (function initSearchClear(){

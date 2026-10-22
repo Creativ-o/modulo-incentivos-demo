@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
-<script src="shared/programs-data.js?v=21d"></script>
+<script src="shared/programs-data.js?v=21e"></script>
 <script src="shared/revert-modal.js" defer></script>
 
 <style>
@@ -125,7 +125,6 @@
   .dd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
   /* Period segment usa naowee-segment del DS */
-  .period-segment{height:36px}
 
   /* Pagination */
   .naowee-pagination{display:flex;align-items:center;gap:0;font-family:'Inter',sans-serif}
@@ -348,12 +347,17 @@
               </div>
             </div>
 
-            <div class="naowee-segment period-segment" role="tablist">
-              <div class="naowee-segment__pill"></div>
-              <button type="button" class="naowee-segment__item" data-period="today" onclick="setPeriod('today', this)">Hoy</button>
-              <button type="button" class="naowee-segment__item" data-period="7d" onclick="setPeriod('7d', this)">7 días</button>
-              <button type="button" class="naowee-segment__item" data-period="30d" onclick="setPeriod('30d', this)">30 días</button>
-              <button type="button" class="naowee-segment__item naowee-segment__item--active" data-period="all" onclick="setPeriod('all', this)">Todo</button>
+            <div class="toolbar-dd-wrap" id="ddPeriodWrap">
+              <button type="button" class="toolbar-dd" onclick="toggleDD('ddPeriodWrap')">
+                <span id="ddPeriodLabel">Período: Todo</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="toolbar-dd-menu" role="listbox" id="ddPeriodMenu">
+                <div class="toolbar-dd-item" role="option" data-val="today" onclick="setPeriod('today','Hoy')">Hoy</div>
+                <div class="toolbar-dd-item" role="option" data-val="7d" onclick="setPeriod('7d','Últimos 7 días')">Últimos 7 días</div>
+                <div class="toolbar-dd-item" role="option" data-val="30d" onclick="setPeriod('30d','Últimos 30 días')">Últimos 30 días</div>
+                <div class="toolbar-dd-item" role="option" aria-selected="true" data-val="all" onclick="setPeriod('all','Todo')">Todo</div>
+              </div>
             </div>
 
             <div class="toolbar-dd-wrap" id="ddEstadoWrap">
@@ -536,25 +540,12 @@ function setEstado(val, label){
   toggleDD('ddEstadoWrap'); render();
 }
 
-function setPeriod(val, el){
+function setPeriod(val, label){
   state.period = val; state.page = 1;
-  const seg = el.closest('.naowee-segment');
-  seg?.querySelectorAll('.naowee-segment__item').forEach(t => t.classList.remove('naowee-segment__item--active'));
-  el.classList.add('naowee-segment__item--active');
-  movePeriodPill(el);
+  document.getElementById('ddPeriodLabel').textContent = 'Período: ' + label;
+  document.querySelectorAll('#ddPeriodWrap .toolbar-dd-item').forEach(it => it.setAttribute('aria-selected', it.dataset.val === val ? 'true' : 'false'));
+  toggleDD('ddPeriodWrap');
   render();
-}
-/* Mueve el pill del segment al item activo (DS spec: transform + width) */
-function movePeriodPill(item){
-  const seg = item.closest('.naowee-segment'); if(!seg) return;
-  const pill = seg.querySelector('.naowee-segment__pill'); if(!pill) return;
-  const r = item.getBoundingClientRect();
-  const pr = seg.getBoundingClientRect();
-  if(!r.width || !pr.width) return;
-  const borderLeft = parseFloat(getComputedStyle(seg).borderLeftWidth) || 0;
-  const offset = r.left - pr.left - borderLeft;
-  pill.style.width = r.width + 'px';
-  pill.style.setProperty('--segment-pill-x', offset + 'px');
 }
 
 function clearSearch(id){
@@ -623,7 +614,7 @@ function render(){
         ? `<span class="valor-cell${mutedValor ? ' muted' : ''}">${moneyTxt}</span>`
         : `<span style="font-family:'Inter',sans-serif;font-size:12.5px;color:#9c9ebf;font-style:italic">Sin valor</span>`;
       return `
-      <tr onclick="openBenef('${a.ccRaw}')" title="Ver el perfil de ${a.person}">
+      <tr ${perfilDe(a.ccRaw) ? `onclick="openBenef('${a.ccRaw}')" title="Ver el perfil de ${a.person}"` : 'style="cursor:default"'}>
         <td>
           <div class="fecha-cell">${a.fecha}</div>
           <div class="fecha-cell__hour">${a.hora}</div>
@@ -715,11 +706,9 @@ render();
 
 /* Inicializa el pill del segment en el item activo. requestAnimationFrame
    para asegurar que el layout esté listo antes de medir bounding rect. */
-requestAnimationFrame(() => {
-  const active = document.querySelector('.period-segment .naowee-segment__item--active');
-  if(active) movePeriodPill(active);
-});
 
+/* Solo se abre el perfil de quien tiene documentación aprobada en algún programa; el resto no lleva a ninguna parte */
+function perfilDe(cc){ const m = (window.__perfiles = window.__perfiles || {}); if(!(cc in m)) m[cc] = !!(window.opSearch && window.opSearch(cc)); return m[cc]; }
 /* Perfil del beneficiario: la misma ficha del paso «Buscar» con sus incentivos y entregas */
 function openBenef(cc){
   sessionStorage.setItem('inc-profile', JSON.stringify({ real: true, doc: cc, view: 'perfil', ts: Date.now() }));
@@ -729,6 +718,7 @@ function fadeAndGo(url){window.location.href=url}
 </script>
 
 
+<script src="shared/filtros.js?v=1" defer></script>
 <script src="shared/footer-scroll.js" defer></script>
 
 <!-- Footer flotante Naowee -->

@@ -117,3 +117,6 @@ body.rc-open .rc-scrim{opacity:1;visibility:visible;transition-delay:0s}
 .rt-part{font-size:11.5px;color:var(--mut);margin-top:7px}
 .rt-part b{color:var(--acc);font-weight:800}
 .rt-band + .rt-title{padding-top:8px}
+
+.rc-cv{width:16px;height:16px;flex:none;color:var(--mut);margin-left:auto;transition:transform .2s}
+.rc-cu.is-open .rc-cv{transform:rotate(180deg)}

@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/naowee-tech/naowee-design-system@v1.4.0/dist/design-system.css"/>
 <link rel="stylesheet" href="shared/shell.css"/>
 <link rel="stylesheet" href="shared/programa-wizard.css"/>
-<script src="shared/programs-data.js?v=21d"></script>
+<script src="shared/programs-data.js?v=21e"></script>
 <script>
 /* Drena la cola de programas guardados (drafts y activations) que el wizard
    empuja a sessionStorage antes de navegar acá. Cada entrada se inserta al
@@ -200,22 +200,22 @@
   }
   .cg-toolbar__left{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
   /* Botón en toolbar igualado al alto del search y del toolbar-dd (34px) */
-  .cg-toolbar__left > .naowee-btn{height:34px;padding:0 14px;font-size:12.5px}
+  .cg-toolbar__left > .naowee-btn{height:36px;padding:0 14px;font-size:12.5px}
   .cg-toolbar__left > .naowee-btn svg{width:14px;height:14px}
   .cg-toolbar .naowee-searchbox--pill{width:300px;max-width:100%}
   .cg-toolbar .naowee-searchbox--pill .naowee-searchbox__input-wrap{
-    border-radius:9999px;height:34px;padding:4px 12px;
+    border-radius:9999px;height:36px;padding:4px 12px;
   }
 
   /* Filter dropdown (escenarios toolbar-dd) */
   .toolbar-dd-wrap{position:relative;display:inline-flex}
   .toolbar-dd{
     position:relative;display:inline-flex;align-items:center;gap:8px;justify-content:space-between;
-    height:34px;padding:4px 12px 4px 14px;
+    height:36px;padding:4px 12px 4px 14px;
     background:#fff;border:1px solid #8788ab;border-radius:8px;
     font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;
     color:var(--naowee-color-text-primary,#282834);
-    cursor:pointer;transition:border-color .15s,box-shadow .15s;min-width:140px;
+    cursor:pointer;transition:border-color .15s,box-shadow .15s;
   }
   .toolbar-dd:hover{border-color:#646587}
   .toolbar-dd.open,.toolbar-dd:focus-visible{
@@ -3458,6 +3458,7 @@ function clearSearch(inputId){
 
 
 
+<script src="shared/filtros.js?v=1" defer></script>
 <script src="shared/footer-scroll.js" defer></script>
 
 <!-- Footer flotante Naowee -->

@@ -201,9 +201,7 @@
     await A.docDelTipo(c, id, 'Certificación bancaria');
   };
   A.llenarCondicionesDiploma = async function (c) {
-    var id = await A.abrirTipo(c, 3);
-    await A.docDelTipo(c, id, 'Certificación bancaria');
-    await A.docDelTipo(c, id, 'Autorización del acudiente');
+    await A.abrirTipo(c, 3);
   };
 
   /* ── Paso 4 ── */
@@ -254,8 +252,11 @@
     for (var k = 0; k < m.length; k++) if (A.vacio(c, m[k][0])) await A.escribir(c, m[k][0], m[k][1], k === 0 || k === 3);
   };
   A.invitarPrograma = async function (c, idx) {
-    var b = c.d.querySelectorAll('#invPrg [data-prg]')[idx || 0];
-    if (b && !b.classList.contains('on')) { b.click(); await zz(350); }
+    var w = c.d.getElementById('ddPrgWrap'), item = c.d.querySelectorAll('#ddPrgMenu [data-prg]')[idx || 0];
+    if (!w || !item || item.getAttribute('aria-selected') === 'true') return;
+    if (!w.classList.contains('open')) { A.pulsar(c, '#ddPrgWrap .toolbar-dd'); await zz(350); }
+    item.click(); await zz(450);
+    c.d.body.click(); await zz(250);   // se cierra el desplegable
   };
   A.rolInvitado = async function (c, rol) { var o = c.d.querySelector('#invRol [data-rol="' + rol + '"]'); if (o && !o.classList.contains('on')) { o.click(); await zz(350); } };
   A.filaUsuario = function (c, nombre) { return [].slice.call(c.d.querySelectorAll('#rows tr')).filter(function (r) { return r.textContent.indexOf(nombre) > -1; })[0]; };
