@@ -68,8 +68,7 @@
         + (listo ? '<button type="button" class="rc-go" data-go="' + c.id + '">Ver recorrido</button>' : '') + '</div></div>';
     }
     panel.innerHTML = '<div class="rc-h"><b>Recorridos de la DEMO</b><span id="rcResetBox"><button type="button" class="rc-ib" id="rcReset" title="Reiniciar demo: borra lo guardado" aria-label="Reiniciar demo">↺</button></span><button type="button" class="rc-ib" id="rcCerrar" aria-label="Cerrar">×</button></div>'
-      + '<div class="rc-b"><div class="rc-g">Perfil</div>' + perf
-      + '<div class="rc-g">Flujo completo</div><div class="rc-sub">La historia de principio a fin, con el mismo programa y las mismas personas. Avisa cuando cambia el perfil y en qué parte va.</div>' + flujo.map(fila).join('')
+      + '<div class="rc-b"><div class="rc-g">Flujo completo</div><div class="rc-sub">La historia de principio a fin, con el mismo programa y las mismas personas. Avisa cuando cambia el perfil y en qué parte va.</div>' + flujo.map(fila).join('')
       + '<div class="rc-g">Casos independientes</div><div class="rc-sub">Cada caso se puede ver solo y parte de su propia escena.</div>' + casos.map(fila).join('')
       + '</div>';
   }
