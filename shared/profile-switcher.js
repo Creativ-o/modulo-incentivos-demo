@@ -375,6 +375,16 @@
       sw.appendChild(dd);
     }
 
+    // Acceso a los recorridos guiados desde el menú de perfiles (no dentro del propio recorrido, que ya los trae)
+    const ddm = sw.querySelector('.profile-dd');
+    let embebido = false; try { embebido = window.parent !== window; } catch(e){ embebido = true; }
+    if(ddm && !embebido && !ddm.querySelector('.profile-dd__tour')){
+      const a = document.createElement('a');
+      a.className = 'profile-dd__tour'; a.href = 'recorrido/';
+      a.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Recorridos guiados</span>';
+      ddm.appendChild(a);
+    }
+
 
     // Wire-up de los items del dropdown. Skipeamos si ya tienen onclick
     // inline (páginas legacy) para evitar doble-fire de switchRole.
